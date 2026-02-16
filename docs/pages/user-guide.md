@@ -1,0 +1,226 @@
+# User Guide
+
+This guide provides comprehensive documentation for Yohou-Optuna.
+
+## Overview
+
+An Optuna integration for hyperparameter tuning in Yohou
+
+[Add 2-3 paragraphs expanding on:
+- What makes this package unique
+- Core philosophy and design principles
+- When to use it vs alternatives]
+
+## Prerequisites
+
+Before diving into Yohou-Optuna, it's helpful to understand:
+
+### [Prerequisite Technology/Concept 1]
+
+[Brief 2-3 sentence explanation of what this is and why it matters. Link to external docs for deeper learning.]
+
+Learn more: [Official Documentation](https://example.com)
+
+### [Prerequisite Technology/Concept 2]
+
+[Brief explanation of the second prerequisite technology or concept.]
+
+Learn more: [Official Documentation](https://example.com)
+
+## Why Yohou-Optuna?
+
+[2-3 paragraphs explaining the philosophy and value proposition:
+- What problem space does this address?
+- What's the approach or methodology?
+- How does it fit into the broader ecosystem?
+- What makes this solution effective?]
+
+### For [User Persona 1] Users
+
+If you're coming from [context/background], Yohou-Optuna offers:
+
+- **[Benefit 1]**: [2-3 line detailed explanation of how this helps this persona specifically]
+- **[Benefit 2]**: [2-3 line detailed explanation of how this helps this persona specifically]
+- **[Benefit 3]**: [2-3 line detailed explanation of how this helps this persona specifically]
+- **[Benefit 4]**: [2-3 line detailed explanation of how this helps this persona specifically]
+
+### For [User Persona 2] Users
+
+If you're familiar with [alternative approach/tool], you'll appreciate:
+
+- **[Benefit 1]**: [2-3 line detailed explanation of how this helps this persona specifically]
+- **[Benefit 2]**: [2-3 line detailed explanation of how this helps this persona specifically]
+- **[Benefit 3]**: [2-3 line detailed explanation of how this helps this persona specifically]
+
+## Core Concepts
+
+### [Concept 1: Primary Concept Name]
+
+[2-3 paragraphs explaining this core concept:
+- What it is and why it exists
+- How it works at a conceptual level
+- Why this design choice was made
+- Examples or analogies that clarify]
+
+```python
+# Example demonstrating the concept
+from yohou_optuna import [Class]
+
+# [Brief code example]
+```
+
+### [Concept 2: Secondary Concept Name]
+
+[Detailed explanation of the second core concept with similar depth]
+
+```python
+# Example demonstrating the concept
+```
+
+## Key Features
+
+### [Feature 1: Feature Name]
+
+[2-3 paragraphs explaining this feature:
+- What capability this provides
+- Why it matters and what problems it solves
+- How to use it effectively
+- When to use this feature]
+
+**Example:**
+
+```python
+from yohou_optuna import [Component]
+
+# Demonstrate the feature with realistic code
+```
+
+Learn more: [Related concept or external documentation](https://example.com)
+
+### [Feature 2: Feature Name]
+
+[Detailed explanation of this feature]
+
+**Example:**
+
+```python
+# Realistic example code
+```
+
+### [Feature 3: Feature Name]
+
+[Detailed explanation with focus on practical use]
+
+### [Feature 4: Feature Name]
+
+[Explanation including trade-offs and best practices]
+
+### [Feature 5: Feature Name]
+
+[Explanation of advanced or specialized feature]
+
+### [Feature 6: Feature Name] *(Experimental)*
+
+[Explanation of experimental or future features, noting maturity level and potential changes]
+
+> **Note**: This feature is experimental and may change in future versions.
+
+## Configuration
+
+### Basic Configuration
+
+[Explanation of how to configure the package]
+
+```python
+from yohou_optuna import [ConfigClass]
+
+config = [ConfigClass](
+    option_1="value",  # Description of what this controls
+    option_2=True,     # Description of what this controls
+)
+```
+
+Or using a configuration file:
+
+```yaml
+# config.yaml
+yohou_optuna:
+  option_1: value
+  option_2: true
+```
+
+### Advanced Configuration
+
+[More advanced configuration options and patterns]
+
+## Best Practices
+
+### 1. [Best Practice Category 1]
+
+**Do:**
+- [Specific recommendation with brief explanation]
+- [Another recommendation]
+
+**Don't:**
+- [Anti-pattern to avoid with explanation why]
+
+### 2. [Best Practice Category 2]
+
+[Explanation of recommended patterns and approaches]
+
+### 3. [Best Practice Category 3]
+
+[Additional guidance on effective usage]
+
+## Limitations and Considerations
+
+Understanding the limitations helps you make informed decisions:
+
+1. **[Limitation 1]**: [Explanation of the trade-off or constraint and why it exists]
+
+2. **[Limitation 2]**: [Explanation of what's not supported and potential workarounds]
+
+3. **[Consideration 3]**: [Important factor to consider when using this package]
+
+## Troubleshooting
+
+### [Common Issue 1]
+
+**Problem**: [Description of the problem users encounter]
+
+**Solution**: [Step-by-step solution with code examples]
+
+```python
+# Example showing the solution
+```
+
+### [Common Issue 2]
+
+**Problem**: [Description]
+
+**Solution**: [Resolution with explanation]
+
+**Solution**: [Resolution with explanation]
+
+## FAQ
+
+### [Question 1]?
+
+[Detailed answer addressing the question comprehensively]
+
+### [Question 2]?
+
+[Answer with examples or links as needed]
+
+### [Question 3]?
+
+[Answer that might reference other sections or external resources]
+
+## Next Steps
+
+Now that you understand the core concepts and features:
+
+- Follow the [Getting Started](getting-started.md) guide to start using Yohou-Optuna
+- Explore the [Examples](examples.md) for real-world use cases
+- Check the [API Reference](api-reference.md) for detailed API documentation
+- Join the community on [GitHub Discussions](https://github.com/stateful-y/yohou-optuna/discussions)

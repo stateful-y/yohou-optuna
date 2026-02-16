@@ -1,0 +1,66 @@
+# Examples
+
+Explore real-world applications of Yohou-Optuna through interactive examples.
+
+## What can Yohou-Optuna do?
+
+### Example 1: [Use Case Title]
+
+[2-3 sentence description of what this example demonstrates and why it's useful. Focus on the problem being solved and the value delivered, not the technical implementation.]
+
+<!-- Add a screenshot showing the example output -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="../../assets/example1_light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example1_dark.png">
+    <img src="../../assets/example1_light.png" alt="Example 1 output" width="600">
+  </picture>
+</p>
+
+[Brief paragraph explaining the approach or technique demonstrated in this example.]
+
+### Example 2: [Use Case Title]
+
+[Description focusing on the business problem or user need this example addresses. Explain what capabilities are shown and why they matter.]
+
+<!-- Add screenshot placeholder -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="../../assets/example2_light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example2_dark.png">
+    <img src="../../assets/example2_light.png" alt="Example 2 output" width="600">
+  </picture>
+</p>
+
+### Example 3: [Use Case Title]
+
+[Description focusing on advanced features or more complex scenarios. Show how Yohou-Optuna handles real-world complexity.]
+
+<!-- Add screenshot placeholder -->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="../../assets/example3_light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example3_dark.png">
+    <img src="../../assets/example3_light.png" alt="Example 3 output" width="600">
+  </picture>
+</p>
+
+## Interactive Demo
+
+For a full-page interactive experience, open the [standalone notebook](/examples/hello/) which runs entirely in your browser using WebAssembly (no server needed).
+
+## Running Examples Locally
+
+```bash
+# Interactive editing
+just example
+
+# Run as script
+python examples/hello.py
+```
+
+## Next Steps
+
+- Browse the [API Reference](api-reference.md) for detailed documentation
+- Check the [User Guide](user-guide.md) to understand core concepts
+
