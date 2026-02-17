@@ -4,63 +4,52 @@ Explore real-world applications of Yohou-Optuna through interactive examples.
 
 ## What can Yohou-Optuna do?
 
-### Example 1: [Use Case Title]
+### Quickstart Search
 
-[2-3 sentence description of what this example demonstrates and why it's useful. Focus on the problem being solved and the value delivered, not the technical implementation.]
+A minimal end-to-end example: load data, define distributions, run `OptunaSearchCV`, and inspect results. This is the best starting point for new users.
 
-<!-- Add a screenshot showing the example output -->
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="../../assets/example1_light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example1_dark.png">
-    <img src="../../assets/example1_light.png" alt="Example 1 output" width="600">
-  </picture>
-</p>
+[:material-notebook: optuna_search.py](../examples/optuna_search/)
 
-[Brief paragraph explaining the approach or technique demonstrated in this example.]
+### Composed Forecaster Tuning
 
-### Example 2: [Use Case Title]
+Tune nested parameters in a `DecompositionPipeline` — optimize the decomposer, trend forecaster, and residual forecaster simultaneously using `__` parameter routing.
 
-[Description focusing on the business problem or user need this example addresses. Explain what capabilities are shown and why they matter.]
+[:material-notebook: composed_tuning.py](../examples/composed_tuning/)
 
-<!-- Add screenshot placeholder -->
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="../../assets/example2_light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example2_dark.png">
-    <img src="../../assets/example2_light.png" alt="Example 2 output" width="600">
-  </picture>
-</p>
+### Search Visualization
 
-### Example 3: [Use Case Title]
+Visualize optimization history, parameter importances, and parallel coordinate plots using Optuna's built-in visualization tools with `search.study_`.
 
-[Description focusing on advanced features or more complex scenarios. Show how Yohou-Optuna handles real-world complexity.]
+[:material-notebook: search_visualization.py](../examples/search_visualization/)
 
-<!-- Add screenshot placeholder -->
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: light)" srcset="../../assets/example3_light.png">
-    <source media="(prefers-color-scheme: dark)" srcset="../../assets/example3_dark.png">
-    <img src="../../assets/example3_light.png" alt="Example 3 output" width="600">
-  </picture>
-</p>
+### Multi-Metric Search
 
-## Interactive Demo
+Evaluate multiple scoring metrics (MAE, RMSE, etc.) in a single search pass. Learn how to use `refit` to select the best forecaster based on your preferred metric.
 
-For a full-page interactive experience, open the [standalone notebook](/examples/hello/) which runs entirely in your browser using WebAssembly (no server needed).
+[:material-notebook: multi_metric_search.py](../examples/multi_metric_search/)
+
+### Samplers and Persistence
+
+Compare different Optuna samplers (TPE, CMA-ES, Random) and persist studies to a SQLite database for resumption and analysis.
+
+[:material-notebook: samplers_and_persistence.py](../examples/samplers_and_persistence/)
 
 ## Running Examples Locally
 
-```bash
-# Interactive editing
-just example
+All examples are [Marimo](https://marimo.io) reactive notebooks stored as `.py` files:
 
-# Run as script
-python examples/hello.py
+```bash
+# Interactive editing (recommended)
+uv run marimo edit examples/optuna_search.py
+
+# Run as script (non-interactive)
+uv run marimo run examples/optuna_search.py
+
+# Or use the justfile shortcut
+just example optuna_search.py
 ```
 
 ## Next Steps
 
 - Browse the [API Reference](api-reference.md) for detailed documentation
 - Check the [User Guide](user-guide.md) to understand core concepts
-

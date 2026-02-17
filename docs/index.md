@@ -3,12 +3,10 @@
 
 # Welcome to Yohou-Optuna's documentation
 
-An Optuna integration for hyperparameter tuning in Yohou
+`OptunaSearchCV` extends Yohou's `BaseSearchCV` — which extends `BaseForecaster` — for Bayesian hyperparameter tuning of time series forecasters, powered by [Optuna](https://optuna.org/). It inherits the full yohou forecasting API (`fit(y, X, forecasting_horizon)`, `predict()`, `update_predict()`, `best_forecaster_`, `cv_results_`) while using Optuna's samplers (TPE, CMA-ES, …) to explore search spaces more efficiently than grid or random search. Optuna distributions give you log-scaled, bounded, and categorical parameter spaces, and wrapper classes (`Sampler`, `Storage`, `Callback`) survive `clone()` and serialization.
 
-[Add 1-2 paragraphs explaining:
-- What this package integrates or provides
-- The main value proposition
-- Key use cases or target audience]
+!!! note "Inspiration"
+    This project is inspired by [optuna-integration's OptunaSearchCV](https://optuna-integration.readthedocs.io/en/latest/reference/generated/optuna_integration.OptunaSearchCV.html) and builds on [sklearn-optuna](https://github.com/stateful-y/sklearn-optuna).
 
 <div class="grid cards" markdown>
 
@@ -16,36 +14,35 @@ An Optuna integration for hyperparameter tuning in Yohou
 
     ---
 
-    Install Yohou-Optuna and [achieve first result]
+    Install Yohou-Optuna and run your first hyperparameter search
 
-    Install → Initialize → Run → Done
+    Install → Define distributions → Fit → Predict
 
     [Getting Started](pages/getting-started.md)
-
-- **Need Help?**
-
-    ---
-
-    Find answers to common questions and troubleshooting tips
-
-    [FAQ & Troubleshooting](pages/user-guide.md#troubleshooting)
 
 - **Learn the Concepts**
 
     ---
 
-    Understand [core concepts or how components work together]
+    Understand OptunaSearchCV, samplers, distributions, and callbacks
 
-    [Introduction](pages/user-guide.md) · [User guide](pages/user-guide.md)
-
+    [User Guide](pages/user-guide.md)
 
 - **See It In Action**
 
     ---
 
-    Explore a complete example [describe what the example demonstrates]
+    Explore 5 interactive notebooks from quickstart to multi-metric search
 
-    [Example Project](pages/examples.md)
+    [Examples](pages/examples.md)
+
+- **API Reference**
+
+    ---
+
+    Complete API documentation for OptunaSearchCV and wrapper classes
+
+    [API Reference](pages/api-reference.md)
 
 
 </div>
@@ -56,17 +53,17 @@ An Optuna integration for hyperparameter tuning in Yohou
 
 Step-by-step guide to installing and setting up Yohou-Optuna in your project.
 
-- [1. [First Setup Step]](pages/getting-started.md#1-initializesetup-step)
-- [2. [Installation or Configuration]](pages/getting-started.md#2-configurecustomize-step)
-- [3. [Initialize/Configure Step]](pages/getting-started.md#3-executerun-step)
+- [1. Install the package](pages/getting-started.md#step-1-install-the-package)
+- [2. Verify installation](pages/getting-started.md#step-2-verify-installation)
+- [3. Basic usage](pages/getting-started.md#basic-usage)
 
 
-### [Example](pages/examples.md)
+### [Examples](pages/examples.md)
 
-A practical example demonstrating how to use Yohou-Optuna in a real project.
+Interactive notebooks demonstrating real-world time series hyperparameter tuning.
 
-- [Project overview](pages/examples.md#what-can-project_name-do)
-- [Quick start](pages/examples.md#running-examples-locally)
+- [What can Yohou-Optuna do?](pages/examples.md#what-can-yohou-optuna-do)
+- [Running examples locally](pages/examples.md#running-examples-locally)
 
 
 ### [User guide](pages/user-guide.md)
@@ -83,4 +80,4 @@ Detailed reference for the Yohou-Optuna API, including classes, functions, and c
 
 ## License
 
-Yohou-Optuna is open source and licensed under the [Apache-2.0 License](https://opensource.org/licenses/Apache-2.0). You are free to use, modify, and distribute this software under the terms of this license.
+Yohou-Optuna is released under the **BSD 3-Clause License**. See the full license text in the repository.

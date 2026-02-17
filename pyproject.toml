@@ -21,12 +21,14 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
-
-    "numpy>=2.3.0",
-    "pandas>=2.2.0",
-    "plotly>=6.5.0",
-
+  "optuna",
+  "scipy",
+  "sklearn-optuna",
+  "yohou",
 ]
+
+[tool.uv.sources]
+yohou = { workspace = true }
 
 [project.scripts]
 pytest = "pytest:console_main"
@@ -46,6 +48,7 @@ tests = [
     "pytest-mock>=3.14",
     "pytest-xdist>=3.8",
     "covdefaults>=2.3",
+    "polars>=0.20",
 ]
 lint = [
     "ruff>=0.8.0",
@@ -138,7 +141,7 @@ ignore-module = false
 ignore-nested-functions = false
 ignore-nested-classes = true
 ignore-setters = false
-fail-under = 75
+fail-under = 100
 exclude = ["setup.py", "docs", "build", "tests", "*_version.py"]
 ignore-regex = ["^get$", "^mock_.*", ".*BaseClass.*"]
 verbose = 0
@@ -190,7 +193,7 @@ omit = [
 precision = 2
 show_missing = true
 skip_covered = false
-fail_under = 1
+fail_under = 80
 include_namespace_packages = true
 
 [tool.coverage.html]

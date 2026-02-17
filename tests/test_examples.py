@@ -24,8 +24,11 @@ def test_notebook_runs_without_error(notebook_file: pathlib.Path) -> None:
     Marimo notebooks can be run directly as Python scripts.
     See: https://docs.marimo.io/getting_started/quickstart/#run-as-scripts
 
-    Args:
-        notebook_file: Path to the notebook file to test.
+    Parameters
+    ----------
+    notebook_file : pathlib.Path
+        Path to the notebook file to test.
+
     """
     result = subprocess.run(
         ["python", str(notebook_file)],
@@ -34,8 +37,5 @@ def test_notebook_runs_without_error(notebook_file: pathlib.Path) -> None:
         check=False,
     )
     assert result.returncode == 0, (
-        f"Notebook {notebook_file.name} failed with:\n"
-        f"STDOUT:\n{result.stdout}\n"
-        f"STDERR:\n{result.stderr}"
+        f"Notebook {notebook_file.name} failed with:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
     )
-

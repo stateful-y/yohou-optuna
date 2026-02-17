@@ -15,28 +15,20 @@
 
 ## What is Yohou-Optuna?
 
-An Optuna integration for hyperparameter tuning in Yohou
+**Yohou-Optuna** brings [Optuna](https://optuna.org/)'s hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a Yohou-compatible search class for time series forecasting.
 
-[Add 1-2 paragraphs explaining:
-- The main problem or need this addresses
-- How it works at a high level
-- Key technologies or dependencies it integrates with
-- Version compatibility information if relevant]
+This integration replaces grid and random search with adaptive sampling (TPE, CMA-ES, and more) while keeping Yohou's forecasting API intact. After fitting, `OptunaSearchCV` behaves like a Yohou forecaster, so you can call `predict`, `update`, and `update_predict` directly.
 
-<!-- Add a screenshot showing your project in action -->
-![Yohou-Optuna Screenshot](https://raw.githubusercontent.com/stateful-y/yohou-optuna/main/docs/assets/screenshot_dark.png)
-
-[Optional: Add version compatibility note]
-<!-- Example: Currently, Yohou-Optuna supports Python 3.11+, and [dependency] versions X.Y.z -->
+It integrates with Optuna's distributions, samplers, and storages, and wraps them for sklearn-style cloning and serialization.
 
 ## What are the features of Yohou-Optuna?
 
-- **[Feature 1 Name]**: [1-2 sentence description of this capability and why it matters. Focus on the value delivered.]
-- **[Feature 2 Name]**: [1-2 sentence description emphasizing what users can accomplish with this feature.]
-- **[Feature 3 Name]**: [1-2 sentence description of the capability and its benefits.]
-- **[Feature 4 Name]**: [1-2 sentence description showing integration or compatibility aspects.]
-- **[Feature 5 Name]**: [1-2 sentence description of advanced functionality.]
-- **(Experimental) [Feature 6 Name]**: [1-2 sentence description noting this is experimental or in development.]
+- **Adaptive optimization**: Run Optuna studies over Yohou forecasters with TPE, CMA-ES, and other samplers to find better configurations in fewer trials.
+- **Forecaster-native API**: `OptunaSearchCV` is a forecaster after fitting, so you can call `predict`, `update`, `update_predict`, and interval methods.
+- **Clone-safe wrappers**: `Sampler`, `Storage`, and `Callback` wrappers ensure Optuna objects survive sklearn cloning and serialization.
+- **Time-series CV support**: Works with Yohou splitters for proper temporal validation and scorer integration.
+- **Multi-metric evaluation**: Evaluate multiple scorers and refit on the one that matters most for your use case.
+- **(Experimental) Persistence workflows**: Resume studies with storage-backed optimization and continue tuning over time.
 
 ## How to install Yohou-Optuna?
 
@@ -68,58 +60,55 @@ or alternatively, add `yohou_optuna` to your `requirements.txt` or `pyproject.to
 
 ## How to get started with Yohou-Optuna?
 
-### 1. [Initialize/Setup Step]
+### 1. Prepare a forecaster and search space
 
-[Brief description of what this step accomplishes]
+Define a Yohou forecaster and Optuna distributions for the parameters you want to tune.
 
-Use the following command to [describe action]:
+```python
+from sklearn.linear_model import Ridge
+from optuna.distributions import FloatDistribution, IntDistribution
 
-```bash
-[command to run]
+from yohou.point import PointReductionForecaster
+from yohou_optuna import OptunaSearchCV
+
+forecaster = PointReductionForecaster(regressor=Ridge())
+param_distributions = {
+    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
+    "observation_horizon": IntDistribution(3, 30),
+}
+
+search = OptunaSearchCV(
+    forecaster=forecaster,
+    param_distributions=param_distributions,
+    n_trials=30,
+)
 ```
 
-### 2. [Configure/Customize Step]
+### 2. Fit the searcher
 
-[Brief description of what configuration does]
+Fit the searcher on your time series data (polars DataFrame with a `time` column).
 
-Define your [settings/options] in the `[config file]` located in [location]. This file allows you to [describe what user can configure].
-
-```yaml
-# [config file path]
-[setting_section]:
-  [setting_1]: [value]  # Comment explaining setting
-  [setting_2]: [value]  # Comment explaining setting
-
-[another_section]:
-  [option_1]:
-    [sub_option]: [value]
-
-  [option_2]:
-    [sub_option]: [value]
+```python
+search.fit(y_train, X_train, forecasting_horizon=12)
 ```
 
-### 3. [Execute/Run Step]
+### 3. Predict with the best forecaster
 
-[Brief description of how to run or execute]
+After fitting, `search` behaves like a Yohou forecaster.
 
-[Action description] using the following command:
-
-```bash
-[command to run]
+```python
+y_pred = search.predict(forecasting_horizon=12)
+print(search.best_params_)
 ```
-
-[Additional context about what happens when this runs, e.g., "The [interface/UI] will be available at http://127.0.0.1:XXXX"]
 
 ## How do I use Yohou-Optuna?
 
 Full documentation is available at [https://yohou-optuna.readthedocs.io/](https://yohou-optuna.readthedocs.io/).
 
-
 Interactive examples are available in the `examples/` directory:
 
 - **Online**: [https://yohou-optuna.readthedocs.io/en/latest/pages/examples/](https://yohou-optuna.readthedocs.io/en/latest/pages/examples/)
-- **Locally**: Run `marimo edit examples/hello.py` to open an interactive notebook
-
+- **Locally**: Run `marimo edit examples/optuna_search.py` to open an interactive notebook
 
 ## Can I contribute?
 
@@ -133,7 +122,7 @@ If you are interested in becoming a maintainer or taking a more active role, ple
 
 ## Where can I learn more?
 
-[Customize this section based on your project's community resources. For example:]
+Here are the main Yohou-Optuna resources:
 
 - Full documentation: [https://yohou-optuna.readthedocs.io/](https://yohou-optuna.readthedocs.io/)
 - GitHub Discussions: [https://github.com/stateful-y/yohou-optuna/discussions](https://github.com/stateful-y/yohou-optuna/discussions)

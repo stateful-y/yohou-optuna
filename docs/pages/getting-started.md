@@ -20,20 +20,6 @@ Choose your preferred package manager:
     uv add yohou_optuna
     ```
 
-=== "conda"
-
-    ```bash
-    conda install -c conda-forge yohou_optuna
-    ```
-
-=== "mamba"
-
-    ```bash
-    mamba install -c conda-forge yohou_optuna
-    ```
-
-> **Note**: For conda/mamba, ensure the package is published to conda-forge first.
-
 ### Step 2: Verify installation
 
 ```python
@@ -43,52 +29,52 @@ print(yohou_optuna.__version__)
 
 ## Basic Usage
 
-### Step 1: [Import and initialize]
+### Step 1: Import components
 
 ```python
-from yohou_optuna.example import hello
+import polars as pl
+from sklearn.linear_model import Ridge
 
-# Basic usage example
-result = hello("World")
-print(result)  # Output: Hello, World!
+from yohou.point import PointReductionForecaster
+from yohou_optuna import OptunaSearchCV
+from optuna.distributions import FloatDistribution, IntDistribution
 ```
 
-### Step 2: [Configure your setup]
-
-Create a configuration file or set up options:
-
-```yaml
-# config.yaml (if your package supports config files)
-yohou_optuna:
-  option_1: value     # Description of what this controls
-  option_2: true      # Description of what this controls
-  option_3: 10        # Description of what this controls
-```
-
-Or configure in code:
+### Step 2: Define search space and fit
 
 ```python
-from yohou_optuna import [MainClass]
+# Create a forecaster
+forecaster = PointReductionForecaster(regressor=Ridge())
 
-# Initialize with custom configuration
-instance = [MainClass](
-    option_1="value",   # Description
-    option_2=True,      # Description
-    option_3=10,        # Description
+# Define Optuna distributions
+param_distributions = {
+    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
+    "observation_horizon": IntDistribution(3, 30),
+}
+
+# Create the searcher
+search = OptunaSearchCV(
+    forecaster=forecaster,
+    param_distributions=param_distributions,
+    n_trials=20,
 )
+
+# Fit on time series data (y must have a "time" column)
+search.fit(y_train, X_train, forecasting_horizon=5)
 ```
 
-### Step 3: [Use the main functionality]
+### Step 3: Use results
 
 ```python
-# [Add realistic example showing actual usage]
-# For example:
-# result = instance.process(data)
-# output = instance.transform(input_data)
+# Best forecaster is already fitted
+print(search.best_params_)
+print(search.best_score_)
 
-# Example with the provided function
-greeting = hello("Python")
-print(greeting)
+# Predict directly — OptunaSearchCV is a forecaster
+y_pred = search.predict(forecasting_horizon=5)
+
+# Access the underlying Optuna study
+print(search.study_)
 ```
 
 ## Complete Example
@@ -96,18 +82,47 @@ print(greeting)
 Here's a complete working example:
 
 ```python
-from yohou_optuna.example import hello
+import polars as pl
+from sklearn.linear_model import Ridge
 
-# [Replace with realistic multi-step example]
-# Step 1: Initialize
-names = ["Alice", "Bob", "Charlie"]
+from yohou.datasets import load_air_passengers
+from yohou.metrics import MeanAbsoluteError
+from yohou.model_selection import ExpandingWindowSplitter
+from yohou.point import PointReductionForecaster
+from yohou_optuna import OptunaSearchCV
+from optuna.distributions import FloatDistribution, IntDistribution
 
-# Step 2: Process
-greetings = [hello(name) for name in names]
+# Load data
+y = load_air_passengers()
 
-# Step 3: Display results
-for greeting in greetings:
-    print(greeting)
+# Split into train/test
+y_train = y.head(120)
+y_test = y.tail(24)
+
+# Set up search
+forecaster = PointReductionForecaster(regressor=Ridge())
+param_distributions = {
+    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
+    "observation_horizon": IntDistribution(3, 30),
+}
+
+search = OptunaSearchCV(
+    forecaster=forecaster,
+    param_distributions=param_distributions,
+    n_trials=30,
+    scoring=MeanAbsoluteError(),
+    cv=ExpandingWindowSplitter(n_splits=3),
+)
+
+search.fit(y_train, forecasting_horizon=12)
+
+# Results
+print(f"Best score: {search.best_score_:.4f}")
+print(f"Best params: {search.best_params_}")
+
+# Predict
+y_pred = search.predict(forecasting_horizon=12)
+print(y_pred)
 ```
 
 ## Try Interactive Examples
@@ -117,20 +132,19 @@ For hands-on learning with interactive notebooks, see the [Examples](examples.md
 - Run code directly in your browser
 - Experiment with different parameters
 - See visual outputs in real-time
-- Download standalone HTML versions
 
 Or run locally:
 
 === "just"
 
     ```bash
-    just example
+    just example optuna_search.py
     ```
 
 === "uv run"
 
     ```bash
-    uv run marimo edit examples/hello.py
+    uv run marimo edit examples/optuna_search.py
     ```
 
 ## Next Steps
@@ -140,4 +154,3 @@ Now that you have Yohou-Optuna installed and running:
 - **Learn the concepts**: Read the [User Guide](user-guide.md) to understand core concepts and capabilities
 - **Explore examples**: Check out the [Examples](examples.md) for real-world use cases
 - **Dive into the API**: Browse the [API Reference](api-reference.md) for detailed documentation
-- **Get help**: Visit [GitHub Discussions](https://github.com/stateful-y/yohou-optuna/discussions) or [open an issue](https://github.com/stateful-y/yohou-optuna/issues)

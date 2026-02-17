@@ -10,7 +10,7 @@ We are committed to providing a welcoming and inclusive environment for all cont
 
 ### Prerequisites
 
-- Python +
+- Python 3.11+
 - [uv](https://github.com/astral-sh/uv) (recommended)
 - [just](https://github.com/casey/just) (optional, for task automation)
 - Git
@@ -403,12 +403,45 @@ All examples are interactive [marimo](https://marimo.io) notebooks that combine 
        uv run marimo new examples/<name>.py
        ```
 
-2. Develop your example in the marimo editor, ollowing the standardized structure:
+2. Develop your example in the marimo editor, following the standardized structure:
    - **Overview**: Explain what readers will learn (flexible length)
+   - **Pyodide install cell**: Immediately after the overview, add a hidden cell that installs packages when running in the browser via pyodide (see template below)
    - **Numbered sections**: Main concepts as `## 1.`, `## 2.`, `## 3.`
    - **Key Takeaways**: Bullet points summarizing important lessons
-   - **Next Steps**: Context for progression to related notebooks
-   - Use `hide_code=True` for utility functions (sliders, data generation, visualization)
+   - **Next Steps**: Links to related notebooks for progression
+   - Use `hide_code=True` for infrastructure cells: `import marimo`, pyodide install, library imports, utilities, and markdown cells
+
+   **Pyodide install cell template** (place right after the overview cell):
+
+   ```python
+   @app.cell(hide_code=True)
+   async def _():
+       import sys
+
+       if "pyodide" in sys.modules:
+           import micropip
+
+           await micropip.install(["scikit-learn"]) # List all packages needed to run the example
+       return
+   ```
+
+   **`hide_code=True` guidance** — mark these cells as hidden:
+
+   | Cell type | Why hidden |
+   |-----------|-----------|
+   | `import marimo as mo` | Boilerplate, not instructive |
+   | Pyodide install | Infrastructure, not tutorial content |
+   | Library imports | Setup, readers focus on usage |
+   | Utilities | Not the lesson |
+   | Section header markdown cells | Purely structural |
+
+   Leave these cells **visible**:
+
+   | Cell type | Why visible |
+   |-----------|------------|
+   | Model construction / `MyEstimator(...)` | Core teaching content |
+   | `search.fit(...)` calls | Demonstrates usage |
+   | Results display | Shows output interpretation |
 
 3. Run the example test suite to verify it passes:
 
