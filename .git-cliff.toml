@@ -100,4 +100,3 @@ sort_commits = "oldest"
 [remote.github]
 owner = "stateful-y"
 repo = "yohou-optuna"
-

@@ -283,3 +283,39 @@ def failing_forecaster():
 
     """
     return FailingForecaster(fail_on="fit")
+
+
+@pytest.fixture
+def interval_forecaster():
+    """Create an IntervalReductionForecaster for interval prediction testing.
+
+    Returns
+    -------
+    IntervalReductionForecaster
+        A forecaster that supports interval prediction.
+
+    """
+    from sklearn.linear_model import QuantileRegressor
+    from yohou.interval import IntervalReductionForecaster
+
+    return IntervalReductionForecaster(estimator=QuantileRegressor())
+
+
+@pytest.fixture
+def large_param_distributions():
+    """Create parameter distributions with many parameters for stress testing.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping parameter names to Optuna distributions.
+
+    """
+    from optuna.distributions import CategoricalDistribution
+
+    return {
+        "estimator__alpha": FloatDistribution(0.01, 10.0, log=True),
+        "estimator__fit_intercept": CategoricalDistribution([True, False]),
+        "estimator__copy_X": CategoricalDistribution([True, False]),
+        "estimator__positive": CategoricalDistribution([True, False]),
+    }

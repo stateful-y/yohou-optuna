@@ -38,24 +38,24 @@ class OptunaSearchCV(BaseSearchCV):
         A yohou forecaster instance to optimize.
     param_distributions : dict[str, optuna.distributions.BaseDistribution]
         Dictionary with parameter names as keys and Optuna distribution
-        objects as values. Distributions define the search space for each
+        objects as values.  Distributions define the search space for each
         hyperparameter.
     scoring : BaseScorer or dict of str to BaseScorer
-        Scoring function(s) for evaluation. Must be a yohou BaseScorer
+        Scoring function(s) for evaluation.  Must be a yohou BaseScorer
         instance or a dictionary mapping names to BaseScorer instances.
-    sampler : Sampler, default=None
-        A wrapped Optuna sampler. If None, TPESampler is used.
-    storage : Storage, default=None
-        A wrapped Optuna storage. If None, in-memory storage is used.
-    callbacks : dict of str to Callback, default=None
+    sampler : Sampler or None, default=None
+        A wrapped Optuna sampler.  If ``None``, TPESampler is used.
+    storage : Storage or None, default=None
+        A wrapped Optuna storage.  If ``None``, in-memory storage is used.
+    callbacks : dict of str to Callback or None, default=None
         Dictionary mapping callback names to Callback instances.
     n_trials : int, default=10
         Number of trials for hyperparameter search.
-    timeout : float, default=None
+    timeout : float or None, default=None
         Stop study after the given number of seconds.
-    n_jobs : int, default=None
+    n_jobs : int or None, default=None
         Number of parallel trials to run via Optuna's threading.
-        ``None`` or ``1`` runs sequentially. ``-1`` uses all cores.
+        ``None`` or ``1`` runs sequentially.  ``-1`` uses all cores.
     refit : bool, str, or callable, default=True
         Refit a forecaster using the best found parameters on the
         whole dataset.
@@ -101,26 +101,29 @@ class OptunaSearchCV(BaseSearchCV):
 
     Examples
     --------
-    >>> from yohou.point import PointReductionForecaster
-    >>> from yohou.metrics import MeanAbsoluteError
-    >>> from yohou_optuna import OptunaSearchCV, Sampler
-    >>> from optuna.distributions import FloatDistribution
     >>> import optuna
-    >>> import polars as pl
+    >>> optuna.logging.set_verbosity(optuna.logging.WARNING)
     >>> from datetime import datetime, timedelta
+    >>> import polars as pl
+    >>> from optuna.distributions import FloatDistribution
+    >>> from sklearn.linear_model import Ridge
+    >>> from yohou.metrics import MeanAbsoluteError
+    >>> from yohou.point import PointReductionForecaster
+    >>> from yohou_optuna import OptunaSearchCV, Sampler
     >>> dates = [datetime(2020, 1, 1) + timedelta(days=i) for i in range(100)]
     >>> y = pl.DataFrame({"time": dates, "value": range(100)})
     >>> param_distributions = {
     ...     "estimator__alpha": FloatDistribution(0.01, 10.0, log=True),
     ... }
     >>> search = OptunaSearchCV(
-    ...     PointReductionForecaster(),
+    ...     PointReductionForecaster(estimator=Ridge()),
     ...     param_distributions,
     ...     scoring=MeanAbsoluteError(),
-    ...     n_trials=5,
+    ...     n_trials=2,
+    ...     cv=2,
     ...     sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
     ... )
-    >>> search.fit(y, forecasting_horizon=3)  # doctest: +SKIP
+    >>> search.fit(y, forecasting_horizon=3)  # doctest: +ELLIPSIS
     OptunaSearchCV(...)
 
     """
@@ -195,12 +198,12 @@ class OptunaSearchCV(BaseSearchCV):
         ----------
         y : pl.DataFrame
             Target time series with a ``"time"`` column.
-        X : pl.DataFrame, optional
+        X : pl.DataFrame or None, default=None
             Exogenous features with a ``"time"`` column.
         forecasting_horizon : int, default=1
             Number of steps ahead to forecast.
-        study : optuna.study.Study, default=None
-            An existing Optuna study to continue from. If None, a new
+        study : optuna.study.Study or None, default=None
+            An existing Optuna study to continue from.  If ``None``, a new
             study is created.
         **params : dict
             Parameters passed to fit, predict, and score methods
@@ -210,6 +213,13 @@ class OptunaSearchCV(BaseSearchCV):
         -------
         self
             Fitted search instance.
+
+        Raises
+        ------
+        ValueError
+            If ``param_distributions`` contains non-BaseDistribution values.
+        TypeError
+            If ``callbacks`` is not a dict or contains non-Callback values.
 
         """
         _raise_for_params(params, self, "fit")

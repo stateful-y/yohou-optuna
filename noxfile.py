@@ -1,8 +1,5 @@
 """Nox sessions for Yohou-Optuna."""
 
-from pathlib import Path
-
-
 import nox
 
 # Require Nox version 2024.3.2 or newer to support the 'default_venv_backend' option
@@ -48,10 +45,8 @@ def test_coverage(session: nox.Session) -> None:
         "-m",
         "pytest",
         "tests",
-    
         "-m",
         "not example",
-    
         "-n",
         "auto",
         f"--junitxml=junit.{session.python}.xml",
@@ -250,7 +245,6 @@ def build_docs(session: nox.Session) -> None:
 
     # Build the docs (hooks automatically export notebooks and prepare site)
     session.run("mkdocs", "build", "--clean", external=True)
-
 
 
 @nox.session(venv_backend="uv")

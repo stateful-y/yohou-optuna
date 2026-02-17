@@ -23,7 +23,7 @@ class _Objective:
 
     This class encapsulates the logic for evaluating hyperparameter
     configurations during Optuna optimization. It handles parameter
-    suggestion, cross-validation using yohou's time series scoring,
+    suggestion, cross-validation using Yohou's time series scoring,
     and error handling.
 
     Parameters
@@ -33,9 +33,9 @@ class _Objective:
     param_distributions : dict[str, optuna.distributions.BaseDistribution]
         Dictionary mapping parameter names to Optuna distributions.
     y : pl.DataFrame
-        Target time series.
+        Target time series with a ``"time"`` column.
     X : pl.DataFrame or None
-        Feature time series.
+        Feature time series with a ``"time"`` column.
     forecasting_horizon : int
         Number of steps ahead to forecast.
     cv : BaseSplitter
@@ -43,9 +43,9 @@ class _Objective:
     scorers : BaseScorer or _MultimetricScorer
         Scoring functions.
     fit_params : dict
-        Additional parameters passed to forecaster.fit().
+        Additional parameters passed to ``forecaster.fit()``.
     predict_params : dict
-        Additional parameters passed to forecaster.predict().
+        Additional parameters passed to ``forecaster.predict()``.
     score_params : dict
         Additional parameters passed to scorer.
     verbose : int, default=0
@@ -53,11 +53,26 @@ class _Objective:
     return_train_score : bool, default=False
         Whether to include training scores.
     error_score : numeric or 'raise', default=np.nan
-        Value to assign on error, or 'raise' to propagate exceptions.
+        Value to assign on error, or ``'raise'`` to propagate exceptions.
     multimetric : bool, default=False
         Whether multiple metrics are being optimized.
     refit : bool or str, default=True
         Primary metric name for multi-metric optimization.
+
+    Notes
+    -----
+    The trial evaluation flow is:
+
+    1. Suggest parameters from distributions using ``trial._suggest()``.
+    2. Store parameters as trial user attributes (``param_{name}``).
+    3. Clone forecaster with suggested parameters.
+    4. Run cross-validation across all splits.
+    5. Store per-split scores, timing, and aggregated statistics.
+    6. Return the mean test score (or primary metric in multi-metric mode).
+
+    If an error occurs during evaluation, behavior depends on
+    ``error_score``.  If ``'raise'``, the exception propagates.  Otherwise,
+    the error score value is stored and ``-inf`` is returned to Optuna.
 
     """
 
@@ -107,7 +122,15 @@ class _Objective:
         Returns
         -------
         float
-            Optimization objective value (score to maximize).
+            Optimization objective value (score to maximize).  Returns
+            ``-inf`` if the trial fails and ``error_score`` is not
+            ``'raise'``.
+
+        Raises
+        ------
+        Exception
+            If ``error_score='raise'`` and an error occurs during
+            forecaster fitting or scoring.
 
         """
         # Suggest parameters

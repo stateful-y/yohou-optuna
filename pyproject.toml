@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-yohou = { workspace = true }
+yohou = { git = "https://github.com/stateful-y/yohou.git" }
 
 [project.scripts]
 pytest = "pytest:console_main"
@@ -124,7 +124,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*" = ["ARG", "S101", "T201", "PLR2004"]  # Allow assert statements, prints, and magic values in tests
+"tests/**/*" = ["ARG", "S101", "T201", "PLR2004", "PLC0415"]  # Allow assert statements, prints, magic values, and local imports in tests
 "docs/**/*" = ["T201", "ARG001"]  # Allow prints and unused args in documentation hooks
 
 [tool.ruff.lint.isort]
@@ -207,4 +207,3 @@ version_provider = "scm"
 update_changelog_on_bump = false
 major_version_zero = true
 tag_format = "v$version"
-

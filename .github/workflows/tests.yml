@@ -118,7 +118,7 @@ jobs:
         run: uv tool install nox
 
       - name: Set up Python
-        run: uv python install 
+        run: uv python install
 
       - name: Run pre-commit with nox
         run: |
@@ -170,4 +170,3 @@ jobs:
 
       - name: Run example notebooks
         run: nox -s test_examples
-

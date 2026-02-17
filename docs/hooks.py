@@ -224,10 +224,7 @@ class _HtmlToMarkdown(HTMLParser):
         if self._skip_depth:
             self._skip_depth -= 1
             return
-        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"}:
-            self._flush_line()
-            self._ensure_blank_line()
-        elif tag == "p":
+        if tag in {"h1", "h2", "h3", "h4", "h5", "h6"} or tag == "p":
             self._flush_line()
             self._ensure_blank_line()
         elif tag in {"ul", "ol"}:
@@ -369,7 +366,6 @@ def _is_excluded(relative_posix: str, patterns: list[str]) -> bool:
     return any(fnmatch.fnmatch(relative_posix, pattern) for pattern in patterns)
 
 
-
 def _fix_marimo_filename(html_file: Path, notebook_name: str) -> None:
     """Replace the default 'notebook.py' filename in marimo HTML exports.
 
@@ -420,7 +416,6 @@ def _inject_rtd_css(html_file: Path) -> None:
         html_file.write_text(html_content, encoding="utf-8")
 
 
-
 def on_post_build(config):
     """Copy markdown files for LLM consumption after build completes."""
     site_dir = Path(config["site_dir"])
@@ -431,7 +426,7 @@ def on_post_build(config):
     # Copy standalone HTML example files
     if docs_examples.exists():
         for html_dir in docs_examples.iterdir():
-            if not html_dir.is_dir() or html_dir.name.startswith('.'):
+            if not html_dir.is_dir() or html_dir.name.startswith("."):
                 continue
 
             index_html = html_dir / "index.html"
@@ -457,7 +452,6 @@ def on_post_build(config):
             _inject_rtd_css(target_dir / "index.html")
 
             print(f"[hooks] copied examples/{html_dir.name}/ to site")
-
 
     # Get exclude patterns from config
     # Note: mkdocs converts exclude_docs to a GitIgnoreSpec object, so we use an empty list

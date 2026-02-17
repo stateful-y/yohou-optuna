@@ -17,7 +17,7 @@ def _build_cv_results(
     """Build cv_results_ dict from Optuna trials.
 
     Converts Optuna trial data into a format compatible with yohou's
-    BaseSearchCV cv_results_ structure.
+    BaseSearchCV ``cv_results_`` structure.
 
     Parameters
     ----------
@@ -31,15 +31,16 @@ def _build_cv_results(
     Returns
     -------
     dict
-        Dictionary compatible with yohou's cv_results_ format.
+        Dictionary compatible with yohou's ``cv_results_`` format.
 
     Notes
     -----
     This function filters for completed trials only and expects
     trial user attributes to be formatted as:
-    - 'param_{name}' for parameter values
-    - 'mean_test_{metric}' and 'split{i}_test_{metric}' for test scores
-    - 'mean_train_{metric}' and 'split{i}_train_{metric}' for train scores
+
+    - ``'param_{name}'`` for parameter values
+    - ``'mean_test_{metric}'`` and ``'split{i}_test_{metric}'`` for test scores
+    - ``'mean_train_{metric}'`` and ``'split{i}_train_{metric}'`` for train scores
 
     """
     # Filter completed trials
@@ -219,6 +220,12 @@ def _compute_rankings(results: dict[str, Any]) -> None:
     ----------
     results : dict
         Result arrays containing mean test scores.
+
+    Notes
+    -----
+    Uses ``scipy.stats.rankdata`` with ``method='min'`` to handle ties
+    (same as sklearn).  Scores are negated because ``rankdata`` ranks in
+    ascending order and higher scores are better in Yohou.
 
     """
     mean_test_keys = [k for k in results if k.startswith("mean_test")]
