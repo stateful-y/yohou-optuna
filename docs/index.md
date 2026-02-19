@@ -3,7 +3,7 @@
 
 # Welcome to Yohou-Optuna's documentation
 
-`OptunaSearchCV` extends Yohou's `BaseSearchCV` — which extends `BaseForecaster` — for Bayesian hyperparameter tuning of time series forecasters, powered by [Optuna](https://optuna.org/). It inherits the full yohou forecasting API (`fit(y, X, forecasting_horizon)`, `predict()`, `update_predict()`, `best_forecaster_`, `cv_results_`) while using Optuna's samplers (TPE, CMA-ES, …) to explore search spaces more efficiently than grid or random search. Optuna distributions give you log-scaled, bounded, and categorical parameter spaces, and wrapper classes (`Sampler`, `Storage`, `Callback`) survive `clone()` and serialization.
+`OptunaSearchCV` extends Yohou's `BaseSearchCV` — which extends `BaseForecaster` — for Bayesian hyperparameter tuning of time series forecasters, powered by [Optuna](https://optuna.org/). It inherits the full yohou forecasting API (`fit(y, X, forecasting_horizon)`, `predict()`, `observe_predict()`, `best_forecaster_`, `cv_results_`) while using Optuna's samplers (TPE, CMA-ES, …) to explore search spaces more efficiently than grid or random search. Optuna distributions give you log-scaled, bounded, and categorical parameter spaces, and wrapper classes (`Sampler`, `Storage`, `Callback`) survive `clone()` and serialization.
 
 !!! note "Inspiration"
     This project is inspired by [optuna-integration's OptunaSearchCV](https://optuna-integration.readthedocs.io/en/latest/reference/generated/optuna_integration.OptunaSearchCV.html) and builds on [sklearn-optuna](https://github.com/stateful-y/sklearn-optuna).

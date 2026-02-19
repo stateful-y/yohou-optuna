@@ -69,22 +69,23 @@ def y_X_factory():
         )
 
         if panel:
+            # Convention: <entity>__<variable> (e.g., group_0__y_0)
             y = pl.DataFrame({"time": time_col})
-            for i in range(n_targets):
-                base_values = rng.random(length)
-                for group_idx in range(n_groups):
+            for group_idx in range(n_groups):
+                for i in range(n_targets):
+                    base_values = rng.random(length)
                     variation = group_idx * 0.1
-                    col_name = f"y_{i}__group_{group_idx}"
+                    col_name = f"group_{group_idx}__y_{i}"
                     y = y.with_columns(pl.Series(col_name, base_values + variation))
 
             X = None
             if n_features > 0:
                 X = pl.DataFrame({"time": time_col})
-                for i in range(n_features):
-                    base_values = rng.random(length)
-                    for group_idx in range(n_groups):
+                for group_idx in range(n_groups):
+                    for i in range(n_features):
+                        base_values = rng.random(length)
                         variation = group_idx * 0.05
-                        col_name = f"X_{i}__group_{group_idx}"
+                        col_name = f"group_{group_idx}__X_{i}"
                         X = X.with_columns(pl.Series(col_name, base_values + variation))
         else:
             y = pl.DataFrame({"time": time_col})

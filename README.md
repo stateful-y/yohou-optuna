@@ -17,14 +17,14 @@
 
 **Yohou-Optuna** brings [Optuna](https://optuna.org/)'s hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a Yohou-compatible search class for time series forecasting.
 
-This integration replaces grid and random search with adaptive sampling (TPE, CMA-ES, and more) while keeping Yohou's forecasting API intact. After fitting, `OptunaSearchCV` behaves like a Yohou forecaster, so you can call `predict`, `update`, and `update_predict` directly.
+This integration replaces grid and random search with adaptive sampling (TPE, CMA-ES, and more) while keeping Yohou's forecasting API intact. After fitting, `OptunaSearchCV` behaves like a Yohou forecaster, so you can call `predict`, `observe`, and `observe_predict` directly.
 
 It integrates with Optuna's distributions, samplers, and storages, and wraps them for sklearn-style cloning and serialization.
 
 ## What are the features of Yohou-Optuna?
 
 - **Adaptive optimization**: Run Optuna studies over Yohou forecasters with TPE, CMA-ES, and other samplers to find better configurations in fewer trials.
-- **Forecaster-native API**: `OptunaSearchCV` is a forecaster after fitting, so you can call `predict`, `update`, `update_predict`, and interval methods.
+- **Forecaster-native API**: `OptunaSearchCV` is a forecaster after fitting, so you can call `predict`, `observe`, `observe_predict`, and interval methods.
 - **Clone-safe wrappers**: `Sampler`, `Storage`, and `Callback` wrappers ensure Optuna objects survive sklearn cloning and serialization.
 - **Time-series CV support**: Works with Yohou splitters for proper temporal validation and scorer integration.
 - **Multi-metric evaluation**: Evaluate multiple scorers and refit on the one that matters most for your use case.

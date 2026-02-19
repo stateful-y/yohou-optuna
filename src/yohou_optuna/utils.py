@@ -225,7 +225,9 @@ def _compute_rankings(results: dict[str, Any]) -> None:
     -----
     Uses ``scipy.stats.rankdata`` with ``method='min'`` to handle ties
     (same as sklearn).  Scores are negated because ``rankdata`` ranks in
-    ascending order and higher scores are better in Yohou.
+    ascending order.  Lower-is-better metrics (e.g., MAE) are already
+    negated by ``_score()`` so that higher numeric values always indicate
+    better performance.
 
     """
     mean_test_keys = [k for k in results if k.startswith("mean_test")]
@@ -234,7 +236,8 @@ def _compute_rankings(results: dict[str, Any]) -> None:
         scores = results[key]
         # Use rankdata with method='min' to handle ties (same as sklearn)
         # Negate scores because rankdata ranks in ascending order
-        # and higher scores are better in yohou
+        # and higher numeric values indicate better performance
+        # (lower_is_better metrics are already negated by _score())
         if np.isnan(scores).all():
             ranks = np.ones_like(scores, dtype=np.int32)
         else:

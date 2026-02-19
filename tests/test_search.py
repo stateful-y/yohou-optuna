@@ -1074,38 +1074,38 @@ class TestPanelData:
 class TestForecasterDelegation:
     """Test method delegation to best_forecaster_ after fit."""
 
-    def test_update_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
-        """Test that update() delegates to best_forecaster_ after fit."""
+    def test_observe_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
+        """Test that observe() delegates to best_forecaster_ after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         optuna_search_cv.fit(y, X, forecasting_horizon=3)
 
-        # Get new data for update
+        # Get new data for observe
         y_new, X_new = y_X_factory(length=10, n_targets=1, n_features=2, seed=99)
-        result = optuna_search_cv.update(y_new, X_new)
+        result = optuna_search_cv.observe(y_new, X_new)
         assert result is optuna_search_cv
 
-    def test_update_predict_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
-        """Test that update_predict() delegates to best_forecaster_ after fit."""
+    def test_observe_predict_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
+        """Test that observe_predict() delegates to best_forecaster_ after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         optuna_search_cv.fit(y, X, forecasting_horizon=3)
 
-        # Get new data for update_predict
+        # Get new data for observe_predict
         y_new, X_new = y_X_factory(length=10, n_targets=1, n_features=2, seed=99)
-        y_pred = optuna_search_cv.update_predict(y_new, X_new, forecasting_horizon=3)
+        y_pred = optuna_search_cv.observe_predict(y_new, X_new, forecasting_horizon=3)
         assert y_pred is not None
         assert len(y_pred) > 0
 
-    def test_update_before_fit_raises_error(self, optuna_search_cv, y_X_factory):
-        """Test that update() before fit raises AttributeError."""
+    def test_observe_before_fit_raises_error(self, optuna_search_cv, y_X_factory):
+        """Test that observe() before fit raises AttributeError."""
         y, X = y_X_factory(length=10, n_targets=1, n_features=2)
         with pytest.raises(AttributeError):
-            optuna_search_cv.update(y, X)
+            optuna_search_cv.observe(y, X)
 
-    def test_update_predict_before_fit_raises_error(self, optuna_search_cv, y_X_factory):
-        """Test that update_predict() before fit raises AttributeError."""
+    def test_observe_predict_before_fit_raises_error(self, optuna_search_cv, y_X_factory):
+        """Test that observe_predict() before fit raises AttributeError."""
         y, X = y_X_factory(length=10, n_targets=1, n_features=2)
         with pytest.raises(AttributeError):
-            optuna_search_cv.update_predict(y, X, forecasting_horizon=3)
+            optuna_search_cv.observe_predict(y, X, forecasting_horizon=3)
 
 
 @pytest.mark.slow

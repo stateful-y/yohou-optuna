@@ -6,7 +6,7 @@ This guide provides comprehensive documentation for Yohou-Optuna.
 
 Yohou-Optuna brings Optuna's Bayesian hyperparameter optimization to Yohou's time series forecasting framework. Unlike `GridSearchCV` or `RandomizedSearchCV`, which evaluate a fixed or random set of candidates, `OptunaSearchCV` uses Optuna's samplers (TPE, CMA-ES, GP, etc.) to adaptively explore the search space — focusing trials on promising regions.
 
-`OptunaSearchCV` extends Yohou's `BaseSearchCV`, which itself extends `BaseForecaster`. This means `OptunaSearchCV` **is** a forecaster: after fitting it behaves exactly like its best-found forecaster, supporting `predict()`, `update()`, `update_predict()`, and all other yohou forecasting methods.
+`OptunaSearchCV` extends Yohou's `BaseSearchCV`, which itself extends `BaseForecaster`. This means `OptunaSearchCV` **is** a forecaster: after fitting it behaves exactly like its best-found forecaster, supporting `predict()`, `observe()`, `observe_predict()`, and all other yohou forecasting methods.
 
 The wrapper classes `Sampler`, `Storage`, and `Callback` let you pass Optuna objects through sklearn's `clone()` and serialization boundaries, which is essential for cross-validation and persistence.
 
@@ -45,7 +45,7 @@ If you're familiar with Optuna but new to Yohou, you'll appreciate:
 
 - **Forecaster compatibility**: `OptunaSearchCV` wraps any yohou forecaster and handles temporal cross-validation automatically.
 - **Panel data support**: Tune forecasters across multiple time series (panel data) without additional boilerplate.
-- **Full forecaster API**: The fitted `OptunaSearchCV` object supports `predict()`, `update()`, `update_predict()`, and interval forecasting if the underlying forecaster supports it.
+- **Full forecaster API**: The fitted `OptunaSearchCV` object supports `predict()`, `observe()`, `observe_predict()`, and interval forecasting if the underlying forecaster supports it.
 
 ### Compared to Manual Optuna Studies
 
@@ -64,7 +64,7 @@ The search lifecycle follows yohou's standard forecaster pattern:
 1. **Construction**: Define the forecaster, parameter distributions, number of trials, scoring, and CV strategy.
 2. **`fit(y, X, forecasting_horizon)`**: Creates an Optuna study, runs `n_trials` trials, each evaluating a parameter combination via cross-validation. Refits the best forecaster on the full training data.
 3. **`predict(forecasting_horizon)`**: Delegates to the best-found forecaster.
-4. **`update(y, X)`**: Updates the best forecaster with new observations.
+4. **`observe(y, X)`**: Observes new data for the best forecaster.
 
 ```python
 from yohou_optuna import OptunaSearchCV
@@ -83,8 +83,8 @@ search.fit(y_train, X_train, forecasting_horizon=12)
 # predict → delegates to best_forecaster_
 y_pred = search.predict(forecasting_horizon=12)
 
-# update → updates best_forecaster_ with new data
-search.update(y_new, X_new)
+# observe → feeds new data to best_forecaster_
+search.observe(y_new, X_new)
 y_pred_updated = search.predict(forecasting_horizon=12)
 ```
 
