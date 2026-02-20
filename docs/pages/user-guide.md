@@ -88,6 +88,9 @@ search.observe(y_new, X_new)
 y_pred_updated = search.predict(forecasting_horizon=12)
 ```
 
+!!! example "Interactive Example"
+    See [**Quickstart Search**](/examples/optuna_search/) ([View](/examples/optuna_search/) | [Editable](/examples/optuna_search/edit/)) for a complete walkthrough of the search lifecycle using the Air Passengers dataset.
+
 ### Wrapper Classes
 
 Optuna's `BaseSampler`, `BaseStorage`, and callback objects are not compatible with sklearn's `clone()` (used internally during cross-validation). Yohou-Optuna provides wrapper classes that serialize the class name and constructor arguments, enabling safe cloning:
@@ -129,6 +132,9 @@ param_distributions = {
 }
 ```
 
+!!! example "Interactive Example"
+    See [**Composed Forecaster Tuning**](/examples/composed_tuning/) ([View](/examples/composed_tuning/) | [Editable](/examples/composed_tuning/edit/)) for a demonstration of tuning nested parameters with `IntDistribution` and `FloatDistribution`.
+
 ## Key Features
 
 ### 1. Sampler Selection
@@ -147,6 +153,9 @@ search = OptunaSearchCV(
 )
 ```
 
+!!! example "Interactive Example"
+    See [**Panel Data Tuning**](/examples/panel_tuning/) ([View](/examples/panel_tuning/) | [Editable](/examples/panel_tuning/edit/)) for a side-by-side comparison of Random vs TPE samplers on the Australian Tourism dataset.
+
 ### 2. Callbacks
 
 Use callbacks for early stopping, logging, or custom logic:
@@ -163,6 +172,9 @@ search = OptunaSearchCV(
     ],
 )
 ```
+
+!!! example "Interactive Example"
+    See [**Panel Data Tuning**](/examples/panel_tuning/) ([View](/examples/panel_tuning/) | [Editable](/examples/panel_tuning/edit/)) for a demonstration of `MaxTrialsCallback` for early stopping.
 
 ### 3. Study Persistence
 
@@ -203,6 +215,9 @@ search = OptunaSearchCV(
 
 When `scoring` is a list or dict, `cv_results_` contains columns for each metric. Set `refit` to the metric name used for selecting the best forecaster.
 
+!!! example "Interactive Example"
+    See [**Multi-Metric Search**](/examples/multi_metric_search/) ([View](/examples/multi_metric_search/) | [Editable](/examples/multi_metric_search/edit/)) for evaluating MAE, RMSE, and MSE simultaneously on the ETT-M1 dataset.
+
 ### 5. Training Scores
 
 Optionally compute scores on the training folds:
@@ -237,6 +252,9 @@ param_distributions = {
     "decomposer__period": IntDistribution(4, 24),
 }
 ```
+
+!!! example "Interactive Example"
+    See [**Composed Forecaster Tuning**](/examples/composed_tuning/) ([View](/examples/composed_tuning/) | [Editable](/examples/composed_tuning/edit/)) for tuning a `PointReductionForecaster` with a `LagTransformer` feature pipeline.
 
 ## Configuration
 
@@ -323,10 +341,18 @@ optuna.visualization.plot_optimization_history(search.study_)
 optuna.visualization.plot_param_importances(search.study_)
 ```
 
+!!! example "Interactive Example"
+    See [**Search Visualization**](/examples/search_visualization/) ([View](/examples/search_visualization/) | [Editable](/examples/search_visualization/edit/)) for a complete comparison of Optuna's optimization plots alongside yohou's forecast diagnostics.
+
 ## Next Steps
 
 Now that you understand the core concepts and features:
 
 - Follow the [Getting Started](getting-started.md) guide to start using Yohou-Optuna
-- Explore the [Examples](examples.md) for real-world use cases
+- Explore the [Examples](examples.md) for interactive notebooks:
+    - [**Quickstart Search**](/examples/optuna_search/) ([View](/examples/optuna_search/) | [Editable](/examples/optuna_search/edit/)) — Your first hyperparameter search
+    - [**Composed Tuning**](/examples/composed_tuning/) ([View](/examples/composed_tuning/) | [Editable](/examples/composed_tuning/edit/)) — Nested parameter tuning
+    - [**Multi-Metric Search**](/examples/multi_metric_search/) ([View](/examples/multi_metric_search/) | [Editable](/examples/multi_metric_search/edit/)) — Multiple scoring metrics
+    - [**Search Visualization**](/examples/search_visualization/) ([View](/examples/search_visualization/) | [Editable](/examples/search_visualization/edit/)) — Optuna + yohou plots
+    - [**Panel Data Tuning**](/examples/panel_tuning/) ([View](/examples/panel_tuning/) | [Editable](/examples/panel_tuning/edit/)) — Grouped time series
 - Check the [API Reference](api-reference.md) for detailed API documentation

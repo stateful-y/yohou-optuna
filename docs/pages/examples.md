@@ -1,43 +1,42 @@
 # Examples
 
-Explore real-world applications of Yohou-Optuna through interactive examples. Each notebook uses real datasets from `yohou.datasets` and visualizations from `yohou.plotting`.
+Learn Yohou-Optuna through focused, interactive examples. Each notebook demonstrates one core workflow using real datasets from `yohou.datasets` and visualizations from `yohou.plotting`. Examples are organized from basic usage to advanced patterns and are runnable and editable locally or online.
 
-## What can Yohou-Optuna do?
+## Getting Started
 
-### Quickstart Search
+### Quickstart Search ([View](/examples/optuna_search/) | [Editable](/examples/optuna_search/edit/))
 
-Load the Air Passengers dataset, define search distributions, run `OptunaSearchCV`, and visualize results with `plot_cv_results_scatter` and `plot_forecast`. The best starting point for new users.
+**Your First Hyperparameter Search**
 
-[:material-notebook: optuna_search.py](../examples/optuna_search/)
+Start here to understand the fundamental `OptunaSearchCV` workflow. This example loads the Air Passengers dataset, defines search distributions for Ridge regression parameters, runs a complete hyperparameter search, and visualizes results. You'll learn the three essential steps every search needs: defining parameter distributions, fitting the search, and inspecting results with `plot_cv_results_scatter` and `plot_forecast`.
 
-### Composed Forecaster Tuning
+## Core Workflows
 
-Tune nested parameters in a `PointReductionForecaster` with `LagTransformer` -- use autocorrelation analysis to motivate lag selection, optimize with `ExpandingWindowSplitter`, and diagnose residuals. Uses the Sunspots dataset.
+### Composed Forecaster Tuning ([View](/examples/composed_tuning/) | [Editable](/examples/composed_tuning/edit/))
 
-[:material-notebook: composed_tuning.py](../examples/composed_tuning/)
+**Tuning Nested Parameters in Reduction Forecasters**
 
-### Multi-Metric Search
+Dive into tuning composed estimators by optimizing both a Ridge regressor and its `LagTransformer` feature pipeline. This example uses the Sunspots dataset and autocorrelation analysis to motivate lag selection, then searches over nested parameters with `ExpandingWindowSplitter` cross-validation. You'll see how the double-underscore syntax (`feature_transformer__lag`) reaches into nested components, and how to diagnose results with residual plots.
 
-Evaluate multiple scoring metrics (MAE, RMSE, MSE) in a single search pass. Compare rankings across metrics with `plot_model_comparison_bar` and visualize multivariate data from the ETT-M1 dataset.
+### Multi-Metric Search ([View](/examples/multi_metric_search/) | [Editable](/examples/multi_metric_search/edit/))
 
-[:material-notebook: multi_metric_search.py](../examples/multi_metric_search/)
+**Evaluating Multiple Scoring Metrics Simultaneously**
 
-### Search Visualization
+Evaluate MAE, RMSE, and MSE in a single search pass instead of running separate searches for each metric. This example uses multivariate data from the ETT-M1 dataset and demonstrates how different metrics can rank the same trials differently. You'll compare the best trial selected by each metric using `plot_model_comparison_bar`, and understand when `refit` matters for choosing the final forecaster.
 
-Combine Optuna's built-in optimization plots (history, importances, contour) with yohou's forecast diagnostics (`plot_cv_results_scatter`, `plot_forecast`, `plot_residual_time_series`). Uses Victoria Electricity data.
+## Advanced Topics
 
-[:material-notebook: search_visualization.py](../examples/search_visualization/)
+### Search Visualization ([View](/examples/search_visualization/) | [Editable](/examples/search_visualization/edit/))
 
-### Panel Data Tuning
+**Combining Optuna and Yohou Visualization**
 
-Tune forecasters on grouped time series from the Australian Tourism dataset. Visualize CV splits with `plot_splits`, compare Random vs TPE samplers, and use `MaxTrialsCallback` for early stopping.
+Explore the full diagnostic toolkit by combining Optuna's built-in optimization plots (history, parameter importances, contour) with yohou's forecast diagnostics (`plot_cv_results_scatter`, `plot_forecast`, `plot_residual_time_series`). This example uses Victoria Electricity demand data and shows how the two visualization ecosystems complement each other -- Optuna for understanding the search process, yohou for evaluating forecast quality.
 
-[:material-notebook: panel_tuning.py](../examples/panel_tuning/)
+### Panel Data Tuning ([View](/examples/panel_tuning/) | [Editable](/examples/panel_tuning/edit/))
 
-Each example is available in two formats:
+**Hyperparameter Search on Grouped Time Series**
 
-- **[View](/examples/optuna_search/)** — Static HTML for quick reading
-- **[Editable](/examples/optuna_search/edit/)** — Interactive WASM notebook that runs entirely in your browser (no server needed)
+Apply `OptunaSearchCV` to panel data from the Australian Tourism dataset, where multiple related time series are tuned jointly. This example visualizes cross-validation splits with `plot_splits`, compares Random and TPE sampling strategies side by side, and demonstrates `MaxTrialsCallback` for early stopping. Essential for understanding how yohou-optuna handles real-world datasets with hierarchical structure.
 
 ## Running Examples Locally
 
@@ -56,5 +55,6 @@ just example optuna_search.py
 
 ## Next Steps
 
-- Browse the [API Reference](api-reference.md) for detailed documentation
-- Check the [User Guide](user-guide.md) to understand core concepts
+- **[User Guide](user-guide.md)** — Deep dive into core concepts and architecture
+- **[API Reference](api-reference.md)** — Complete OptunaSearchCV documentation
+- **[Contributing](contributing.md)** — Add your own examples or improve existing ones
