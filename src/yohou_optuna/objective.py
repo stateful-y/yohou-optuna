@@ -253,7 +253,7 @@ class _Objective:
                     test_reset = train[-len(test) :]
                     y_train_reset, X_train_reset = _safe_split(fold_forecaster, y_train, X_train, train_reset)
                     y_train_test, X_train_test = _safe_split(fold_forecaster, y_train, X_train, test_reset, train_reset)
-                    fold_forecaster.reset(y_train_reset, X_train_reset)
+                    fold_forecaster.rewind(y_train_reset, X_train_reset)
                     train_scores = _score(
                         fold_forecaster,
                         y_train_reset,

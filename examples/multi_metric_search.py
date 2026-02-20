@@ -248,7 +248,7 @@ def _(mo):
         - The `refit` parameter selects which metric determines the best model
         - `cv_results_` contains `mean_test_<name>`, `std_test_<name>`, and `rank_test_<name>` for each metric
         - Use `return_train_score=True` to also collect training scores (useful for overfitting diagnostics)
-        - Different metrics may rank configurations differently — always check consistency
+        - Different metrics may rank configurations differently  --  always check consistency
 
         ## Next Steps
 

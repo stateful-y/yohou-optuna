@@ -241,7 +241,7 @@ def _(mo):
         ## 5. Callbacks: Early Stopping
 
         Use `Callback` to wrap Optuna callbacks. Here we use `MaxTrialsCallback`
-        to stop the study after a fixed number of trials — useful when
+        to stop the study after a fixed number of trials  --  useful when
         combined with a high `n_trials` limit and a tight time budget.
         """
     )
@@ -365,10 +365,10 @@ def _(mo):
         ## Key Takeaways
 
         - `Sampler` wraps any Optuna sampler (`RandomSampler`, `TPESampler`, etc.) with an optional seed for reproducibility
-        - `Storage` wraps Optuna storage backends — use `InMemoryStorage` for ephemeral studies or SQLite for persistence
+        - `Storage` wraps Optuna storage backends  --  use `InMemoryStorage` for ephemeral studies or SQLite for persistence
         - `Callback` wraps Optuna callbacks like `MaxTrialsCallback` for custom trial-level logic
         - Pass `study=previous_search.study_` to `fit()` to continue an existing optimization study
-        - All wrappers follow Optuna's API — consult Optuna docs for advanced configurations
+        - All wrappers follow Optuna's API  --  consult Optuna docs for advanced configurations
 
         ## Next Steps
 

@@ -71,9 +71,9 @@ from optuna.distributions import FloatDistribution, IntDistribution
 from yohou.point import PointReductionForecaster
 from yohou_optuna import OptunaSearchCV
 
-forecaster = PointReductionForecaster(regressor=Ridge())
+forecaster = PointReductionForecaster(estimator=Ridge())
 param_distributions = {
-    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
+    "estimator__alpha": FloatDistribution(1e-4, 10.0, log=True),
     "observation_horizon": IntDistribution(3, 30),
 }
 

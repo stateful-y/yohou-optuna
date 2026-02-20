@@ -31,9 +31,6 @@ dependencies = [
 # yohou = { git = "https://github.com/stateful-y/yohou.git" }
 yohou = { workspace = true }
 
-[project.scripts]
-pytest = "pytest:console_main"
-
 [dependency-groups]
 dev = [
     {include-group = "tests"},
@@ -122,6 +119,8 @@ ignore = [
     "PLR0915", # too many statements
     "PLR0912", # too many branches
     "PLR2004", # magic value used in comparison
+    "PLC0415", # `import` should be at top-level (lazy imports are intentional)
+    "ARG002",  # unused method argument (needed for API compatibility)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -194,7 +193,7 @@ omit = [
 precision = 2
 show_missing = true
 skip_covered = false
-fail_under = 80
+fail_under = 100
 include_namespace_packages = true
 
 [tool.coverage.html]

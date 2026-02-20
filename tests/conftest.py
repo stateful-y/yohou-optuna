@@ -1,6 +1,10 @@
 """Test configuration and fixtures for Yohou-Optuna."""
 
+from __future__ import annotations
+
+from collections.abc import Generator
 from datetime import datetime, timedelta
+from typing import Any
 
 import numpy as np
 import optuna
@@ -16,6 +20,66 @@ from yohou_optuna import OptunaSearchCV, Sampler
 
 # Suppress noisy optuna logs during tests
 optuna.logging.set_verbosity(optuna.logging.WARNING)
+
+
+def run_checks(
+    estimator: Any,
+    checks: Generator[tuple[str, Any, dict], None, None],
+    *,
+    expected_failures: set[str] | frozenset[str] = frozenset(),
+) -> None:
+    """Run all checks from a generator, collecting and reporting all failures.
+
+    Unlike a simple for-loop, this function does **not** stop at the first
+    failure. All checks are executed and a single ``pytest.fail`` is raised
+    at the end summarising every unexpected failure (and every expected
+    failure that unexpectedly passed).
+
+    Parameters
+    ----------
+    estimator : object
+        Fitted estimator instance passed as the first positional argument
+        to each check function.
+    checks : generator of (str, callable, dict)
+        Output of a ``_yield_yohou_*_checks`` generator.
+    expected_failures : set of str, optional
+        Check names that are expected to fail.  Unexpected passes are
+        reported alongside unexpected failures.
+
+    """
+    failures: list[str] = []
+    xfail_passed: list[str] = []
+
+    for check_name, check_func, check_kwargs in checks:
+        passes_estimator = (
+            "splitter" in check_kwargs
+            or "splitter_class" in check_kwargs
+            or "scorer" in check_kwargs
+            or "scorer_class" in check_kwargs
+        )
+
+        try:
+            if passes_estimator:
+                check_func(**check_kwargs)
+            else:
+                check_func(estimator, **check_kwargs)
+        except Exception as exc:
+            if check_name in expected_failures:
+                continue
+            failures.append(f"  {check_name}: {type(exc).__name__}: {exc}")
+        else:
+            if check_name in expected_failures:
+                xfail_passed.append(check_name)
+
+    messages: list[str] = []
+    if failures:
+        messages.append(f"{len(failures)} check(s) failed:\n" + "\n".join(failures))
+    if xfail_passed:
+        xfail_lines = "\n".join(f"  {name}" for name in xfail_passed)
+        messages.append(f"{len(xfail_passed)} expected failure(s) unexpectedly passed:\n" + xfail_lines)
+
+    if messages:
+        pytest.fail("\n\n".join(messages))
 
 
 @pytest.fixture

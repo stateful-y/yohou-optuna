@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 from numbers import Integral, Real
-from typing import Any
 
 import numpy as np
 import optuna
@@ -191,7 +190,7 @@ class OptunaSearchCV(BaseSearchCV):
         """
         raise NotImplementedError("OptunaSearchCV overrides fit() directly.")
 
-    def fit(self, y, X=None, forecasting_horizon=1, *, study=None, **params):
+    def fit(self, y, X=None, forecasting_horizon=1, *, study=None, **params) -> OptunaSearchCV:
         """Run Optuna hyperparameter optimization.
 
         Parameters
@@ -346,13 +345,20 @@ class OptunaSearchCV(BaseSearchCV):
 
         return self
 
-    def _more_tags(self) -> dict[str, Any]:
-        """Get additional tags for this estimator.
+    def __sklearn_tags__(self):
+        """Get tags for this search estimator.
+
+        Adds ``search_type = "optuna"`` to the tags returned by
+        ``BaseSearchCV.__sklearn_tags__``.  This allows downstream code
+        to distinguish Optuna-based searches from grid/random searches.
 
         Returns
         -------
-        dict
-            Additional tag information.
+        Tags
+            Estimator tags with ``search_type`` set to ``"optuna"``.
 
         """
-        return {"search_type": "optuna"}
+        tags = super().__sklearn_tags__()
+        assert tags.forecaster_tags is not None
+        tags.forecaster_tags.search_type = "optuna"
+        return tags
