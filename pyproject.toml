@@ -29,7 +29,7 @@ dependencies = [
 
 [tool.uv.sources]
 # yohou = { git = "https://github.com/stateful-y/yohou.git" }
-yohou = { workspace = true }
+yohou = { path = "../yohou" }
 
 [dependency-groups]
 dev = [
