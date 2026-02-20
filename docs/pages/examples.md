@@ -34,6 +34,11 @@ Tune forecasters on grouped time series from the Australian Tourism dataset. Vis
 
 [:material-notebook: panel_tuning.py](../examples/panel_tuning/)
 
+Each example is available in two formats:
+
+- **[View](/examples/optuna_search/)** — Static HTML for quick reading
+- **[Editable](/examples/optuna_search/edit/)** — Interactive WASM notebook that runs entirely in your browser (no server needed)
+
 ## Running Examples Locally
 
 All examples are [Marimo](https://marimo.io) reactive notebooks stored as `.py` files:

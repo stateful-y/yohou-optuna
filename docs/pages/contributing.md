@@ -400,9 +400,44 @@ Create a new marimo notebook in `examples/<name>.py`:
 
 === "uv run"
 
-    ```bash
-    uv run marimo new examples/<name>.py
-    ```
+2. Develop your example in the marimo editor, following the standardized structure:
+   - **Numbered sections**: Main concepts as `## 1.`, `## 2.`, `## 3.`
+   - **Key Takeaways**: Bullet points summarizing important lessons
+   - **Next Steps**: Links to related notebooks for progression
+   - Isolate utilities and markdown in separate cells
+   - Use `hide_code=True` for infrastructure cells: `import marimo`, pyodide install, library imports, utilities, and markdown cells
+
+   **Pyodide install cell template** (place right after `import marimo as mo`):
+
+   ```python
+   @app.cell(hide_code=True)
+   async def _():
+       import sys
+
+       if "pyodide" in sys.modules:
+           import micropip
+
+           await micropip.install(["scikit-learn"]) # List all packages needed to run the example
+       return
+   ```
+
+   **`hide_code=True` guidance** — mark these cells as hidden:
+
+   | Cell type | Why hidden |
+   |-----------|-----------|
+   | `import marimo as mo` | Boilerplate, not instructive |
+   | Pyodide install | Infrastructure, not tutorial content |
+   | Library imports | Setup, readers focus on usage |
+   | Utilities | Not the lesson |
+   | Markdown cells | Purely structural |
+
+   Leave these cells **visible**:
+
+   | Cell type | Why visible |
+   |-----------|------------|
+   | Model construction / `MyEstimator(...)` | Core teaching content |
+   | `search.fit(...)` calls | Demonstrates usage |
+   | Results display | Shows output interpretation |
 
 #### Required Structure
 
