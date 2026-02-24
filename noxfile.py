@@ -103,9 +103,11 @@ def test_fast(session: nox.Session) -> None:
     )
 
     # Run fast tests only with parallel execution
+    # --no-cov disables coverage (from addopts) so it cannot fail this step
     session.run(
         "pytest",
         "tests",
+        "--no-cov",
         "-m",
         "not slow and not integration and not example",
         "-n",
@@ -240,6 +242,8 @@ def build_docs(session: nox.Session) -> None:
         "--no-default-groups",
         "--group",
         "docs",
+        "--group",
+        "examples",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
 
@@ -257,6 +261,8 @@ def serve_docs(session: nox.Session) -> None:
         "--no-default-groups",
         "--group",
         "docs",
+        "--group",
+        "examples",
         env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location},
     )
 

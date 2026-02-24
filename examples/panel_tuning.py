@@ -1,3 +1,14 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "optuna",
+#     "polars",
+#     "scikit-learn",
+#     "yohou",
+#     "yohou-optuna",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.19.11"
@@ -31,17 +42,6 @@ def _(mo):
         panel data concepts (multiple related time series sharing the same time index).
         """
     )
-    return
-
-
-@app.cell(hide_code=True)
-async def _():
-    import sys
-
-    if "pyodide" in sys.modules:
-        import micropip
-
-        await micropip.install(["scikit-learn", "optuna", "sklearn-optuna"])
     return
 
 
