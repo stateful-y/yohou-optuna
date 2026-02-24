@@ -4,7 +4,7 @@ Learn Yohou-Optuna through focused, interactive examples. Each notebook demonstr
 
 ## Getting Started
 
-### Quickstart Search ([View](/examples/optuna_search/) | [Editable](/examples/optuna_search/edit/))
+### Quickstart Search ([View](/examples/optuna_search/) | [Open in marimo](/examples/optuna_search/edit/))
 
 **Your First Hyperparameter Search**
 
@@ -12,13 +12,13 @@ Start here to understand the fundamental `OptunaSearchCV` workflow. This example
 
 ## Core Workflows
 
-### Composed Forecaster Tuning ([View](/examples/composed_tuning/) | [Editable](/examples/composed_tuning/edit/))
+### Composed Forecaster Tuning ([View](/examples/composed_tuning/) | [Open in marimo](/examples/composed_tuning/edit/))
 
 **Tuning Nested Parameters in Reduction Forecasters**
 
 Dive into tuning composed estimators by optimizing both a Ridge regressor and its `LagTransformer` feature pipeline. This example uses the Sunspots dataset and autocorrelation analysis to motivate lag selection, then searches over nested parameters with `ExpandingWindowSplitter` cross-validation. You'll see how the double-underscore syntax (`feature_transformer__lag`) reaches into nested components, and how to diagnose results with residual plots.
 
-### Multi-Metric Search ([View](/examples/multi_metric_search/) | [Editable](/examples/multi_metric_search/edit/))
+### Multi-Metric Search ([View](/examples/multi_metric_search/) | [Open in marimo](/examples/multi_metric_search/edit/))
 
 **Evaluating Multiple Scoring Metrics Simultaneously**
 
@@ -26,13 +26,13 @@ Evaluate MAE, RMSE, and MSE in a single search pass instead of running separate 
 
 ## Advanced Topics
 
-### Search Visualization ([View](/examples/search_visualization/) | [Editable](/examples/search_visualization/edit/))
+### Search Visualization ([View](/examples/search_visualization/) | [Open in marimo](/examples/search_visualization/edit/))
 
 **Combining Optuna and Yohou Visualization**
 
 Explore the full diagnostic toolkit by combining Optuna's built-in optimization plots (history, parameter importances, contour) with yohou's forecast diagnostics (`plot_cv_results_scatter`, `plot_forecast`, `plot_residual_time_series`). This example uses Victoria Electricity demand data and shows how the two visualization ecosystems complement each other -- Optuna for understanding the search process, yohou for evaluating forecast quality.
 
-### Panel Data Tuning ([View](/examples/panel_tuning/) | [Editable](/examples/panel_tuning/edit/))
+### Panel Data Tuning ([View](/examples/panel_tuning/) | [Open in marimo](/examples/panel_tuning/edit/))
 
 **Hyperparameter Search on Grouped Time Series**
 
