@@ -350,9 +350,9 @@ Now that you understand the core concepts and features:
 
 - Follow the [Getting Started](getting-started.md) guide to start using Yohou-Optuna
 - Explore the [Examples](examples.md) for interactive notebooks:
-    - [**Quickstart Search**](/examples/optuna_search/) ([View](/examples/optuna_search/) | [Open in marimo](/examples/optuna_search/edit/)): Your first hyperparameter search
-    - [**Composed Tuning**](/examples/composed_tuning/) ([View](/examples/composed_tuning/) | [Open in marimo](/examples/composed_tuning/edit/)): Nested parameter tuning
-    - [**Multi-Metric Search**](/examples/multi_metric_search/) ([View](/examples/multi_metric_search/) | [Open in marimo](/examples/multi_metric_search/edit/)): Multiple scoring metrics
-    - [**Search Visualization**](/examples/search_visualization/) ([View](/examples/search_visualization/) | [Open in marimo](/examples/search_visualization/edit/)): Optuna + yohou plots
-    - [**Panel Data Tuning**](/examples/panel_tuning/) ([View](/examples/panel_tuning/) | [Open in marimo](/examples/panel_tuning/edit/)): Grouped time series
+  - [**Quickstart Search**](/examples/optuna_search/) ([View](/examples/optuna_search/) | [Open in marimo](/examples/optuna_search/edit/)): Your first hyperparameter search
+  - [**Composed Tuning**](/examples/composed_tuning/) ([View](/examples/composed_tuning/) | [Open in marimo](/examples/composed_tuning/edit/)): Nested parameter tuning
+  - [**Multi-Metric Search**](/examples/multi_metric_search/) ([View](/examples/multi_metric_search/) | [Open in marimo](/examples/multi_metric_search/edit/)): Multiple scoring metrics
+  - [**Search Visualization**](/examples/search_visualization/) ([View](/examples/search_visualization/) | [Open in marimo](/examples/search_visualization/edit/)): Optuna + yohou plots
+  - [**Panel Data Tuning**](/examples/panel_tuning/) ([View](/examples/panel_tuning/) | [Open in marimo](/examples/panel_tuning/edit/)): Grouped time series
 - Check the [API Reference](api-reference.md) for detailed API documentation

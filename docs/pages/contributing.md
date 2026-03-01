@@ -244,6 +244,7 @@ Mark your tests appropriately to help maintain fast feedback during development:
   - Test multiple components working together
   - Require complex setup or teardown
   - Exercise end-to-end workflows
+
 - `@pytest.mark.example` is used in `tests/test_examples.py` to:
   - Validate example notebooks execute without errors
   - Run notebooks in the `examples/` directory
