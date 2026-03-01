@@ -98,6 +98,14 @@ class OptunaSearchCV(BaseSearchCV):
     yohou.model_selection.GridSearchCV : Exhaustive grid search.
     yohou.model_selection.RandomizedSearchCV : Randomized search.
 
+    References
+    ----------
+    .. [1] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019).
+       Optuna: A Next-generation Hyperparameter Optimization Framework.
+       In Proceedings of the 25th ACM SIGKDD International Conference on
+       Knowledge Discovery & Data Mining (pp. 2623-2631).
+       https://doi.org/10.1145/3292500.3330701
+
     Examples
     --------
     >>> import optuna

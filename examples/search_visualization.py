@@ -14,6 +14,12 @@ import marimo
 __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
+__gallery__ = {
+    "title": "Search Visualization",
+    "description": "Combine Optuna's optimization plots with yohou's forecast diagnostics for comprehensive analysis.",
+    "category": "Advanced Topics",
+}
+
 
 @app.cell(hide_code=True)
 def _():
@@ -30,14 +36,14 @@ def _(mo):
 
         ## What You'll Learn
 
-        - How to access the Optuna `study_` object after fitting `OptunaSearchCV`
+        - How to access the Optuna `study_` object after fitting [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/)
         - How to plot optimization history, parameter importances, and contour plots with Optuna
         - How to use `yohou.plotting` for CV result scatter plots, forecasts, and residual diagnostics
         - How to combine Optuna and yohou visualizations for comprehensive analysis
 
         ## Prerequisites
 
-        Familiarity with the basics of `OptunaSearchCV` (see optuna_search.py).
+        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
         """
     )
     return
@@ -314,9 +320,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Multi-metric search**: See multi_metric_search.py to track multiple metrics and compare rankings
-        - **Panel data tuning**: See panel_tuning.py for grouped time series optimization
-        - **Quickstart**: See optuna_search.py for a minimal end-to-end walkthrough
+        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to track multiple metrics and compare rankings
+        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) for grouped time series optimization
+        - **Quickstart**: See [`optuna_search.py`](/examples/optuna_search/) for a minimal end-to-end walkthrough
         """
     )
     return
