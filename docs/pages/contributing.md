@@ -205,7 +205,6 @@ Run tests across multiple Python versions:
     ```bash
     uvx nox -s test
     ```
-
 Run example notebook tests:
 
 === "just"
@@ -243,12 +242,10 @@ Mark your tests appropriately to help maintain fast feedback during development:
   - Test multiple components working together
   - Require complex setup or teardown
   - Exercise end-to-end workflows
-
 - `@pytest.mark.example` is used in `tests/test_examples.py` to:
   - Validate example notebooks execute without errors
   - Run notebooks in the `examples/` directory
   - Test interactive documentation and tutorials
-
 
 Example:
 
@@ -405,28 +402,13 @@ Create a new marimo notebook in `examples/<name>.py`:
    - **Key Takeaways**: Bullet points summarizing important lessons
    - **Next Steps**: Links to related notebooks for progression
    - Isolate utilities and markdown in separate cells
-   - Use `hide_code=True` for infrastructure cells: `import marimo`, pyodide install, library imports, utilities, and markdown cells
-
-   **Pyodide install cell template** (place right after `import marimo as mo`):
-
-   ```python
-   @app.cell(hide_code=True)
-   async def _():
-       import sys
-
-       if "pyodide" in sys.modules:
-           import micropip
-
-           await micropip.install(["scikit-learn"]) # List all packages needed to run the example
-       return
-   ```
+   - Use `hide_code=True` for infrastructure cells: `import marimo`, library imports, utilities, and markdown cells
 
    **`hide_code=True` guidance:** mark these cells as hidden:
 
    | Cell type | Why hidden |
    |-----------|-----------|
    | `import marimo as mo` | Boilerplate, not instructive |
-   | Pyodide install | Infrastructure, not tutorial content |
    | Library imports | Setup, readers focus on usage |
    | Utilities | Not the lesson |
    | Markdown cells | Purely structural |
@@ -468,10 +450,31 @@ Basic familiarity with sklearn's fit/predict API and time series concepts (trend
 
 #### Marimo Cell Conventions
 
+- Add [PEP 723](https://peps.python.org/pep-0723/) inline script metadata at the top of each notebook listing its dependencies
 - Use `hide_code=True` on all markdown cells, import cells, and utility/helper cells
 - Use `r"""..."""` (raw triple-quoted strings) for markdown cell content
-- The second cell (after `import marimo as mo`) must be the Pyodide/micropip guard for browser compatibility
-- Group all imports into a single hidden cell after the Pyodide guard
+- Group all imports into a single hidden cell
+
+**PEP 723 header template** (place at the very top of the file, before `import marimo`):
+
+```python
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "my-dependency",
+# ]
+# ///
+```
+
+**What to include in `dependencies`:**
+
+- Only list packages the notebook **directly imports** (e.g., `numpy`, `plotly`)
+- Include `yohou_optuna` when the notebook imports from the project itself
+- Do **not** include `marimo` — it is the runner, not a dependency of the script
+- Do **not** include transitive dependencies (packages already pulled in by a listed dependency)
+- Do **not** add `[tool.uv.sources]` — local development uses workspace resolution automatically; published notebooks should resolve from PyPI
+
+When in doubt, run `uv run --script examples/<name>.py` in a clean environment. If it fails with an `ImportError`, add the missing package.
 
 #### Content Guidelines
 
@@ -509,7 +512,6 @@ Add a link to your example in `docs/pages/examples.md`:
 ```
 
 The mkdocs hooks automatically export notebooks to HTML during docs build. All notebooks in `examples/` are automatically discovered and tested by `test_examples.py` using pytest's parametrization feature, which runs them in parallel for fast validation.
-
 ## Submitting Changes
 
 1. Push your changes to your fork:

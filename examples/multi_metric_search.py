@@ -1,3 +1,15 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "numpy",
+#     "optuna",
+#     "polars",
+#     "scikit-learn",
+#     "yohou",
+#     "yohou-optuna",
+# ]
+# ///
+
 import marimo
 
 __generated_with = "0.19.11"
@@ -29,17 +41,6 @@ def _(mo):
         Familiarity with the basics of `OptunaSearchCV` (see optuna_search.py).
         """
     )
-    return
-
-
-@app.cell(hide_code=True)
-async def _():
-    import sys
-
-    if "pyodide" in sys.modules:
-        import micropip
-
-        await micropip.install(["scikit-learn", "optuna", "sklearn-optuna"])
     return
 
 
