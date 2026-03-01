@@ -74,7 +74,7 @@ In-depth documentation on the design, architecture, and core concepts.
 - [Configuration](pages/user-guide.md#configuration)
 - [Best Practices](pages/user-guide.md#best-practices)
 
-### [Reference](pages/api-reference.md)
+### [Reference](pages/api-reference/)
 
 Detailed reference for the Yohou-Optuna API, including classes, functions, and configuration options.
 
