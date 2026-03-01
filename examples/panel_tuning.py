@@ -14,6 +14,12 @@ import marimo
 __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
+__gallery__ = {
+    "title": "Panel Data Tuning",
+    "description": "Apply OptunaSearchCV to grouped time series from the Australian Tourism dataset with sampler comparison.",
+    "category": "Advanced Topics",
+}
+
 
 @app.cell(hide_code=True)
 def _():
@@ -30,7 +36,7 @@ def _(mo):
 
         ## What You'll Learn
 
-        - How to use `OptunaSearchCV` with panel (grouped) time series data
+        - How to use [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) with panel (grouped) time series data
         - How to visualize cross-validation splits on panel data with `plot_splits`
         - How to compare different Optuna samplers (Random vs TPE)
         - How to use callbacks for early stopping with `MaxTrialsCallback`
@@ -38,7 +44,7 @@ def _(mo):
 
         ## Prerequisites
 
-        Familiarity with the basics of `OptunaSearchCV` (see optuna_search.py) and
+        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)) and
         panel data concepts (multiple related time series sharing the same time index).
         """
     )
@@ -325,9 +331,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Quickstart**: See optuna_search.py for a minimal end-to-end walkthrough
-        - **Composed tuning**: See composed_tuning.py to tune forecasters with feature transformers
-        - **Search visualization**: See search_visualization.py for Optuna's optimization plots
+        - **Quickstart**: See [`optuna_search.py`](/examples/optuna_search/) for a minimal end-to-end walkthrough
+        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune forecasters with feature transformers
+        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization plots
         """
     )
     return

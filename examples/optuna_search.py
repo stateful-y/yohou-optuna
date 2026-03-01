@@ -14,6 +14,12 @@ import marimo
 __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
+__gallery__ = {
+    "title": "Quickstart Search",
+    "description": "Your first hyperparameter search with OptunaSearchCV on the Air Passengers dataset.",
+    "category": "Getting Started",
+}
+
 
 @app.cell(hide_code=True)
 def _():
@@ -32,7 +38,7 @@ def _(mo):
 
         - How to load a real dataset from `yohou.datasets`
         - How to define Optuna search distributions for forecaster parameters
-        - How to run `OptunaSearchCV` for Bayesian hyperparameter optimization
+        - How to run [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) for Bayesian hyperparameter optimization
         - How to inspect cross-validation results and visualize them with `yohou.plotting`
         - How to generate and visualize forecasts with the best model
 
@@ -275,7 +281,7 @@ def _(mo):
         r"""
         ## Key Takeaways
 
-        - **OptunaSearchCV** wraps Optuna's Bayesian optimization for yohou forecasters with a familiar scikit-learn-style API
+        - **[`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/)** wraps Optuna's Bayesian optimization for yohou forecasters with a familiar scikit-learn-style API
         - **Search distributions** like `FloatDistribution` and `CategoricalDistribution` define the hyperparameter space
         - **`plot_cv_results_scatter`** visualizes how parameter values relate to cross-validation scores
         - **`plot_forecast`** overlays predicted values on actuals for quick visual evaluation
@@ -283,9 +289,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Composed tuning**: See composed_tuning.py to tune forecasters with feature transformers like `LagTransformer`
-        - **Multi-metric search**: See multi_metric_search.py to track multiple metrics (MAE, RMSE, MSE) simultaneously
-        - **Search visualization**: See search_visualization.py for Optuna's built-in optimization plots
+        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune forecasters with feature transformers like `LagTransformer`
+        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to track multiple metrics (MAE, RMSE, MSE) simultaneously
+        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's built-in optimization plots
         """
     )
     return

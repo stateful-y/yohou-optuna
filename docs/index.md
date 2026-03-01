@@ -62,7 +62,7 @@ Step-by-step guide to installing and setting up Yohou-Optuna in your project.
 
 Interactive notebooks demonstrating real-world time series hyperparameter tuning.
 
-- [What can Yohou-Optuna do?](pages/examples.md#what-can-yohou-optuna-do)
+- [Example gallery](pages/examples.md#examples)
 - [Running examples locally](pages/examples.md#running-examples-locally)
 
 

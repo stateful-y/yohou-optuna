@@ -14,6 +14,12 @@ import marimo
 __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
+__gallery__ = {
+    "title": "Composed Forecaster Tuning",
+    "description": "Tune nested parameters across a Ridge regressor and LagTransformer pipeline using double-underscore routing.",
+    "category": "Core Workflows",
+}
+
 
 @app.cell(hide_code=True)
 def _():
@@ -37,7 +43,7 @@ def _(mo):
 
         ## Prerequisites
 
-        Familiarity with the basics of `OptunaSearchCV` (see optuna_search.py).
+        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
         """
     )
     return
@@ -317,9 +323,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Multi-metric search**: See multi_metric_search.py to evaluate multiple metrics simultaneously
-        - **Search visualization**: See search_visualization.py for Optuna's optimization history and parameter importance plots
-        - **Panel data tuning**: See panel_tuning.py to tune forecasters on grouped time series
+        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to evaluate multiple metrics simultaneously
+        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization history and parameter importance plots
+        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) to tune forecasters on grouped time series
         """
     )
     return

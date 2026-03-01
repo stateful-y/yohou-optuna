@@ -15,6 +15,12 @@ import marimo
 __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
+__gallery__ = {
+    "title": "Multi-Metric Search",
+    "description": "Evaluate MAE, RMSE, and MSE simultaneously and compare how different metrics rank the same trials.",
+    "category": "Core Workflows",
+}
+
 
 @app.cell(hide_code=True)
 def _():
@@ -38,7 +44,7 @@ def _(mo):
 
         ## Prerequisites
 
-        Familiarity with the basics of `OptunaSearchCV` (see optuna_search.py).
+        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
         """
     )
     return
@@ -327,9 +333,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Search visualization**: See search_visualization.py for Optuna's optimization history and parameter importance plots
-        - **Panel data tuning**: See panel_tuning.py to tune forecasters on grouped time series
-        - **Composed tuning**: See composed_tuning.py to tune nested pipelines with feature transformers
+        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization history and parameter importance plots
+        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) to tune forecasters on grouped time series
+        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune nested pipelines with feature transformers
         """
     )
     return
