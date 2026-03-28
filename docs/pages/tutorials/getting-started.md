@@ -1,10 +1,13 @@
 # Getting Started
 
-In this tutorial, we will install Yohou-Optuna and run a first example.
+In this tutorial, we will run our first Bayesian hyperparameter search for a time series forecaster. Along the way, we will install Yohou-Optuna, define a search space using Optuna distributions, fit an `OptunaSearchCV`, and predict with the best-found forecaster.
 
-## Installation
+## Prerequisites
 
-Choose your preferred package manager:
+- Python 3.11+ installed
+- A terminal or command prompt
+
+## Step 1: Install Yohou-Optuna
 
 === "pip"
 
@@ -18,58 +21,117 @@ Choose your preferred package manager:
     uv add yohou_optuna
     ```
 
-=== "conda"
-
-    ```bash
-    conda install -c conda-forge yohou_optuna
-    ```
-
-=== "mamba"
-
-    ```bash
-    mamba install -c conda-forge yohou_optuna
-    ```
-
-> **Note**: For conda/mamba, ensure the package is published to conda-forge first.
-
-Verify the installation:
+Verify the installation works:
 
 ```python
 import yohou_optuna
 print(yohou_optuna.__version__)
 ```
 
-## Your First Example
+The output should show a version string such as `0.1.0-alpha.2`.
+
+## Step 2: Set Up a Forecaster
+
+We will tune a `PointReductionForecaster` - a forecaster that converts a time series problem into a regression problem using lag features. First, import what we need:
 
 ```python
-from yohou_optuna.example import hello
+import polars as pl
+from sklearn.linear_model import Ridge
 
-result = hello("World")
-print(result)  # Output: Hello, World!
+from yohou.datasets import load_air_passengers
+from yohou.metrics import MeanAbsoluteError
+from yohou.model_selection import ExpandingWindowSplitter
+from yohou.point import PointReductionForecaster
+from yohou_optuna import OptunaSearchCV
+from optuna.distributions import FloatDistribution, IntDistribution
 ```
 
+Now let us load a dataset and split it into training and test sets:
 
-## Try Interactive Examples
+```python
+y = load_air_passengers()
 
-For hands-on learning with interactive notebooks, see the [Examples](examples.md) page.
+y_train = y.head(120)
+y_test = y.tail(24)
+```
 
-Run locally:
+Notice that `y` is a polars DataFrame with a `time` column - this is the standard Yohou data format. Each row is one time step.
 
-=== "just"
+Create the base forecaster we want to tune:
 
-    ```bash
-    just example
-    ```
+```python
+forecaster = PointReductionForecaster(regressor=Ridge())
+```
 
-=== "uv run"
+## Step 3: Define the Search Space
 
-    ```bash
-    uv run marimo edit examples/hello.py
-    ```
+We define the search space using Optuna distribution objects. Each key in `param_distributions` is a parameter name; the value is a distribution that the sampler will draw from:
+
+```python
+param_distributions = {
+    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
+    "observation_horizon": IntDistribution(3, 30),
+}
+```
+
+Notice that `regressor__alpha` uses a double-underscore to route the `alpha` parameter to the regressor inside the forecaster. The `log=True` flag on `FloatDistribution` means candidates are sampled on a log scale, which is appropriate for regularization strengths.
+
+## Step 4: Run the Search
+
+Create an `OptunaSearchCV` and call `fit()`. This will run 30 trials, each one evaluating a different parameter combination via cross-validation:
+
+```python
+search = OptunaSearchCV(
+    forecaster=forecaster,
+    param_distributions=param_distributions,
+    n_trials=30,
+    scoring=MeanAbsoluteError(),
+    cv=ExpandingWindowSplitter(n_splits=3),
+)
+
+search.fit(y_train, forecasting_horizon=12)
+```
+
+You should see Optuna logging trial results as they complete. After all trials finish, the best-found forecaster is automatically refit on the full training set.
+
+## Step 5: Inspect the Results
+
+Let us check what parameters were found:
+
+```python
+print(f"Best score: {search.best_score_:.4f}")
+print(f"Best params: {search.best_params_}")
+```
+
+The output should look something like:
+
+```text
+Best score: 12.3456
+Best params: {'regressor__alpha': 0.0137, 'observation_horizon': 18}
+```
+
+The `study_` attribute gives us access to the full Optuna study - all 30 trials with their scores and parameters:
+
+```python
+print(f"Number of trials: {len(search.study_.trials)}")
+```
+
+## Step 6: Predict
+
+`OptunaSearchCV` is itself a forecaster. We can call `predict()` directly - it delegates to `best_forecaster_`:
+
+```python
+y_pred = search.predict(forecasting_horizon=12)
+print(y_pred)
+```
+
+The prediction covers the next 12 time steps after the training period.
+
+We have now built a complete Bayesian hyperparameter search pipeline: we installed the package, defined a search space, ran an adaptive search, inspected the results, and made a prediction.
 
 ## Next Steps
 
-- **Learn the concepts**: Read [Concepts](../explanation/concepts.md) to understand the design
-- **Explore examples**: Check out the [Examples](examples.md) for interactive notebooks
-- **Dive into the API**: Browse the [API Reference](../reference/api.md) for detailed documentation
-- **Get help**: Visit [GitHub Discussions](https://github.com/stateful-y/yohou-optuna/discussions) or [open an issue](https://github.com/stateful-y/yohou-optuna/issues)
+- **Understand the design**: Read [About OptunaSearchCV](../explanation/concepts.md) to understand the object model, the search lifecycle, and wrapper classes
+- **Explore more examples**: Browse the [Examples](examples.md) for interactive notebooks covering panel data, multi-metric search, and visualization
+- **Configure the search**: See [Configure OptunaSearchCV](../how-to/configure.md) for sampler selection, callbacks, and study persistence
+- **Browse the API**: See the [API Reference](../reference/api.md) for all parameters and attributes

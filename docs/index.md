@@ -16,17 +16,17 @@
 
     Install Yohou-Optuna and run your first hyperparameter search
 
-    Install → Define distributions → Fit → Predict
+    Install - Define distributions - Fit - Predict
 
-    [Getting Started](pages/getting-started.md)
+    [Getting Started](pages/tutorials/getting-started.md)
 
-- **Learn the Concepts**
+- **Understand the Design**
 
     ---
 
-    Understand OptunaSearchCV, samplers, distributions, and callbacks
+    Understand OptunaSearchCV, the object model, temporal CV, and wrapper classes
 
-    [User Guide](pages/user-guide.md)
+    [About OptunaSearchCV](pages/explanation/concepts.md)
 
 - **See It In Action**
 
@@ -34,7 +34,7 @@
 
     Explore 5 interactive notebooks from quickstart to multi-metric search
 
-    [Examples](pages/examples.md)
+    [Examples](pages/tutorials/examples.md)
 
 - **API Reference**
 
@@ -42,41 +42,28 @@
 
     Complete API documentation for OptunaSearchCV and wrapper classes
 
-    [API Reference](pages/api-reference.md)
+    [API Reference](pages/reference/api.md)
 
 
 </div>
 
-## Table of Contents
+## Documentation
 
-### [Getting started](pages/getting-started.md)
+### [Getting Started](pages/tutorials/getting-started.md)
 
-Step-by-step guide to installing and setting up Yohou-Optuna in your project.
+A step-by-step tutorial to install Yohou-Optuna and run your first Bayesian hyperparameter search.
 
-- [1. Install the package](pages/getting-started.md#step-1-install-the-package)
-- [2. Verify installation](pages/getting-started.md#step-2-verify-installation)
-- [3. Basic usage](pages/getting-started.md#basic-usage)
+### [Examples](pages/tutorials/examples.md)
 
+Interactive marimo notebooks demonstrating real-world time series hyperparameter tuning.
 
-### [Examples](pages/examples.md)
+### [How-to Guides](pages/how-to/configure.md)
 
-Interactive notebooks demonstrating real-world time series hyperparameter tuning.
+Task-focused guides for configuring `OptunaSearchCV`, running multi-metric searches, tuning composed forecasters, and more.
 
-- [Example gallery](pages/examples.md#examples)
-- [Running examples locally](pages/examples.md#running-examples-locally)
+### [API Reference](pages/reference/api.md)
 
-
-### [User guide](pages/user-guide.md)
-
-In-depth documentation on the design, architecture, and core concepts.
-
-- [Core Concepts](pages/user-guide.md#core-concepts)
-- [Configuration](pages/user-guide.md#configuration)
-- [Best Practices](pages/user-guide.md#best-practices)
-
-### [Reference](pages/api-reference/)
-
-Detailed reference for the Yohou-Optuna API, including classes, functions, and configuration options.
+Complete API documentation for `OptunaSearchCV`, `Sampler`, `Storage`, and `Callback`.
 
 ## License
 

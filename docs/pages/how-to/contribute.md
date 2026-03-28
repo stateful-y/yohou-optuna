@@ -668,4 +668,4 @@ If you have any questions, feel free to:
 - [Open an issue on GitHub](https://github.com/stateful-y/yohou-optuna/issues/new)
 - [Start a discussion in the repository](https://github.com/stateful-y/yohou-optuna/discussions)
 
-Thank you for contributing! 🎉
+Thank you for contributing!
