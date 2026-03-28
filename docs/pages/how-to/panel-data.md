@@ -40,11 +40,11 @@ search = OptunaSearchCV(
 search.fit(y_panel, forecasting_horizon=4)
 ```
 
-The scores across folds are averaged over all groups and all time steps, giving a single objective value per trial.
+The scores across folds are averaged over all groups and time steps.
 
 ## Compare Samplers on Panel Data
 
-Panel data searches can be slower per trial due to the larger dataset size. Comparing TPE against Random search helps you assess whether Bayesian optimization is worth the overhead for your specific dataset:
+Panel data searches can be slower per trial due to the larger dataset size. If you need to benchmark samplers, run both and compare `best_score_`:
 
 ```python
 from yohou_optuna import Sampler

@@ -139,20 +139,20 @@ plugins:
 nav:
   - Home: index.md
   - Tutorials:
-      - Getting Started: pages/tutorials/getting-started.md
-      - Examples: pages/tutorials/examples.md
+    - Getting Started: pages/tutorials/getting-started.md
+    - Examples: pages/tutorials/examples.md
   - How-to Guides:
-      - Configure OptunaSearchCV: pages/how-to/configure.md
-      - Multi-Metric Search: pages/how-to/multi-metric-search.md
-      - Tune Composed Forecasters: pages/how-to/composed-forecasters.md
-      - Panel Data Tuning: pages/how-to/panel-data.md
-      - Visualize a Study: pages/how-to/visualize-study.md
-      - Troubleshooting: pages/how-to/troubleshooting.md
-      - Contributing: pages/how-to/contribute.md
+    - Configuration: pages/how-to/configure.md
+    - Multi-Metric Search: pages/how-to/multi-metric-search.md
+    - Composed Forecasters: pages/how-to/composed-forecasters.md
+    - Panel Data: pages/how-to/panel-data.md
+    - Visualization: pages/how-to/visualize-study.md
+    - Troubleshooting: pages/how-to/troubleshooting.md
+    - Contributing: pages/how-to/contribute.md
   - Reference:
-      - API Reference: pages/reference/api.md
+    - API: pages/reference/api.md
   - Explanation:
-      - Concepts: pages/explanation/concepts.md
+    - Concepts: pages/explanation/concepts.md
 
 extra:
   social:

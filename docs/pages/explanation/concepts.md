@@ -45,13 +45,9 @@ The lazy instantiation also means the Optuna backend - database connections, sam
 
 ## Parameter Distributions
 
-Optuna's distribution objects define the search space for each parameter. Unlike a fixed grid (exhaustive) or a uniform random range (uninformed), distributions carry structure that the sampler exploits:
+Optuna's distribution objects define the search space for each parameter. Unlike a fixed grid (exhaustive) or a uniform random range (uninformed), distributions carry structure that the sampler exploits. A log-scaled float distribution tells the sampler that a regularization strength spanning 0.0001 to 10 should be explored on a logarithmic scale, focusing candidates evenly across orders of magnitude. An integer distribution signals that only whole numbers are valid, and a categorical distribution signals unordered choices. This type information lets the sampler allocate its budget more efficiently than it could with a flat grid or unstructured range.
 
-- `FloatDistribution(low, high, log=True)` - log-uniform sampling, standard for regularization strengths that span orders of magnitude
-- `IntDistribution(low, high)` - integer range, for window sizes, depths, and counts
-- `CategoricalDistribution(choices)` - discrete set, for kernel types, activation functions, or any nominal parameter
-
-Nested parameters in composed forecasters use the double-underscore routing convention from sklearn: `"deseason__regressor__alpha"` routes `alpha` to the regressor inside the `deseason` step.
+Nested parameters in composed forecasters use the double-underscore routing convention from sklearn: `"deseason__regressor__alpha"` routes `alpha` to the regressor inside the `deseason` step. See the [API Reference](../reference/api.md) for the full list of distribution types.
 
 ## Samplers and Adaptive Search
 

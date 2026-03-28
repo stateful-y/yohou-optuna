@@ -30,7 +30,7 @@ search = OptunaSearchCV(
 search.fit(y_train, forecasting_horizon=12)
 ```
 
-When `scoring` is a list, `refit` must be a string matching the name of one scorer. That scorer's results determine `best_params_`, `best_score_`, and which forecaster is stored in `best_forecaster_`.
+When `scoring` is a list, set `refit` to the name of the scorer that selects the best forecaster.
 
 ## Use a Dict for Custom Names
 
@@ -60,13 +60,6 @@ results = pl.DataFrame(search.cv_results_)
 
 # Each metric has mean and std columns
 print(results.select(["params", "mean_test_mae", "mean_test_rmse"]).sort("mean_test_mae"))
-```
-
-The `multimetric_` attribute is `True` when multiple scorers were used:
-
-```python
-print(search.multimetric_)   # True
-print(search.scorer_)        # dict of scorers keyed by name
 ```
 
 ## Predict with the Best Forecaster

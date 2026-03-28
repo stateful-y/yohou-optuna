@@ -55,7 +55,7 @@ y_train = y.head(120)
 y_test = y.tail(24)
 ```
 
-Notice that `y` is a polars DataFrame with a `time` column - this is the standard Yohou data format. Each row is one time step.
+Notice that `y` is a polars DataFrame with a `time` column.
 
 Create the base forecaster we want to tune:
 
@@ -65,7 +65,7 @@ forecaster = PointReductionForecaster(regressor=Ridge())
 
 ## Step 3: Define the Search Space
 
-We define the search space using Optuna distribution objects. Each key in `param_distributions` is a parameter name; the value is a distribution that the sampler will draw from:
+We define the search space using Optuna distribution objects:
 
 ```python
 param_distributions = {
@@ -74,7 +74,7 @@ param_distributions = {
 }
 ```
 
-Notice that `regressor__alpha` uses a double-underscore to route the `alpha` parameter to the regressor inside the forecaster. The `log=True` flag on `FloatDistribution` means candidates are sampled on a log scale, which is appropriate for regularization strengths.
+Notice that `regressor__alpha` uses a double-underscore to route `alpha` to the regressor inside the forecaster. See [About OptunaSearchCV](../explanation/concepts.md) for details on distributions and parameter routing.
 
 ## Step 4: Run the Search
 
@@ -127,7 +127,16 @@ print(y_pred)
 
 The prediction covers the next 12 time steps after the training period.
 
-We have now built a complete Bayesian hyperparameter search pipeline: we installed the package, defined a search space, ran an adaptive search, inspected the results, and made a prediction.
+## What We Built
+
+You have:
+
+- Installed Yohou-Optuna
+- Created a `PointReductionForecaster` with a `Ridge` regressor
+- Defined a search space using `FloatDistribution` and `IntDistribution`
+- Fitted an `OptunaSearchCV` that ran 30 Bayesian trials with cross-validation
+- Inspected the best score and parameters
+- Predicted with the best-found forecaster
 
 ## Next Steps
 

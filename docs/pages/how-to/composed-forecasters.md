@@ -62,27 +62,9 @@ param_distributions = {
 }
 ```
 
-## Collect Training Scores
-
-When tuning composed forecasters, it can be useful to compare training and validation scores to detect overfitting during the search. Set `return_train_score=True`:
-
-```python
-search = OptunaSearchCV(
-    forecaster=pipeline,
-    param_distributions=param_distributions,
-    n_trials=50,
-    return_train_score=True,
-)
-
-search.fit(y_train, forecasting_horizon=12)
-
-import polars as pl
-results = pl.DataFrame(search.cv_results_)
-print(results.select(["params", "mean_train_score", "mean_test_score"]).sort("mean_test_score"))
-```
-
 ## See Also
 
+- [Collect Training Scores](configure.md#collect-training-scores) - compare training and validation scores to detect overfitting
 - [Configure OptunaSearchCV](configure.md) - sampler and CV options
 - [API Reference](../reference/api.md) - full parameter documentation
 - [Composed Forecaster Tuning example](/examples/composed_tuning/) - interactive notebook

@@ -3,10 +3,7 @@
 
 # Welcome to Yohou-Optuna's documentation
 
-`OptunaSearchCV` extends Yohou's `BaseSearchCV` (which extends `BaseForecaster`) for Bayesian hyperparameter tuning of time series forecasters, powered by [Optuna](https://optuna.org/). It inherits the full yohou forecasting API (`fit(y, X, forecasting_horizon)`, `predict()`, `observe_predict()`, `best_forecaster_`, `cv_results_`) while using Optuna's samplers (TPE, CMA-ES, ...) to explore search spaces more efficiently than grid or random search. Optuna distributions give you log-scaled, bounded, and categorical parameter spaces, and wrapper classes (`Sampler`, `Storage`, `Callback`) survive `clone()` and serialization.
-
-!!! note "Inspiration"
-    This project is inspired by [optuna-integration's OptunaSearchCV](https://optuna-integration.readthedocs.io/en/latest/reference/generated/optuna_integration.OptunaSearchCV.html) and builds on [sklearn-optuna](https://github.com/stateful-y/sklearn-optuna).
+`OptunaSearchCV` brings [Optuna](https://optuna.org/)'s Bayesian hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a search class that inherits the full Yohou forecasting API while using adaptive sampling (TPE, CMA-ES, and more) to explore search spaces more efficiently than grid or random search.
 
 <div class="grid cards" markdown>
 
@@ -14,57 +11,59 @@
 
     ---
 
-    Install Yohou-Optuna and run your first hyperparameter search
-
-    Install - Define distributions - Fit - Predict
+    Install Yohou-Optuna and run your first hyperparameter search.
 
     [Getting Started](pages/tutorials/getting-started.md)
 
-- **Understand the Design**
+- **Need Help?**
 
     ---
 
-    Understand OptunaSearchCV, the object model, temporal CV, and wrapper classes
+    Find answers to common questions and troubleshooting tips.
 
-    [About OptunaSearchCV](pages/explanation/concepts.md)
+    [Troubleshooting](pages/how-to/troubleshooting.md)
+
+- **Learn the Concepts**
+
+    ---
+
+    Understand the object model, temporal CV, and wrapper classes.
+
+    [Concepts](pages/explanation/concepts.md)
 
 - **See It In Action**
 
     ---
 
-    Explore 5 interactive notebooks from quickstart to multi-metric search
+    Explore interactive example notebooks.
 
     [Examples](pages/tutorials/examples.md)
-
-- **API Reference**
-
-    ---
-
-    Complete API documentation for OptunaSearchCV and wrapper classes
-
-    [API Reference](pages/reference/api.md)
 
 
 </div>
 
-## Documentation
+## Table of Contents
 
 ### [Getting Started](pages/tutorials/getting-started.md)
 
-A step-by-step tutorial to install Yohou-Optuna and run your first Bayesian hyperparameter search.
+Install Yohou-Optuna and run your first Bayesian hyperparameter search.
 
 ### [Examples](pages/tutorials/examples.md)
 
 Interactive marimo notebooks demonstrating real-world time series hyperparameter tuning.
 
-### [How-to Guides](pages/how-to/configure.md)
+### [Configuration](pages/how-to/configure.md)
 
-Task-focused guides for configuring `OptunaSearchCV`, running multi-metric searches, tuning composed forecasters, and more.
+Configure samplers, callbacks, study persistence, and cross-validation.
 
 ### [API Reference](pages/reference/api.md)
 
 Complete API documentation for `OptunaSearchCV`, `Sampler`, `Storage`, and `Callback`.
 
+### [Concepts](pages/explanation/concepts.md)
+
+The object model, search lifecycle, temporal CV, and wrapper classes.
+
 ## License
 
-Yohou-Optuna is released under the **BSD 3-Clause License**. See the full license text in the repository.
+Yohou-Optuna is open source and licensed under the [Apache-2.0 License](https://opensource.org/licenses/Apache-2.0).

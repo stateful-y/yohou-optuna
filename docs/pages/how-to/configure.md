@@ -9,7 +9,7 @@ This guide shows you how to configure `OptunaSearchCV` for common search scenari
 
 ## Choose a Sampler
 
-The `sampler` parameter controls the optimization strategy. The default - TPE (Tree-structured Parzen Estimator) - works well for most cases by building a probabilistic model of the objective function as trials accumulate.
+The `sampler` parameter controls the optimization strategy. The default - TPE - works well for most cases.
 
 ```python
 from yohou_optuna import OptunaSearchCV, Sampler
@@ -104,7 +104,7 @@ search = OptunaSearchCV(
 )
 ```
 
-Use `ExpandingWindowSplitter` (default) when you want the model to see all available history as training progresses. Use `SlidingWindowSplitter` when you want a fixed-size training window, which is useful for data with concept drift.
+Use `ExpandingWindowSplitter` (default) for growing training windows. Use `SlidingWindowSplitter` for a fixed-size training window.
 
 ## Handle Fitting Errors
 
@@ -141,7 +141,7 @@ results = pl.DataFrame(search.cv_results_)
 print(results.select(["params", "mean_test_score", "mean_train_score"]))
 ```
 
-Large gaps between training and test scores indicate overfitting to the training folds.
+Large gaps between training and test scores suggest overfitting.
 
 ## See Also
 

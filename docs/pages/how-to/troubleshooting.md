@@ -24,7 +24,7 @@ Solutions to common problems when using Yohou-Optuna.
 ## Cross-Validation Issues
 
 **Problem: Optimistic CV scores that do not hold out-of-sample**
-: The default 5-fold CV may not have enough folds for your series length. Increase `n_splits` in your splitter, or switch to `ExpandingWindowSplitter` if you are using `SlidingWindowSplitter`. Ensure the forecast horizon in `cv` matches the horizon you will use at inference.
+: Increase `n_splits` in your splitter, or switch to `ExpandingWindowSplitter` if you are using `SlidingWindowSplitter`. Ensure the forecast horizon in `cv` matches the horizon you will use at inference.
 
 **Problem: `ValueError: Not enough data for the requested number of splits`**
 : The training series is too short for the configured splitter. Reduce `n_splits` or `forecasting_horizon`, or use a shorter minimum training window.

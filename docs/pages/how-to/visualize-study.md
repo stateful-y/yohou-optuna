@@ -21,7 +21,7 @@ print(f"Best params: {study.best_params}")
 
 ## Plot Optimization History
 
-The optimization history shows how the best score evolved over trials. A downward curve indicates the sampler is finding improvements over time:
+The optimization history shows how the best score evolved over trials:
 
 ```python
 import optuna.visualization as vis
@@ -30,18 +30,14 @@ fig = vis.plot_optimization_history(study)
 fig.show()
 ```
 
-If the curve plateaus early, you may have enough trials. If it is still decreasing at the end, consider adding more trials.
-
 ## Plot Parameter Importances
 
-Parameter importances estimate which parameters had the largest impact on the objective score. Use this to focus future searches:
+Parameter importances estimate which parameters had the largest impact on the objective score:
 
 ```python
 fig = vis.plot_param_importances(study)
 fig.show()
 ```
-
-Parameters with low importance are candidates for removal from the search space to reduce trial time.
 
 ## Plot Contour and Parallel Coordinates
 
