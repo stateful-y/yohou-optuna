@@ -87,6 +87,9 @@ docs/examples/*/
 # Auto-generated API submodule pages (created by docs/hooks.py)
 docs/pages/api/
 
+# Worktrees
+.worktrees/
+
 # AI Assistant Instructions
 CLAUDE.md
 CLAUDE_INSTRUCTIONS.md
@@ -102,8 +105,6 @@ COPILOT_INSTRUCTIONS.md
 copilot-instructions.md
 copilot-config.md
 copilot-prompt.md
-.github/skills
-.github/prompts
 
 # ChatGPT / OpenAI
 CHATGPT.md

@@ -1381,7 +1381,6 @@ def on_post_build(config):
             _inject_rtd_css(target_dir / "index.html")
 
             print(f"[hooks] copied examples/{html_dir.name}/ to site")
-
     # Get exclude patterns from config
     # Note: mkdocs converts exclude_docs to a GitIgnoreSpec object, so we hardcode patterns
     exclude_patterns = ["examples/**/CLAUDE.md"]

@@ -33,6 +33,7 @@ dev = [
     {include-group = "lint"},
     {include-group = "docs"},
     {include-group = "fix"},
+    {include-group = "examples"},
 
 ]
 tests = [
@@ -54,7 +55,6 @@ docs = [
     "mkdocs-material>=9.7",
     "mkdocstrings[python]>=0.26.0",
     "pymdown-extensions>=10.20.1",
-    {include-group = "examples"},
 ]
 fix = [
   "pre-commit-uv>=4.1",
@@ -88,7 +88,7 @@ line-length = 120
 target-version = "py311"
 src = ["src", "tests"]
 show-fixes = true
-exclude = ["src/yohou_optuna/_version.py", "examples/"]
+exclude = ["src/yohou_optuna/_version.py", "examples/", ".github/skills/"]
 
 [tool.ruff.format]
 preview = true
@@ -213,6 +213,7 @@ exclude = ["CHANGELOG.md", "site", "htmlcov", ".nox", ".venv"]
 
 [tool.rumdl.per-file-ignores]
 ".github/PULL_REQUEST_TEMPLATE.md" = ["MD041"]  # PR template starts with checklist
+".github/skills/**" = ["MD007"]  # Nested lists in skill files use variable indent
 "README.md" = ["MD041"]  # README starts with logo, not heading
 "docs/index.md" = ["MD041"]  # Landing page starts with logo, not heading
 "CONTRIBUTING.md" = ["MD057"]  # Relative link to docs/ is valid at project level
