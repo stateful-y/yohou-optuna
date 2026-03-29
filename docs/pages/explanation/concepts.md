@@ -4,7 +4,7 @@
 
 ## The Object Model
 
-`OptunaSearchCV` inherits from Yohou's `BaseSearchCV`, which itself inherits from `BaseForecaster`. This means a fitted `OptunaSearchCV` **is** a forecaster - it exposes the complete Yohou forecaster interface: `fit()`, `predict()`, `observe()`, and `observe_predict()`.
+`OptunaSearchCV` inherits from Yohou's `BaseSearchCV`, which itself inherits from `BaseForecaster`. This means a fitted `OptunaSearchCV` **is** a forecaster, exposing the complete Yohou forecaster interface: `fit()`, `predict()`, `observe()`, and `observe_predict()`.
 
 After fitting, you never need to unwrap it to access the best forecaster; `predict()` delegates to `best_forecaster_` automatically. This follows the sklearn convention that fitted search objects behave as the estimators they select. In Yohou, where the forecaster API carries temporal semantics (`fit(y, X, forecasting_horizon)`, observation windows, panel data), this inheritance is particularly valuable: `OptunaSearchCV` participates in the same compositions, pipelines, and evaluation loops as any other forecaster.
 
@@ -12,7 +12,7 @@ After fitting, you never need to unwrap it to access the best forecaster; `predi
 
 Calling `fit(y, X, forecasting_horizon)` triggers the following steps:
 
-1. An Optuna `Study` is created - or loaded from storage if `study_name` and `storage` are provided.
+1. An Optuna `Study` is created (or loaded from storage if `study_name` and `storage` are provided).
 2. For each of `n_trials` trials, the sampler proposes a parameter combination from `param_distributions`.
 3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The mean CV score across folds becomes the trial's objective value.
 4. Optuna records the result and the sampler updates its internal model of the search space.
@@ -24,13 +24,13 @@ The study object (`study_`) remains accessible after fitting. You can inspect th
 
 Hyperparameter search for time series differs from iid settings: using future data to evaluate parameters selected for past data inflates estimates and leads to poor generalization.
 
-`OptunaSearchCV` delegates cross-validation to Yohou's splitter API. By default it uses a 5-fold expanding window split. You can supply any splitter from `yohou.model_selection` - `ExpandingWindowSplitter`, `SlidingWindowSplitter`, or a custom subclass. The splitter determines how the training data is partitioned into fold (past) and validation (future) windows, preserving temporal ordering throughout the search.
+`OptunaSearchCV` delegates cross-validation to Yohou's splitter API. By default it uses a 5-fold expanding window split. You can supply any splitter from `yohou.model_selection`, such as `ExpandingWindowSplitter`, `SlidingWindowSplitter`, or a custom subclass. The splitter determines how the training data is partitioned into fold (past) and validation (future) windows, preserving temporal ordering throughout the search.
 
 This is why the `cv` parameter accepts Yohou splitters rather than sklearn cross-validators: time series folds are defined by their position in time, not by random index shuffles.
 
 ## Wrapper Classes and Cloneability
 
-Optuna's sampler, storage, and callback objects are not compatible with Python's `copy.deepcopy()` - used internally by sklearn's `clone()`, which `BaseSearchCV` calls to create fresh copies of the forecaster for each trial. Passing an `optuna.samplers.TPESampler` directly would fail at the first cloning step.
+Optuna's sampler, storage, and callback objects are not compatible with Python's `copy.deepcopy()`, which sklearn's `clone()` uses internally. `BaseSearchCV` calls `clone()` to create fresh copies of the forecaster for each trial. Passing an `optuna.samplers.TPESampler` directly would fail at the first cloning step.
 
 The `Sampler`, `Storage`, and `Callback` wrappers (re-exported from [sklearn-optuna](https://github.com/stateful-y/sklearn-optuna)) solve this by storing the class name and constructor arguments rather than the live Optuna object. When the study needs to be created, the wrapper instantiates the underlying Optuna object on demand. Since a wrapper holds only serializable Python values, `clone()` can copy it safely.
 
@@ -41,7 +41,7 @@ storage = Storage("RDBStorage", url="sqlite:///study.db")
 callback = Callback("MaxTrialsCallback", n_trials=100)
 ```
 
-The lazy instantiation also means the Optuna backend - database connections, sampler state - is only initialized when the study is actually created, not when you construct `OptunaSearchCV`.
+The lazy instantiation also means the Optuna backend (database connections, sampler state) is only initialized when the study is actually created, not when you construct `OptunaSearchCV`.
 
 ## Parameter Distributions
 
@@ -51,7 +51,7 @@ Nested parameters in composed forecasters use the double-underscore routing conv
 
 ## Samplers and Adaptive Search
 
-Optuna's default sampler - TPE (Tree-structured Parzen Estimator) - builds a probabilistic model of the objective function from observed trials and uses it to propose the next candidate. Unlike random search, which treats all candidates uniformly, TPE focuses exploration on regions that performed well in past trials. This typically reaches good solutions in fewer evaluations.
+Optuna's default sampler, TPE (Tree-structured Parzen Estimator), builds a probabilistic model of the objective function from observed trials and uses it to propose the next candidate. Unlike random search, which treats all candidates uniformly, TPE focuses exploration on regions that performed well in past trials. This typically reaches good solutions in fewer evaluations.
 
 Other samplers are available: CMA-ES for continuous search spaces with correlated parameters, Gaussian Process sampler for small budgets with smooth objectives, and Random sampler as a baseline. The sampler is swappable via the `sampler` parameter without changing any other part of the code.
 

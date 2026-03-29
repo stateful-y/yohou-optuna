@@ -32,7 +32,7 @@ The output should show a version string such as `0.1.0-alpha.2`.
 
 ## Step 2: Set Up a Forecaster
 
-We will tune a `PointReductionForecaster` - a forecaster that converts a time series problem into a regression problem using lag features. First, import what we need:
+We will tune a `PointReductionForecaster`, a forecaster that converts a time series problem into a regression problem using lag features. First, import what we need:
 
 ```python
 import polars as pl
@@ -110,7 +110,7 @@ Best score: 12.3456
 Best params: {'regressor__alpha': 0.0137, 'observation_horizon': 18}
 ```
 
-The `study_` attribute gives us access to the full Optuna study - all 30 trials with their scores and parameters:
+The `study_` attribute gives us access to the full Optuna study, including all 30 trials with their scores and parameters:
 
 ```python
 print(f"Number of trials: {len(search.study_.trials)}")
@@ -118,7 +118,7 @@ print(f"Number of trials: {len(search.study_.trials)}")
 
 ## Step 6: Predict
 
-`OptunaSearchCV` is itself a forecaster. We can call `predict()` directly - it delegates to `best_forecaster_`:
+`OptunaSearchCV` is itself a forecaster. We can call `predict()` directly because it delegates to `best_forecaster_`:
 
 ```python
 y_pred = search.predict(forecasting_horizon=12)

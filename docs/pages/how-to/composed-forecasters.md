@@ -1,6 +1,6 @@
 # How to Tune Composed Forecasters
 
-This guide shows you how to tune hyperparameters in composed forecasters - pipelines and combinations that nest multiple components - using `OptunaSearchCV`.
+This guide shows you how to tune hyperparameters in composed forecasters (pipelines and combinations that nest multiple components) using `OptunaSearchCV`.
 
 ## Prerequisites
 

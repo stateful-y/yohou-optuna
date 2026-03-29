@@ -1,6 +1,6 @@
 # How to Tune a Forecaster on Panel Data
 
-This guide shows you how to use `OptunaSearchCV` with panel (grouped) time series data - multiple related series sharing a common time index.
+This guide shows you how to use `OptunaSearchCV` with panel (grouped) time series data, where multiple related series share a common time index.
 
 ## Prerequisites
 

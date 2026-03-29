@@ -9,7 +9,7 @@ This guide shows you how to configure `OptunaSearchCV` for common search scenari
 
 ## Choose a Sampler
 
-The `sampler` parameter controls the optimization strategy. The default - TPE - works well for most cases.
+The `sampler` parameter controls the optimization strategy. The default (TPE) works well for most cases.
 
 ```python
 from yohou_optuna import OptunaSearchCV, Sampler
@@ -35,7 +35,7 @@ sampler=Sampler("GPSampler")
 sampler=Sampler("RandomSampler", seed=42)
 ```
 
-Pass `seed` for reproducible results. Always use the `Sampler` wrapper rather than a raw Optuna sampler object - raw Optuna objects are not compatible with `clone()`.
+Pass `seed` for reproducible results. Always use the `Sampler` wrapper rather than a raw Optuna sampler object because raw Optuna objects are not compatible with `clone()`.
 
 !!! tip
     Start with TPE. Switch to CMA-ES only when you have a large all-continuous search space and notice slow convergence.
@@ -59,7 +59,7 @@ search = OptunaSearchCV(
 
 `MaxTrialsCallback` stops the study once the specified number of trials completes, regardless of the `n_trials` setting on `OptunaSearchCV`. This is useful when you want to set a generous upper bound on trials but stop early once you have enough results.
 
-Always use the `Callback` wrapper - not a raw Optuna callback - for the same cloneability reasons as `Sampler`.
+Always use the `Callback` wrapper instead of a raw Optuna callback for the same cloneability reasons as `Sampler`.
 
 ## Persist and Resume Studies
 

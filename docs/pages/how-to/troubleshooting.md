@@ -10,13 +10,13 @@ Solutions to common problems when using Yohou-Optuna.
 **Problem: `TypeError: cannot pickle 'TPESampler' object` during `fit()`**
 : You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler("TPESampler")`. The same applies to `Storage` and `Callback`. See [Configure OptunaSearchCV](configure.md).
 
-**Problem: `AttributeError` when cloning - `__init__` parameter not found**
+**Problem: `AttributeError` when cloning (`__init__` parameter not found)**
 : This usually means a parameter name in `param_distributions` does not match the forecaster's API. Check spelling and use `forecaster.get_params()` to list valid parameter names.
 
 ## Parameter Routing
 
 **Problem: `ValueError: Invalid parameter ... for estimator`**
-: The nested parameter path is wrong. For a parameter `alpha` on the `regressor` inside a `PointReductionForecaster`, use `"regressor__alpha"` - two underscores. Verify the full path with `forecaster.get_params(deep=True)`.
+: The nested parameter path is wrong. For a parameter `alpha` on the `regressor` inside a `PointReductionForecaster`, use `"regressor__alpha"` (two underscores). Verify the full path with `forecaster.get_params(deep=True)`.
 
 **Problem: Parameter distribution values cause fitting failures**
 : Set `error_score=float("nan")` to assign a penalty score for failed trials rather than aborting the search. Then inspect `cv_results_` for trials with `nan` scores to narrow down the bad region.
