@@ -2,6 +2,10 @@
 
 This guide shows you how to evaluate multiple scoring metrics simultaneously during hyperparameter search and select the best forecaster based on a chosen metric.
 
+!!! tip "Interactive version available"
+    Try this guide as an interactive notebook:
+    [View](/examples/multi_metric_search/) · [Open in marimo](/examples/multi_metric_search/edit/)
+
 ## Prerequisites
 
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
@@ -74,4 +78,3 @@ y_pred = search.predict(forecasting_horizon=12)
 
 - [Configure OptunaSearchCV](configure.md) - sampler, callbacks, CV options
 - [API Reference](../reference/api.md) - `OptunaSearchCV` parameter documentation
-- [Multi-Metric Search example](/examples/multi_metric_search/) - interactive notebook

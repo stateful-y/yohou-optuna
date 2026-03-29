@@ -15,9 +15,10 @@ __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
 __gallery__ = {
-    "title": "Panel Data Tuning",
+    "title": "How to Tune on Panel Data",
     "description": "Apply OptunaSearchCV to grouped time series from the Australian Tourism dataset with sampler comparison.",
-    "category": "Advanced Topics",
+    "category": "how-to",
+    "companion": "pages/how-to/panel-data.md",
 }
 
 
@@ -32,20 +33,11 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # Panel Data Tuning
+        # How to Tune on Panel Data
 
-        ## What You'll Learn
+        Run `OptunaSearchCV` on grouped time series, compare samplers, and use `MaxTrialsCallback` for early stopping.
 
-        - How to use [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) with panel (grouped) time series data
-        - How to visualize cross-validation splits on panel data with `plot_splits`
-        - How to compare different Optuna samplers (Random vs TPE)
-        - How to use callbacks for early stopping with `MaxTrialsCallback`
-        - How to visualize panel-aware forecasts
-
-        ## Prerequisites
-
-        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)) and
-        panel data concepts (multiple related time series sharing the same time index).
+        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)) and panel data concepts.
         """
     )
     return
@@ -90,11 +82,9 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        ## 1. Load and Explore Panel Data
+        ## 1. Load the Panel Data
 
-        The Australian Tourism dataset contains quarterly trip counts for 8 Australian
-        states/territories. Each column follows the `group__member` naming convention
-        (e.g., `victoria__trips`), which yohou recognizes as panel data.
+        Load the Australian Tourism dataset (quarterly trips for 8 states, using `group__member` columns).
         """
     )
     return
@@ -118,11 +108,9 @@ def _(y):
 def _(mo):
     mo.md(
         r"""
-        ## 2. Configure Splitter and Forecaster
+        ## 2. Configure the Splitter
 
-        For panel data, `ExpandingWindowSplitter` applies the same temporal split
-        across all groups. Use `plot_splits` to visualize the cross-validation
-        strategy before running the search.
+        Set up an `ExpandingWindowSplitter` and visualize the CV strategy with `plot_splits`.
         """
     )
     return
@@ -146,9 +134,7 @@ def _(mo):
         r"""
         ## 3. Compare Samplers: Random vs TPE
 
-        `RandomSampler` explores the space uniformly, while `TPESampler` uses
-        Bayesian optimization to focus on promising regions. Compare their
-        performance on the same panel forecasting task.
+        Run two searches with different samplers on the same task to compare convergence.
         """
     )
     return
@@ -231,9 +217,8 @@ def _(mo):
         r"""
         ## 4. Use Callbacks for Early Stopping
 
-        `MaxTrialsCallback` stops the search after a fixed number of trials,
-        even if `n_trials` is set higher. This is useful when you want a time
-        budget or want to interactively control search duration.
+        Pass a `MaxTrialsCallback` to stop the search after a fixed number of trials,
+        regardless of `n_trials`.
         """
     )
     return
@@ -287,11 +272,9 @@ def _(callback_search, mo):
 def _(mo):
     mo.md(
         r"""
-        ## 5. Inspect Panel Forecasts
+        ## 5. Generate a Panel Forecast
 
-        Generate forecasts with the best model from the TPE search and
-        visualize them against the held-out test set. For panel data,
-        `plot_forecast` shows all groups together.
+        Predict with the best TPE model and compare against the held-out test set.
         """
     )
     return
@@ -320,20 +303,11 @@ def _(plot_forecast, y_pred, y_test, y_train):
 def _(mo):
     mo.md(
         r"""
-        ## Key Takeaways
-
-        - **Panel data** with `group__member` column naming is automatically recognized by yohou forecasters and splitters
-        - **`ExpandingWindowSplitter`** applies the same temporal split across all panel groups
-        - **`plot_splits`** visualizes how training and test windows expand across CV folds
-        - **`RandomSampler` vs `TPESampler`**: TPE typically finds better configurations with fewer trials
-        - **`MaxTrialsCallback`** provides early stopping control via the `callbacks` parameter
-        - **`plot_forecast`** handles panel data by showing all groups together
-
         ## Next Steps
 
-        - **Quickstart**: See [`optuna_search.py`](/examples/optuna_search/) for a minimal end-to-end walkthrough
-        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune forecasters with feature transformers
-        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization plots
+        - [OptunaSearchCV Quickstart](/examples/optuna_search/) - minimal end-to-end walkthrough
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune forecasters with feature transformers
+        - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization plots
         """
     )
     return

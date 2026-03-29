@@ -140,7 +140,6 @@ nav:
   - Home: index.md
   - Tutorials:
     - Getting Started: pages/tutorials/getting-started.md
-    - Examples: pages/tutorials/examples.md
   - How-to Guides:
     - Configuration: pages/how-to/configure.md
     - Multi-Metric Search: pages/how-to/multi-metric-search.md
@@ -149,6 +148,7 @@ nav:
     - Visualization: pages/how-to/visualize-study.md
     - Troubleshooting: pages/how-to/troubleshooting.md
     - Contributing: pages/how-to/contribute.md
+  - Examples: pages/tutorials/examples.md
   - Reference:
     - API: pages/reference/api.md
   - Explanation:

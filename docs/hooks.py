@@ -356,6 +356,7 @@ def _get_gallery_items(project_root):
         items.append({
             "title": gallery.get("title", stem.replace("_", " ").title()),
             "description": gallery.get("description", ""),
+            "category": gallery.get("category", ""),
             "view_path": view_path,
             "open_path": open_path,
             "stem": stem,
@@ -366,12 +367,43 @@ def _get_gallery_items(project_root):
 
 
 def _build_gallery_html(project_root):
-    """Build gallery card grid as Material 'grid cards' markdown."""
+    """Build gallery card grid as Material 'grid cards' markdown, grouped by category."""
     items = _get_gallery_items(project_root)
 
     if not items:
         return "<!-- no gallery items found -->\n"
 
+    _CATEGORY_HEADINGS = {
+        "tutorial": "Tutorials",
+        "how-to": "How-to Guides",
+    }
+
+    grouped = {}
+    for item in items:
+        cat = item.get("category", "")
+        grouped.setdefault(cat, []).append(item)
+
+    sections = []
+    for cat_key in ("tutorial", "how-to"):
+        cat_items = grouped.pop(cat_key, [])
+        if not cat_items:
+            continue
+        heading = _CATEGORY_HEADINGS.get(cat_key, cat_key)
+        cards = _format_gallery_cards(cat_items)
+        sections.append(f"### {heading}\n\n{cards}")
+
+    for cat_key, cat_items in sorted(grouped.items()):
+        if not cat_items:
+            continue
+        heading = cat_key or "Other"
+        cards = _format_gallery_cards(cat_items)
+        sections.append(f"### {heading}\n\n{cards}")
+
+    return "\n\n".join(sections) + "\n"
+
+
+def _format_gallery_cards(items):
+    """Format a list of gallery items as a Material 'grid cards' block."""
     cards = []
     for item in items:
         desc = item["description"] or "No description."
@@ -385,7 +417,6 @@ def _build_gallery_html(project_root):
             f"    [View]({item['view_path']}) · "
             f"[Open in marimo]({item['open_path']})"
         )
-
     return '<div class="grid cards" markdown>\n\n' + "\n\n".join(cards) + "\n\n</div>\n"
 
 

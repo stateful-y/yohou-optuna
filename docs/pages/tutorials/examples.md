@@ -1,6 +1,6 @@
 # Examples
 
-Explore Yohou-Optuna through interactive example notebooks. Each notebook is a self-contained marimo app covering a specific use case.
+Interactive [marimo](https://marimo.io) notebooks organized by purpose: **Tutorials** walk through concepts step-by-step, while **How-to Guides** solve specific tasks.
 
 <!-- GALLERY -->
 

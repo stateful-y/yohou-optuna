@@ -2,6 +2,10 @@
 
 This guide shows you how to tune hyperparameters in composed forecasters (pipelines and combinations that nest multiple components) using `OptunaSearchCV`.
 
+!!! tip "Interactive version available"
+    Try this guide as an interactive notebook:
+    [View](/examples/composed_tuning/) · [Open in marimo](/examples/composed_tuning/edit/)
+
 ## Prerequisites
 
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
@@ -67,4 +71,3 @@ param_distributions = {
 - [Collect Training Scores](configure.md#collect-training-scores) - compare training and validation scores to detect overfitting
 - [Configure OptunaSearchCV](configure.md) - sampler and CV options
 - [API Reference](../reference/api.md) - full parameter documentation
-- [Composed Forecaster Tuning example](/examples/composed_tuning/) - interactive notebook

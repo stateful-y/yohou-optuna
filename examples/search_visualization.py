@@ -15,9 +15,10 @@ __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
 __gallery__ = {
-    "title": "Search Visualization",
+    "title": "How to Visualize Search Results",
     "description": "Combine Optuna's optimization plots with yohou's forecast diagnostics for comprehensive analysis.",
-    "category": "Advanced Topics",
+    "category": "how-to",
+    "companion": "pages/how-to/visualize-study.md",
 }
 
 
@@ -32,18 +33,11 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # Search Visualization with Optuna
+        # How to Visualize Search Results
 
-        ## What You'll Learn
+        Access the Optuna `study_` object from a fitted `OptunaSearchCV` and produce optimization history, parameter importance, contour, and slice plots alongside yohou's forecast diagnostics.
 
-        - How to access the Optuna `study_` object after fitting [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/)
-        - How to plot optimization history, parameter importances, and contour plots with Optuna
-        - How to use `yohou.plotting` for CV result scatter plots, forecasts, and residual diagnostics
-        - How to combine Optuna and yohou visualizations for comprehensive analysis
-
-        ## Prerequisites
-
-        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
+        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -92,11 +86,9 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        ## 1. Load and Explore the Data
+        ## 1. Load the Data
 
-        The Victoria Electricity dataset contains 30-minute measurements of
-        electricity demand and temperature. We use a subset of the Demand column
-        to keep the search fast.
+        Load a subset of the Victoria Electricity demand series.
         """
     )
     return
@@ -129,9 +121,7 @@ def _(mo):
         r"""
         ## 2. Run the Search
 
-        We search over two parameters to produce interesting visualizations:
-        the regularization strength and the intercept setting. Using 25 trials
-        generates enough data for meaningful optimization plots.
+        Search over two parameters with 25 trials to generate data for the plots.
         """
     )
     return
@@ -173,8 +163,7 @@ def _(mo):
         r"""
         ## 3. Optuna Study Visualizations
 
-        After fitting, `search.study_` exposes the underlying Optuna study.
-        Optuna provides built-in Plotly visualizations for analyzing the search.
+        Access the underlying Optuna study via `search.study_`.
         """
     )
     return
@@ -184,8 +173,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        **Optimization History** shows the objective value across trials with a running best line.
-        This reveals whether the sampler is converging.
+        **Optimization History** - objective value across trials with a running best line.
         """
     )
     return
@@ -201,8 +189,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Parameter Importances** show how much each hyperparameter contributes to
-        objective variation. This helps decide which parameters to keep tuning.
+        **Parameter Importances** - contribution of each hyperparameter to objective variation.
         """
     )
     return
@@ -218,8 +205,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Slice Plots** show the relationship between individual parameter values
-        and the objective. Each point is a trial.
+        **Slice Plots** - per-parameter objective values across trials.
         """
     )
     return
@@ -235,8 +221,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Contour Plot** visualizes the interaction between two parameters as a 2D
-        surface, revealing joint effects not visible in slice plots.
+        **Contour Plot** - joint parameter interaction as a 2D surface.
         """
     )
     return
@@ -257,9 +242,7 @@ def _(mo):
         r"""
         ## 4. Yohou Forecast Diagnostics
 
-        Yohou's plotting module complements Optuna's study-level visualizations
-        with forecast-level diagnostics. These show how well the best model
-        actually performs on the data.
+        Use yohou's plotting module for forecast-level analysis.
         """
     )
     return
@@ -309,20 +292,11 @@ def _(plot_residual_time_series, y_pred, y_test):
 def _(mo):
     mo.md(
         r"""
-        ## Key Takeaways
-
-        - **`search.study_`** exposes the full Optuna study for native visualization
-        - **`plot_optimization_history`** reveals sampler convergence across trials
-        - **`plot_param_importances`** identifies which hyperparameters matter most
-        - **`plot_slice` and `plot_contour`** show individual and joint parameter effects
-        - **`plot_cv_results_scatter`** from yohou visualizes score vs parameter values
-        - **`plot_forecast` and `plot_residual_time_series`** provide forecast-level diagnostics
-
         ## Next Steps
 
-        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to track multiple metrics and compare rankings
-        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) for grouped time series optimization
-        - **Quickstart**: See [`optuna_search.py`](/examples/optuna_search/) for a minimal end-to-end walkthrough
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/) - track multiple metrics and compare rankings
+        - [How to Tune on Panel Data](/examples/panel_tuning/) - grouped time series optimization
+        - [OptunaSearchCV Quickstart](/examples/optuna_search/) - minimal end-to-end walkthrough
         """
     )
     return

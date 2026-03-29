@@ -15,9 +15,10 @@ __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
 __gallery__ = {
-    "title": "Quickstart Search",
+    "title": "OptunaSearchCV Quickstart",
     "description": "Your first hyperparameter search with OptunaSearchCV on the Air Passengers dataset.",
-    "category": "Getting Started",
+    "category": "tutorial",
+    "companion": "pages/tutorials/getting-started.md",
 }
 
 
@@ -32,19 +33,15 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # Optuna Hyperparameter Search for Yohou
+        # OptunaSearchCV Quickstart
 
-        ## What You'll Learn
+        In this notebook, we will run a Bayesian hyperparameter search on the
+        Air Passengers dataset using
+        [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/).
+        We will load the data, define a search space, fit the search, inspect
+        cross-validation results, and generate a forecast with the best model.
 
-        - How to load a real dataset from `yohou.datasets`
-        - How to define Optuna search distributions for forecaster parameters
-        - How to run [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) for Bayesian hyperparameter optimization
-        - How to inspect cross-validation results and visualize them with `yohou.plotting`
-        - How to generate and visualize forecasts with the best model
-
-        ## Prerequisites
-
-        Basic familiarity with scikit-learn's fit/predict API and time series forecasting concepts.
+        **Prerequisites** - basic familiarity with scikit-learn's fit/predict API and time series forecasting concepts.
         """
     )
     return
@@ -89,10 +86,8 @@ def _(mo):
         r"""
         ## 1. Load and Explore the Data
 
-        We use the classic Air Passengers dataset: 144 monthly observations of
-        international airline passenger counts from 1949 to 1960. This univariate
-        series exhibits both trend and seasonality, making it a good benchmark for
-        forecasting.
+        Let's start with the Air Passengers dataset - 144 monthly observations of
+        international airline passenger counts from 1949 to 1960.
         """
     )
     return
@@ -109,8 +104,7 @@ def _(load_air_passengers, plot_time_series):
 def _(mo):
     mo.md(
         r"""
-        Split the data into training (first 120 months) and test (last 24 months) sets.
-        The test set will be used later to evaluate the best forecaster.
+        We split into training (first 120 months) and test (last 24 months) sets.
         """
     )
     return
@@ -129,10 +123,9 @@ def _(mo):
         r"""
         ## 2. Define Forecaster and Search Space
 
-        We use a `PointReductionForecaster` with a Ridge regression estimator.
-        The search space covers the regularization strength (`alpha`) and whether
-        to fit an intercept. Optuna's TPE sampler performs Bayesian optimization
-        over these distributions.
+        We wrap a Ridge regressor in a `PointReductionForecaster` and define
+        distributions for `alpha` and `fit_intercept`. The TPE sampler will
+        guide the search through this space.
         """
     )
     return
@@ -171,11 +164,9 @@ def _(
 def _(mo):
     mo.md(
         r"""
-        ## 3. Run OptunaSearchCV
+        ## 3. Run the Search
 
-        Fit the search on the training data. `OptunaSearchCV` runs cross-validated
-        evaluation for each trial and uses the TPE sampler to guide the search
-        toward promising regions of the hyperparameter space.
+        Let's fit the search on the training data.
         """
     )
     return
@@ -207,9 +198,7 @@ def _(mo):
         r"""
         ## 4. Inspect Cross-Validation Results
 
-        The `cv_results_` dictionary contains per-trial scores, parameters, and
-        rankings. We can visualize how the regularization strength affects the
-        MAE score using `plot_cv_results_scatter`.
+        Let's look at how regularization strength relates to the MAE score.
         """
     )
     return
@@ -246,11 +235,11 @@ def _(plot_cv_results_scatter, search):
 def _(mo):
     mo.md(
         r"""
-        ## 5. Forecast and Evaluate
+        ## 5. Forecast with the Best Model
 
-        After fitting, `OptunaSearchCV` refits the best forecaster on the full
-        training data. Use it directly to generate forecasts and compare against
-        the held-out test set.
+        Since we set `refit=True`, the best forecaster is already fitted on the
+        full training data. Let's generate predictions and compare against the
+        held-out test set.
         """
     )
     return
@@ -279,19 +268,18 @@ def _(plot_forecast, y_pred, y_test, y_train):
 def _(mo):
     mo.md(
         r"""
-        ## Key Takeaways
+        ## What We Built
 
-        - **[`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/)** wraps Optuna's Bayesian optimization for yohou forecasters with a familiar scikit-learn-style API
-        - **Search distributions** like `FloatDistribution` and `CategoricalDistribution` define the hyperparameter space
-        - **`plot_cv_results_scatter`** visualizes how parameter values relate to cross-validation scores
-        - **`plot_forecast`** overlays predicted values on actuals for quick visual evaluation
-        - **`best_params_`, `best_score_`, `cv_results_`** provide full access to search results after fitting
+        We ran a complete hyperparameter search: loaded the Air Passengers
+        dataset, defined a search space over Ridge parameters, ran 20
+        Bayesian-optimized trials with `OptunaSearchCV`, inspected
+        cross-validation rankings, and generated a forecast with the best model.
 
         ## Next Steps
 
-        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune forecasters with feature transformers like `LagTransformer`
-        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to track multiple metrics (MAE, RMSE, MSE) simultaneously
-        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's built-in optimization plots
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune forecasters with feature transformers like `LagTransformer`
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/) - track multiple metrics (MAE, RMSE, MSE) simultaneously
+        - [How to Visualize Search Results](/examples/search_visualization/) - use Optuna's built-in optimization plots
         """
     )
     return

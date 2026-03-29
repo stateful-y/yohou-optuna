@@ -16,9 +16,10 @@ __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
 __gallery__ = {
-    "title": "Multi-Metric Search",
+    "title": "How to Run a Multi-Metric Search",
     "description": "Evaluate MAE, RMSE, and MSE simultaneously and compare how different metrics rank the same trials.",
-    "category": "Core Workflows",
+    "category": "how-to",
+    "companion": "pages/how-to/multi-metric-search.md",
 }
 
 
@@ -33,18 +34,11 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # Multi-Metric Search
+        # How to Run a Multi-Metric Search
 
-        ## What You'll Learn
+        Pass multiple scorers to `OptunaSearchCV` and choose which metric drives model selection with the `refit` parameter.
 
-        - How to define multiple scoring metrics for a single search
-        - How `refit` selects which metric drives model selection
-        - How to access per-metric results and rankings in `cv_results_`
-        - How to visually compare metrics and analyze score per forecast horizon
-
-        ## Prerequisites
-
-        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
+        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -98,12 +92,9 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        ## 1. Load and Explore Multivariate Data
+        ## 1. Load the Data
 
-        The ETT-M1 (Electricity Transformer Temperature) dataset contains 15-minute
-        measurements of oil temperature and six power load features. We use a subset
-        and select a few columns to keep the search fast while still demonstrating
-        multivariate forecasting.
+        Load a subset of the ETT-M1 dataset (oil temperature + power load features).
         """
     )
     return
@@ -135,9 +126,9 @@ def _(mo):
         r"""
         ## 2. Define Multi-Metric Scoring
 
-        Pass a dictionary of scorers to `scoring`. Optuna tracks all metrics per
-        trial and selects the best configuration based on the `refit` metric.
-        Setting `return_train_score=True` enables overfitting diagnostics.
+        Pass a dictionary of scorers to `scoring` and set `refit` to the metric
+        that should drive model selection. Set `return_train_score=True` if you
+        need overfitting diagnostics.
         """
     )
     return
@@ -188,11 +179,10 @@ def _(
 def _(mo):
     mo.md(
         r"""
-        ## 3. Run Search
+        ## 3. Run the Search
 
-        Each trial evaluates all three metrics. The `refit="mae"` setting means
-        the final best model is chosen by MAE, even though RMSE and MSE are also
-        tracked.
+        Fit the search. All three metrics are evaluated per trial; `refit="mae"`
+        determines which one selects the best model.
         """
     )
     return
@@ -224,10 +214,9 @@ def _(mo, search):
 def _(mo):
     mo.md(
         r"""
-        ## 4. Compare Metrics Visually
+        ## 4. Compare Metrics
 
-        The results table shows per-trial scores for all three metrics with
-        independent rankings. Different metrics may rank configurations differently.
+        Review per-trial scores and independent rankings for each metric.
         """
     )
     return
@@ -255,9 +244,7 @@ def _(pl, search):
 def _(mo):
     mo.md(
         r"""
-        Compare the best model's test performance across all three metrics
-        using a bar chart. This helps assess whether the model performs
-        consistently or if some metrics reveal weaknesses.
+        Compare the best model's test scores across all three metrics with a bar chart.
         """
     )
     return
@@ -323,19 +310,11 @@ def _(plot_forecast, y_pred, y_test, y_train):
 def _(mo):
     mo.md(
         r"""
-        ## Key Takeaways
-
-        - **Multi-metric scoring** accepts a dictionary of scorers, tracking all metrics per trial
-        - **`refit`** determines which metric selects the best model for final refitting
-        - **`cv_results_`** provides `mean_test_<name>`, `std_test_<name>`, and `rank_test_<name>` for each metric
-        - **`return_train_score=True`** adds training scores for overfitting diagnostics
-        - **Different metrics may rank configurations differently** -- use `plot_model_comparison_bar` to compare
-
         ## Next Steps
 
-        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization history and parameter importance plots
-        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) to tune forecasters on grouped time series
-        - **Composed tuning**: See [`composed_tuning.py`](/examples/composed_tuning/) to tune nested pipelines with feature transformers
+        - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization history and parameter importance plots
+        - [How to Tune on Panel Data](/examples/panel_tuning/) - tune forecasters on grouped time series
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune nested pipelines with feature transformers
         """
     )
     return

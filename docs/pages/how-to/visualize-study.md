@@ -2,6 +2,10 @@
 
 This guide shows you how to analyze and visualize the results of an `OptunaSearchCV` search using Optuna's built-in plotting tools and yohou's forecast diagnostics.
 
+!!! tip "Interactive version available"
+    Try this guide as an interactive notebook:
+    [View](/examples/search_visualization/) · [Open in marimo](/examples/search_visualization/edit/)
+
 ## Prerequisites
 
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
@@ -70,4 +74,3 @@ fig.show()
 
 - [Configure OptunaSearchCV](configure.md) - persist studies for longer analysis sessions
 - [API Reference](../reference/api.md) - `study_` and `cv_results_` attributes
-- [Search Visualization example](/examples/search_visualization/) - interactive notebook with combined Optuna and yohou plots
