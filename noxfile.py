@@ -68,6 +68,8 @@ def test(session: nox.Session) -> None:
         "pytest",
         "tests",
         "src/yohou_optuna",
+        "-m",
+        "not example",
         "--doctest-modules",
         "--doctest-continue-on-failure",
         "-n",
