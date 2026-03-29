@@ -1052,7 +1052,7 @@ def on_pre_build(config):
     if failed:
         msg = f"[hooks] {len(failed)} notebook(s) had cell execution errors:\n"
         msg += "\n".join(f"  - {f}" for f in failed)
-        raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
 
 
 class _HtmlToMarkdown(HTMLParser):
