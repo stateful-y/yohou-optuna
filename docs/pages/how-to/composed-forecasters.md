@@ -2,8 +2,8 @@
 
 This guide shows you how to tune hyperparameters in composed forecasters (pipelines and combinations that nest multiple components) using `OptunaSearchCV`.
 
-!!! tip "Interactive version available"
-    Try this guide as an interactive notebook:
+!!! tip "Interactive notebook"
+    See the companion notebook for a runnable example.
     [View](/examples/composed_tuning/) · [Open in marimo](/examples/composed_tuning/edit/)
 
 ## Prerequisites

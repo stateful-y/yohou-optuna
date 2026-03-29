@@ -2,8 +2,8 @@
 
 This guide shows you how to evaluate multiple scoring metrics simultaneously during hyperparameter search and select the best forecaster based on a chosen metric.
 
-!!! tip "Interactive version available"
-    Try this guide as an interactive notebook:
+!!! tip "Interactive notebook"
+    See the companion notebook for a runnable example.
     [View](/examples/multi_metric_search/) · [Open in marimo](/examples/multi_metric_search/edit/)
 
 ## Prerequisites
