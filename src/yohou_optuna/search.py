@@ -17,12 +17,17 @@ from sklearn.utils.validation import _check_method_params, indexable
 from sklearn_optuna.optuna import Callback, Sampler, Storage
 from yohou.model_selection.search import BaseSearchCV
 from yohou.model_selection.split import check_cv
+from yohou.model_selection.utils import (
+    _collect_coverage_rates,
+    _needs_interval_predictions,
+)
 from yohou.utils import validate_search_data
 
 from .objective import _Objective
-from .utils import _build_cv_results
+from .utils import _build_cv_results, _validate_forecaster_scorer_compatibility
 
 
+# TODO: Check reference and make it mkdocs-compatible
 class OptunaSearchCV(BaseSearchCV):
     """Hyperparameter search using Optuna optimization for Yohou forecasters.
 
@@ -95,8 +100,8 @@ class OptunaSearchCV(BaseSearchCV):
 
     See Also
     --------
-    yohou.model_selection.GridSearchCV : Exhaustive grid search.
-    yohou.model_selection.RandomizedSearchCV : Randomized search.
+    `yohou.model_selection.GridSearchCV` : Exhaustive grid search.
+    `yohou.model_selection.RandomizedSearchCV` : Randomized search.
 
     References
     ----------
@@ -236,6 +241,8 @@ class OptunaSearchCV(BaseSearchCV):
 
         scorers, refit_metric = self._get_scorers()
 
+        _validate_forecaster_scorer_compatibility(self.forecaster, scorers)
+
         y, X = indexable(y, X)
         params = _check_method_params(y, params=params)
 
@@ -250,6 +257,10 @@ class OptunaSearchCV(BaseSearchCV):
                     f"Expected optuna.distributions.BaseDistribution, got {type(distribution)}."
                 )
                 raise ValueError(msg)
+
+        # Determine interval prediction needs
+        needs_interval = _needs_interval_predictions(scorers)
+        coverage_rates = _collect_coverage_rates(scorers) if needs_interval else None
 
         # Get routed params
         routed_params = self._get_routed_params_for_fit(params)
@@ -294,6 +305,11 @@ class OptunaSearchCV(BaseSearchCV):
                 storage=storage_instance,
             )
 
+        # Route predict_params for interval or point prediction
+        predict_func_params = (
+            routed_params.forecaster.predict_interval if needs_interval else routed_params.forecaster.predict
+        )
+
         # Create objective
         objective = _Objective(
             forecaster=self.forecaster,
@@ -304,13 +320,14 @@ class OptunaSearchCV(BaseSearchCV):
             cv=cv_orig,
             scorers=scorers,
             fit_params=routed_params.forecaster.fit,
-            predict_params=routed_params.forecaster.predict,
+            predict_func_params=predict_func_params,
             score_params=routed_params.scorer.score,
             verbose=self.verbose,
             return_train_score=self.return_train_score,
             error_score=self.error_score,
             multimetric=self.multimetric_,
             refit=self.refit,
+            coverage_rates=coverage_rates,
         )
 
         # Run optimization
@@ -347,8 +364,10 @@ class OptunaSearchCV(BaseSearchCV):
         if self.refit:
             self.best_forecaster_ = clone(self.forecaster).set_params(**clone(self.best_params_, safe=False))
             refit_start_time = time.time()
-            fit_params_filtered = {k: v for k, v in routed_params.forecaster.fit.items() if k not in ["y", "X"]}
-            self.best_forecaster_.fit(y, X, forecasting_horizon, **fit_params_filtered)
+            fit_params = dict(routed_params.forecaster.fit)
+            if coverage_rates is not None:
+                fit_params["coverage_rates"] = coverage_rates
+            self.best_forecaster_.fit(y, X, forecasting_horizon, **fit_params)
             self.refit_time_ = time.time() - refit_start_time
 
         return self
