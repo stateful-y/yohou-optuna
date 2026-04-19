@@ -163,6 +163,7 @@ addopts = [
 filterwarnings = [
     "error",
     "ignore::ResourceWarning",
+    "ignore:Support for the dataframe interchange protocol is deprecated:DeprecationWarning",
 ]
 markers = [
     "integration: marks tests as integration tests that run subprocesses (deselect with '-m \"not integration\"')",
