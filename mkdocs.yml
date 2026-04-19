@@ -144,6 +144,7 @@ nav:
   - Tutorials:
     - Getting Started: pages/tutorials/getting-started.md
   - How-to Guides:
+    - pages/how-to/index.md
     - Configuration: pages/how-to/configure.md
     - Multi-Metric Search: pages/how-to/multi-metric-search.md
     - Composed Forecasters: pages/how-to/composed-forecasters.md
