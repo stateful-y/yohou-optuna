@@ -58,7 +58,7 @@ def _():
     from optuna.distributions import CategoricalDistribution, FloatDistribution
     from sklearn.linear_model import Ridge
 
-    from yohou.datasets import load_ett_m1
+    from yohou.datasets import fetch_electricity_demand
     from yohou.metrics import MeanAbsoluteError, MeanSquaredError, RootMeanSquaredError
     from yohou.model_selection import ExpandingWindowSplitter
     from yohou.plotting import (
@@ -83,7 +83,7 @@ def _():
         Ridge,
         RootMeanSquaredError,
         Sampler,
-        load_ett_m1,
+        fetch_electricity_demand,
         np,
         optuna,
         pl,
@@ -100,26 +100,30 @@ def _(mo):
         r"""
         ## 1. Load and Explore Multivariate Data
 
-        The ETT-M1 (Electricity Transformer Temperature) dataset contains 15-minute
-        measurements of oil temperature and six power load features. We use a subset
-        and select a few columns to keep the search fast while still demonstrating
-        multivariate forecasting.
+        The Electricity Demand dataset contains 30-minute measurements of
+        electricity demand across Australian states. We select three state columns
+        and rename them for multivariate forecasting, then use a subset to keep
+        the search fast.
         """
     )
     return
 
 
 @app.cell
-def _(load_ett_m1, pl):
-    y_full = load_ett_m1()
-    y_all = y_full.select(["time", "OT", "HUFL", "HULL"]).head(1000)
+def _(fetch_electricity_demand, pl):
+    y_full = fetch_electricity_demand().frame
+    y_all = (
+        y_full.select(["time", "nsw__demand", "vic__demand", "qun__demand"])
+        .rename({"nsw__demand": "nsw_demand", "vic__demand": "vic_demand", "qun__demand": "qun_demand"})
+        .head(1000)
+    )
     y_all.head()
     return y_all, y_full
 
 
 @app.cell
 def _(plot_time_series, y_all):
-    plot_time_series(y_all, title="Electricity Transformer: OT, HUFL, HULL")
+    plot_time_series(y_all, title="Electricity Demand: NSW, VIC, QUN")
     return
 
 

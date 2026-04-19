@@ -44,8 +44,8 @@ class _Objective:
         Scoring functions.
     fit_params : dict
         Additional parameters passed to ``forecaster.fit()``.
-    predict_params : dict
-        Additional parameters passed to ``forecaster.predict()``.
+    predict_func_params : dict
+        Additional parameters passed to ``forecaster.predict()`` or ``forecaster.predict_interval()``.
     score_params : dict
         Additional parameters passed to scorer.
     verbose : int, default=0
@@ -58,6 +58,9 @@ class _Objective:
         Whether multiple metrics are being optimized.
     refit : bool or str, default=True
         Primary metric name for multi-metric optimization.
+    coverage_rates : list of float or None, default=None
+        Coverage rates for interval forecasters.  Passed to
+        ``forecaster.fit()``.
 
     Notes
     -----
@@ -86,7 +89,7 @@ class _Objective:
         cv: Any,
         scorers: BaseScorer | _MultimetricScorer,
         fit_params: dict[str, Any],
-        predict_params: dict[str, Any],
+        predict_func_params: dict[str, Any],
         score_params: dict[str, Any],
         *,
         verbose: int = 0,
@@ -94,6 +97,7 @@ class _Objective:
         error_score: float | str = np.nan,
         multimetric: bool = False,
         refit: bool | str = True,
+        coverage_rates: list[float] | None = None,
     ) -> None:
         self.forecaster = forecaster
         self.param_distributions = param_distributions
@@ -103,13 +107,14 @@ class _Objective:
         self.cv = cv
         self.scorers = scorers
         self.fit_params = fit_params
-        self.predict_params = predict_params
+        self.predict_func_params = predict_func_params
         self.score_params = score_params
         self.verbose = verbose
         self.return_train_score = return_train_score
         self.error_score = error_score
         self.multimetric = multimetric
         self.refit = refit
+        self.coverage_rates = coverage_rates
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
         """Evaluate a single trial.
@@ -221,6 +226,8 @@ class _Objective:
             try:
                 # Fit
                 fit_start = time.time()
+                if self.coverage_rates is not None:
+                    fit_params["coverage_rates"] = self.coverage_rates
                 fold_forecaster.fit(
                     y=y_train,
                     X=X_train,
@@ -237,7 +244,7 @@ class _Objective:
                     y_train,
                     y_test,
                     X_test,
-                    self.predict_params,
+                    self.predict_func_params,
                     self.scorers,
                     score_params_test,
                     self.error_score,
@@ -259,7 +266,7 @@ class _Objective:
                         y_train_reset,
                         y_train_test,
                         X_train_test,
-                        self.predict_params,
+                        self.predict_func_params,
                         self.scorers,
                         score_params_train,
                         self.error_score,
