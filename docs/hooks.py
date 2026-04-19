@@ -79,13 +79,35 @@ def _get_module_members(py_file):
     except (SyntaxError, UnicodeDecodeError):
         return {"classes": classes, "functions": functions}
 
+    # Collect names defined directly (class/function defs)
+    defined_names = set()
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             doc = ast.get_docstring(node) or ""
             classes.append({"name": node.name, "doc": doc.strip().split("\n")[0]})
+            defined_names.add(node.name)
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and not node.name.startswith("_"):
             doc = ast.get_docstring(node) or ""
             functions.append({"name": node.name, "doc": doc.strip().split("\n")[0]})
+            defined_names.add(node.name)
+
+    # Detect re-exported names via __all__ that are imported but not defined locally
+    all_names = set()
+    imported_names = set()
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "__all__" and isinstance(node.value, ast.List):
+                    all_names = {elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)}
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                name = alias.asname or alias.name
+                if not name.startswith("_"):
+                    imported_names.add(name)
+
+    # Add re-exported imports not already found as local definitions
+    for name in sorted(all_names & imported_names - defined_names):
+        classes.append({"name": name, "doc": ""})
 
     return {"classes": classes, "functions": functions}
 

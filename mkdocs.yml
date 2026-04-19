@@ -126,6 +126,9 @@ plugins:
         python:
           paths: [src]
           options:
+            allow_inspection: true
+            preload_modules:
+            - sklearn_optuna
             docstring_style: numpy
             show_source: true
             show_root_heading: true
