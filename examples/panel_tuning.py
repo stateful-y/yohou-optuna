@@ -50,7 +50,7 @@ def _():
     from optuna.distributions import CategoricalDistribution, FloatDistribution
     from sklearn.linear_model import Ridge
 
-    from yohou.datasets import load_australian_tourism
+    from yohou.datasets import fetch_tourism_quarterly
     from yohou.metrics import MeanAbsoluteError
     from yohou.model_selection import ExpandingWindowSplitter
     from yohou.plotting import plot_forecast, plot_splits, plot_time_series
@@ -69,7 +69,7 @@ def _():
         PointReductionForecaster,
         Ridge,
         Sampler,
-        load_australian_tourism,
+        fetch_tourism_quarterly,
         optuna,
         pl,
         plot_forecast,
@@ -84,16 +84,23 @@ def _(mo):
         r"""
         ## 1. Load the Panel Data
 
-        Load the Australian Tourism dataset (quarterly trips for 8 states, using `group__member` columns).
+        The Tourism Quarterly dataset contains quarterly tourist visit counts across
+        427 regions. Each column follows the `group__member` naming convention
+        (e.g., `T1__tourists`), which yohou recognizes as panel data. We select
+        8 regions to keep the search manageable.
         """
     )
     return
 
 
 @app.cell
-def _(load_australian_tourism, plot_time_series):
-    y = load_australian_tourism()
-    plot_time_series(y, title="Australian Tourism: Quarterly Trips by State")
+def _(fetch_tourism_quarterly, plot_time_series):
+    y = (
+        fetch_tourism_quarterly()
+        .frame.select(["time"] + [f"T{i}__tourists" for i in range(3, 11)])
+        .drop_nulls()
+    )
+    plot_time_series(y, title="Tourism Quarterly: Visits by Region")
     return (y,)
 
 

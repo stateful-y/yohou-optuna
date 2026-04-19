@@ -50,14 +50,14 @@ def _():
     from optuna.distributions import FloatDistribution, IntDistribution
     from sklearn.linear_model import Ridge
 
-    from yohou.datasets import load_sunspots
+    from yohou.datasets import fetch_sunspot
     from yohou.metrics import MeanAbsoluteError
     from yohou.model_selection import ExpandingWindowSplitter
     from yohou.plotting import (
         plot_autocorrelation,
         plot_cv_results_scatter,
         plot_forecast,
-        plot_residual_time_series,
+        plot_residuals,
         plot_time_series,
     )
     from yohou.point import PointReductionForecaster
@@ -77,13 +77,13 @@ def _():
         PointReductionForecaster,
         Ridge,
         Sampler,
-        load_sunspots,
+        fetch_sunspot,
         optuna,
         pl,
         plot_autocorrelation,
         plot_cv_results_scatter,
         plot_forecast,
-        plot_residual_time_series,
+        plot_residuals,
         plot_time_series,
     )
 
@@ -101,8 +101,8 @@ def _(mo):
 
 
 @app.cell
-def _(load_sunspots, plot_time_series):
-    y_full = load_sunspots()
+def _(fetch_sunspot, plot_time_series):
+    y_full = fetch_sunspot().frame
     y = y_full.tail(500)
     plot_time_series(y, title="Sunspot Activity (Last 500 Months)")
     return y, y_full
@@ -280,8 +280,8 @@ def _(plot_forecast, y_pred, y_test, y_train):
 
 
 @app.cell
-def _(plot_residual_time_series, y_pred, y_test):
-    plot_residual_time_series(
+def _(plot_residuals, y_pred, y_test):
+    plot_residuals(
         y_pred,
         y_test,
         title="Forecast Residuals",
@@ -293,6 +293,14 @@ def _(plot_residual_time_series, y_pred, y_test):
 def _(mo):
     mo.md(
         r"""
+        ## Key Takeaways
+
+        - **Nested parameter routing** uses `__` to address parameters inside composed pipelines (e.g., `estimator__alpha`, `feature_transformer__lag`)
+        - **`LagTransformer`** creates lag-based features automatically, turning time series forecasting into tabular regression
+        - **Autocorrelation analysis** helps motivate the range of lags to search over
+        - **`ExpandingWindowSplitter`** provides time-respecting cross-validation that avoids data leakage
+        - **Residual diagnostics** with `plot_residuals` reveal systematic prediction errors
+
         ## Next Steps
 
         - [How to Run a Multi-Metric Search](/examples/multi_metric_search/): evaluate multiple metrics simultaneously
