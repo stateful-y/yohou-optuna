@@ -3,7 +3,7 @@
 
 # Welcome to Yohou-Optuna's documentation
 
-`OptunaSearchCV` brings [Optuna](https://optuna.org/)'s Bayesian hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a search class that inherits the full Yohou forecasting API while using adaptive sampling (TPE, CMA-ES, and more) to explore search spaces more efficiently than grid or random search.
+`OptunaSearchCV` brings [Optuna](https://optuna.org/)'s Bayesian hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a search class that inherits the full Yohou forecasting API while using adaptive sampling (TPE, CMA-ES, and more) to explore search spaces more efficiently than grid or random search. It works with both point and interval forecasters.
 
 <div class="grid cards" markdown>
 

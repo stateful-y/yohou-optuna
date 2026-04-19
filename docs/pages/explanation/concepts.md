@@ -4,9 +4,11 @@
 
 ## The Object Model
 
-`OptunaSearchCV` inherits from Yohou's `BaseSearchCV`, which itself inherits from `BaseForecaster`. This means a fitted `OptunaSearchCV` **is** a forecaster, exposing the complete Yohou forecaster interface: `fit()`, `predict()`, `observe()`, and `observe_predict()`.
+`OptunaSearchCV` inherits from Yohou's `BaseSearchCV`, which itself inherits from `BaseForecaster`. This means a fitted `OptunaSearchCV` **is** a forecaster, exposing the complete Yohou forecaster interface: `fit()`, `predict()`, `predict_interval()`, `observe()`, and `observe_predict()`.
 
 After fitting, you never need to unwrap it to access the best forecaster; `predict()` delegates to `best_forecaster_` automatically. This follows the sklearn convention that fitted search objects behave as the estimators they select. In Yohou, where the forecaster API carries temporal semantics (`fit(y, X, forecasting_horizon)`, observation windows, panel data), this inheritance is particularly valuable: `OptunaSearchCV` participates in the same compositions, pipelines, and evaluation loops as any other forecaster.
+
+`OptunaSearchCV` works with both point forecasters (e.g., `PointReductionForecaster`) and interval forecasters (e.g., `SplitConformalForecaster`). When interval scorers are used, coverage rates are routed automatically and prediction calls `predict_interval()` instead of `predict()`.
 
 ## The Search Lifecycle
 

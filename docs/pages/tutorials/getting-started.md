@@ -36,7 +36,9 @@ The output should show a version string such as `0.1.0-alpha.2`.
 
 ## Step 2: Set Up a Forecaster
 
-We will tune a `PointReductionForecaster`, a forecaster that converts a time series problem into a regression problem using lag features. First, import what we need:
+We will tune a `PointReductionForecaster`, a forecaster that converts a time series problem into a regression problem using lag features. `OptunaSearchCV` also works with interval forecasters - see the [API Reference](../reference/api.md) for details.
+
+First, import what we need:
 
 ```python
 import polars as pl
