@@ -33,6 +33,9 @@ class OptunaSearchCV(BaseSearchCV):
 
     OptunaSearchCV uses Optuna's trial-based optimization framework
     to search for the best hyperparameters of a yohou forecaster.
+    It works with both point and interval forecasters: when interval
+    scorers are used, coverage rates are routed to ``fit()`` and
+    ``predict_interval()`` is called instead of ``predict()``.
     It overrides ``fit()`` to manage the Optuna study lifecycle and
     uses yohou's time series cross-validation for evaluation.
 
@@ -105,11 +108,11 @@ class OptunaSearchCV(BaseSearchCV):
 
     References
     ----------
-    .. [1] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019).
-       Optuna: A Next-generation Hyperparameter Optimization Framework.
-       In Proceedings of the 25th ACM SIGKDD International Conference on
-       Knowledge Discovery & Data Mining (pp. 2623-2631).
-       https://doi.org/10.1145/3292500.3330701
+    [1] Akiba, T., Sano, S., Yanase, T., Ohta, T., & Koyama, M. (2019).
+    Optuna: A Next-generation Hyperparameter Optimization Framework.
+    In Proceedings of the 25th ACM SIGKDD International Conference on
+    Knowledge Discovery & Data Mining (pp. 2623-2631).
+    https://doi.org/10.1145/3292500.3330701
 
     Examples
     --------

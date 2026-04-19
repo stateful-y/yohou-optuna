@@ -15,9 +15,10 @@ __generated_with = "0.19.11"
 app = marimo.App(width="medium")
 
 __gallery__ = {
-    "title": "Composed Forecaster Tuning",
+    "title": "How to Tune Composed Forecasters",
     "description": "Tune nested parameters across a Ridge regressor and LagTransformer pipeline using double-underscore routing.",
-    "category": "Core Workflows",
+    "category": "how-to",
+    "companion": "pages/how-to/composed-forecasters.md",
 }
 
 
@@ -32,18 +33,11 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        # Composed Tuning with OptunaSearchCV
+        # How to Tune Composed Forecasters
 
-        ## What You'll Learn
+        Tune nested parameters across a `PointReductionForecaster` + `LagTransformer` pipeline using `__` parameter routing.
 
-        - How to compose a forecaster with a feature transformer (`LagTransformer`)
-        - How to tune nested parameters across the composed pipeline using `__` routing
-        - How to use autocorrelation analysis to motivate lag selection
-        - How to diagnose forecast quality with residual plots
-
-        ## Prerequisites
-
-        Familiarity with the basics of [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [`optuna_search.py`](/examples/optuna_search/)).
+        **Prerequisites**: familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -98,12 +92,9 @@ def _():
 def _(mo):
     mo.md(
         r"""
-        ## 1. Load and Explore Sunspots
+        ## 1. Load the Sunspots Data
 
-        The Sunspots dataset contains 2820 monthly observations of sunspot activity.
-        This long univariate series has strong cyclical patterns (roughly 11-year
-        solar cycles), making it ideal for demonstrating lag-based feature engineering.
-        We use a subset to keep search times reasonable.
+        Load a subset of the Sunspots dataset (2820 monthly observations) and split into train/test.
         """
     )
     return
@@ -121,11 +112,9 @@ def _(fetch_sunspot, plot_time_series):
 def _(mo):
     mo.md(
         r"""
-        ## 2. Analyze Autocorrelation Structure
+        ## 2. Check the Autocorrelation
 
-        Before tuning, examine the autocorrelation to understand which lags carry
-        the most predictive information. Strong autocorrelation at specific lags
-        motivates the choice of lag features for the `LagTransformer`.
+        Plot the autocorrelation to identify which lags to include in the search range.
         """
     )
     return
@@ -141,16 +130,11 @@ def _(plot_autocorrelation, y):
 def _(mo):
     mo.md(
         r"""
-        ## 3. Compose Forecaster with LagTransformer
+        ## 3. Compose the Forecaster and Define the Search Space
 
-        `PointReductionForecaster` converts a time series problem into tabular
-        regression. Adding a `LagTransformer` as the `feature_transformer`
-        creates lag-based features automatically. We then tune:
-
-        - `estimator__alpha`: Ridge regularization strength
-        - `feature_transformer__lag`: number of lag features to include
-
-        Nested parameter names use `__` to route through the composed pipeline.
+        Add a `LagTransformer` as the `feature_transformer` and define distributions
+        for both `estimator__alpha` and `feature_transformer__lag`. The `__` routing
+        addresses parameters inside the composed pipeline.
         """
     )
     return
@@ -201,11 +185,9 @@ def _(
 def _(mo):
     mo.md(
         r"""
-        ## 4. Run Search and Inspect Results
+        ## 4. Run the Search and Inspect Results
 
-        Fit the search over the composed pipeline. Each trial evaluates a different
-        combination of regularization strength and lag count using expanding-window
-        cross-validation.
+        Fit the search and review per-trial scores.
         """
     )
     return
@@ -270,11 +252,9 @@ def _(plot_cv_results_scatter, search):
 def _(mo):
     mo.md(
         r"""
-        ## 5. Forecast and Diagnose Residuals
+        ## 5. Forecast and Check Residuals
 
-        Generate predictions with the best forecaster and evaluate visually.
-        The residual plot helps identify systematic errors like bias or
-        heteroscedasticity.
+        Generate predictions with the best forecaster and check the residuals.
         """
     )
     return
@@ -323,9 +303,9 @@ def _(mo):
 
         ## Next Steps
 
-        - **Multi-metric search**: See [`multi_metric_search.py`](/examples/multi_metric_search/) to evaluate multiple metrics simultaneously
-        - **Search visualization**: See [`search_visualization.py`](/examples/search_visualization/) for Optuna's optimization history and parameter importance plots
-        - **Panel data tuning**: See [`panel_tuning.py`](/examples/panel_tuning/) to tune forecasters on grouped time series
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/): evaluate multiple metrics simultaneously
+        - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization history and parameter importance plots
+        - [How to Tune on Panel Data](/examples/panel_tuning/): tune forecasters on grouped time series
         """
     )
     return

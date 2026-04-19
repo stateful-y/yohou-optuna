@@ -3,10 +3,7 @@
 
 # Welcome to Yohou-Optuna's documentation
 
-`OptunaSearchCV` extends Yohou's `BaseSearchCV` (which extends `BaseForecaster`) for Bayesian hyperparameter tuning of time series forecasters, powered by [Optuna](https://optuna.org/). It inherits the full yohou forecasting API (`fit(y, X, forecasting_horizon)`, `predict()`, `observe_predict()`, `best_forecaster_`, `cv_results_`) while using Optuna's samplers (TPE, CMA-ES, ...) to explore search spaces more efficiently than grid or random search. Optuna distributions give you log-scaled, bounded, and categorical parameter spaces, and wrapper classes (`Sampler`, `Storage`, `Callback`) survive `clone()` and serialization.
-
-!!! note "Inspiration"
-    This project is inspired by [optuna-integration's OptunaSearchCV](https://optuna-integration.readthedocs.io/en/latest/reference/generated/optuna_integration.OptunaSearchCV.html) and builds on [sklearn-optuna](https://github.com/stateful-y/sklearn-optuna).
+`OptunaSearchCV` brings [Optuna](https://optuna.org/)'s Bayesian hyperparameter optimization to [Yohou](https://github.com/stateful-y/yohou), providing a search class that inherits the full Yohou forecasting API while using adaptive sampling (TPE, CMA-ES, and more) to explore search spaces more efficiently than grid or random search. It works with both point and interval forecasters.
 
 <div class="grid cards" markdown>
 
@@ -14,70 +11,42 @@
 
     ---
 
-    Install Yohou-Optuna and run your first hyperparameter search
+    Install Yohou-Optuna and run your first hyperparameter search.
 
-    Install → Define distributions → Fit → Predict
+    [Getting Started](pages/tutorials/getting-started.md)
 
-    [Getting Started](pages/getting-started.md)
+- **Need Help?**
+
+    ---
+
+    Find answers to common questions and troubleshooting tips.
+
+    [Troubleshooting](pages/how-to/troubleshooting.md)
 
 - **Learn the Concepts**
 
     ---
 
-    Understand OptunaSearchCV, samplers, distributions, and callbacks
+    Understand the object model, temporal CV, and wrapper classes.
 
-    [User Guide](pages/user-guide.md)
+    [Concepts](pages/explanation/concepts.md)
 
 - **See It In Action**
 
     ---
 
-    Explore 5 interactive notebooks from quickstart to multi-metric search
+    Explore interactive example notebooks.
 
-    [Examples](pages/examples.md)
-
-- **API Reference**
-
-    ---
-
-    Complete API documentation for OptunaSearchCV and wrapper classes
-
-    [API Reference](pages/api-reference.md)
-
+    [Examples](pages/tutorials/examples.md)
 
 </div>
 
-## Table of Contents
-
-### [Getting started](pages/getting-started.md)
-
-Step-by-step guide to installing and setting up Yohou-Optuna in your project.
-
-- [1. Install the package](pages/getting-started.md#step-1-install-the-package)
-- [2. Verify installation](pages/getting-started.md#step-2-verify-installation)
-- [3. Basic usage](pages/getting-started.md#basic-usage)
-
-
-### [Examples](pages/examples.md)
-
-Interactive notebooks demonstrating real-world time series hyperparameter tuning.
-
-- [Example gallery](pages/examples.md#examples)
-- [Running examples locally](pages/examples.md#running-examples-locally)
-
-
-### [User guide](pages/user-guide.md)
-
-In-depth documentation on the design, architecture, and core concepts.
-
-- [Core Concepts](pages/user-guide.md#core-concepts)
-- [Configuration](pages/user-guide.md#configuration)
-- [Best Practices](pages/user-guide.md#best-practices)
-
-### [Reference](pages/api-reference/)
-
-Detailed reference for the Yohou-Optuna API, including classes, functions, and configuration options.
-
 ## License
 
-Yohou-Optuna is released under the **BSD 3-Clause License**. See the full license text in the repository.
+This project is licensed under the terms of the [Apache-2.0 License](https://github.com/stateful-y/yohou-optuna/blob/main/LICENSE).
+
+## Acknowledgements
+
+This project is maintained by [stateful-y](https://stateful-y.io), an ML consultancy specializing in time series data science & engineering. If you're interested in collaborating or learning more about our services, please visit our website.
+
+![Made by stateful-y](assets/made_by_stateful-y.png){width=200}

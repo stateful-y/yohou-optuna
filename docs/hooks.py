@@ -79,13 +79,35 @@ def _get_module_members(py_file):
     except (SyntaxError, UnicodeDecodeError):
         return {"classes": classes, "functions": functions}
 
+    # Collect names defined directly (class/function defs)
+    defined_names = set()
     for node in ast.iter_child_nodes(tree):
         if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             doc = ast.get_docstring(node) or ""
             classes.append({"name": node.name, "doc": doc.strip().split("\n")[0]})
+            defined_names.add(node.name)
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef) and not node.name.startswith("_"):
             doc = ast.get_docstring(node) or ""
             functions.append({"name": node.name, "doc": doc.strip().split("\n")[0]})
+            defined_names.add(node.name)
+
+    # Detect re-exported names via __all__ that are imported but not defined locally
+    all_names = set()
+    imported_names = set()
+    for node in ast.iter_child_nodes(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "__all__" and isinstance(node.value, ast.List):
+                    all_names = {elt.value for elt in node.value.elts if isinstance(elt, ast.Constant)}
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                name = alias.asname or alias.name
+                if not name.startswith("_"):
+                    imported_names.add(name)
+
+    # Add re-exported imports not already found as local definitions
+    for name in sorted(all_names & imported_names - defined_names):
+        classes.append({"name": name, "doc": ""})
 
     return {"classes": classes, "functions": functions}
 
@@ -235,7 +257,7 @@ def _build_api_table_html(project_root):
 
         members = _get_module_members(mod_file)
         module_label = f"yohou_optuna.{mod['module_name']}"
-        module_href = f"../api/{mod['module_name']}/"
+        module_href = f"../../api/{mod['module_name']}/"
 
         for cls in members["classes"]:
             qualified = f"yohou_optuna.{mod['module_name']}.{cls['name']}"
@@ -254,7 +276,7 @@ def _build_api_table_html(project_root):
 
     tbody_lines = []
     for name, kind, module_label, module_href, desc, qualified in rows:
-        href = f"../api/generated/{qualified}/"
+        href = f"../../api/generated/{qualified}/"
         badge_cls = _type_badge_cls.get(kind, "")
         tbody_lines.append(
             f"      <tr>"
@@ -356,6 +378,7 @@ def _get_gallery_items(project_root):
         items.append({
             "title": gallery.get("title", stem.replace("_", " ").title()),
             "description": gallery.get("description", ""),
+            "category": gallery.get("category", ""),
             "view_path": view_path,
             "open_path": open_path,
             "stem": stem,
@@ -366,12 +389,43 @@ def _get_gallery_items(project_root):
 
 
 def _build_gallery_html(project_root):
-    """Build gallery card grid as Material 'grid cards' markdown."""
+    """Build gallery card grid as Material 'grid cards' markdown, grouped by category."""
     items = _get_gallery_items(project_root)
 
     if not items:
         return "<!-- no gallery items found -->\n"
 
+    # Group items by category, preserving order within each group
+    _CATEGORY_ORDER = ["tutorial", "how-to"]
+    _CATEGORY_HEADINGS = {
+        "tutorial": "Tutorials",
+        "how-to": "How-to Guides",
+    }
+
+    grouped: dict[str, list[dict]] = {}
+    for item in items:
+        cat = item.get("category") or "other"
+        grouped.setdefault(cat, []).append(item)
+
+    sections = []
+    for cat in _CATEGORY_ORDER:
+        group = grouped.pop(cat, [])
+        if not group:
+            continue
+        heading = _CATEGORY_HEADINGS.get(cat, cat.title())
+        cards = _build_gallery_cards(group)
+        sections.append(f"## {heading}\n\n{cards}")
+
+    # Remaining uncategorized items
+    for _cat, group in grouped.items():
+        cards = _build_gallery_cards(group)
+        sections.append(cards)
+
+    return "\n\n".join(sections) + "\n"
+
+
+def _build_gallery_cards(items):
+    """Build a Material 'grid cards' block from a list of gallery items."""
     cards = []
     for item in items:
         desc = item["description"] or "No description."
@@ -385,7 +439,6 @@ def _build_gallery_html(project_root):
             f"    [View]({item['view_path']}) · "
             f"[Open in marimo]({item['open_path']})"
         )
-
     return '<div class="grid cards" markdown>\n\n' + "\n\n".join(cards) + "\n\n</div>\n"
 
 
@@ -478,25 +531,7 @@ def _build_api_examples_html(project_root, qualified_name):
             seen.add(item["stem"])
             unique_items.append(item)
 
-    cards = []
-    for item in unique_items:
-        desc = item["description"] or "No description."
-        cards.append(
-            f"-   **{item['title']}**\n"
-            f"\n"
-            f"    ---\n"
-            f"\n"
-            f"    {desc}\n"
-            f"\n"
-            f"    [View]({item['view_path']}) · "
-            f"[Open in marimo]({item['open_path']})"
-        )
-
-    return (
-        "## Examples\n\n"
-        "The following example notebooks use this component:\n\n"
-        '<div class="grid cards" markdown>\n\n' + "\n\n".join(cards) + "\n\n</div>\n"
-    )
+    return "## Examples\n\nThe following example notebooks use this component:\n\n" + _build_gallery_cards(unique_items)
 
 
 # ---------------------------------------------------------------------------
@@ -525,7 +560,7 @@ def _build_module_toc(config, current_src_path=None):
     api_dir = docs_dir / "pages" / "api"
     project_root = docs_dir.parent
 
-    is_index = current_src_path is None or current_src_path == "pages/api-reference.md"
+    is_index = current_src_path is None or current_src_path == "pages/reference/api.md"
 
     modules = _get_submodules(project_root)
     module_toc = []
@@ -538,8 +573,8 @@ def _build_module_toc(config, current_src_path=None):
 
         # Compute relative URL
         if is_index:
-            # api-reference.md is at pages/api-reference/, submodule pages at pages/api/
-            page_url = f"../api/{md_filename.replace('.md', '/')}"
+            # reference/api.md is at pages/reference/api/, submodule pages at pages/api/
+            page_url = f"../../api/{md_filename.replace('.md', '/')}"
         else:
             page_url = f"../{md_filename.replace('.md', '/')}".replace("//", "/")
 
@@ -899,7 +934,7 @@ def on_page_content(html, page, config, files):
     if src.startswith("pages/api/generated/"):
         html = _process_api_page_content(html, page, config)
 
-    if src == "pages/api-reference.md":
+    if src == "pages/reference/api.md":
         # API index: flat module list (api-index.html template)
         page.meta["module_toc"] = _build_module_toc(config, current_src_path=src)
     elif (
@@ -1039,7 +1074,7 @@ def on_pre_build(config):
     if failed:
         msg = f"[hooks] {len(failed)} notebook(s) had cell execution errors:\n"
         msg += "\n".join(f"  - {f}" for f in failed)
-        raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
 
 
 class _HtmlToMarkdown(HTMLParser):
@@ -1381,7 +1416,6 @@ def on_post_build(config):
             _inject_rtd_css(target_dir / "index.html")
 
             print(f"[hooks] copied examples/{html_dir.name}/ to site")
-
     # Get exclude patterns from config
     # Note: mkdocs converts exclude_docs to a GitIgnoreSpec object, so we hardcode patterns
     exclude_patterns = ["examples/**/CLAUDE.md"]

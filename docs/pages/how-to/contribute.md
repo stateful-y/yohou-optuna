@@ -207,6 +207,7 @@ Run tests across multiple Python versions:
     ```bash
     uvx nox -s test
     ```
+
 Run example notebook tests:
 
 === "just"
@@ -229,6 +230,7 @@ Run example notebook tests:
 
 This runs all notebooks in the `examples/` directory as Python scripts in parallel using pytest-xdist (`-n auto`). Each notebook is executed non-interactively to validate it runs without errors.
 
+
 #### When to Mark Tests as Slow or Integration
 
 Mark your tests appropriately to help maintain fast feedback during development:
@@ -249,6 +251,7 @@ Mark your tests appropriately to help maintain fast feedback during development:
   - Validate example notebooks execute without errors
   - Run notebooks in the `examples/` directory
   - Test interactive documentation and tutorials
+
 
 Example:
 
@@ -282,8 +285,8 @@ Follow these conventions when writing tests:
 The CI pipeline uses a two-tier testing strategy optimized for fast feedback:
 
 1. **Fast tests** (`test-fast` job): Runs on minimum and maximum Python versions (3.11, 3.14) only:
-   - **Draft PRs**: Ubuntu only - Quick feedback in ~2-3 minutes
-   - **Ready PRs/Main**: All OS - Ubuntu, Windows, macOS - Cross-platform validation
+   - **Draft PRs**: Ubuntu only, giving quick feedback in ~2-3 minutes
+   - **Ready PRs/Main**: all OS (Ubuntu, Windows, macOS) for cross-platform validation
 
 2. **Full test suite** (`test-full` job): Runs all tests (fast + slow + integration) on Ubuntu across all Python versions (3.11-3.14) when the PR is not in draft mode or on the main branch. This comprehensive validation includes coverage reporting on the minimum supported Python version.
 
@@ -358,13 +361,13 @@ uvx interrogate src
 
 **Required sections** (as applicable):
 
-- `Parameters` - All function/method parameters with types and descriptions
-- `Returns` - Return value type and description
-- `Raises` - Exceptions raised
-- `See Also` - Related classes/functions
-- `References` - Academic references for algorithms or methods used
-- `Notes` - Implementation details, mathematical background
-- `Examples` - Usage examples (tested via `pytest --doctest-modules`)
+- `Parameters`: all function/method parameters with types and descriptions
+- `Returns`: return value type and description
+- `Raises`: exceptions raised
+- `See Also`: related classes/functions
+- `References`: academic references for algorithms or methods used
+- `Notes`: implementation details, mathematical background
+- `Examples`: usage examples (tested via `pytest --doctest-modules`)
 
 **`See Also` format:**
 
@@ -442,29 +445,44 @@ Create a new marimo notebook in `examples/<name>.py`:
 
 #### Required Structure
 
-Every example notebook **must** follow this structure in order:
+Notebooks serve **tutorials** or **how-to guides** only, never explanation or reference. The structure depends on the quadrant:
 
-1. **Title**: A top-level `# Title` heading describing the notebook topic
-2. **What You'll Learn**: A `## What You'll Learn` section with a bulleted list of concrete learning goals
-3. **Prerequisites**: A `## Prerequisites` section stating required prior knowledge (one-liner or short bullet list). For standalone dataset explorations, use "None: this is a standalone dataset exploration."
-4. **Numbered sections**: Main content as `## 1. Section Name`, `## 2. Section Name`, etc.
-5. **Key Takeaways**: A `## Key Takeaways` section with bullet points summarizing important lessons learned
-6. **Next Steps**: A `## Next Steps` section with bullet points linking to related notebooks or documentation
+**Tutorial notebooks** (category: `tutorial`):
 
-**Example intro cell**:
+1. **Title**: `# In this notebook, we will [goal]`
+2. **Prerequisites**: One-liner stating required prior knowledge
+3. **Numbered sections**: `## 1. Section Name`, `## 2. Section Name`, etc. with visible output every cell
+4. **What We Built**: Closing section summarizing what was accomplished and linking to next steps
+
+**How-to notebooks** (category: `how-to`):
+
+1. **Title**: `# How to [Verb] [Object]`
+2. **Prerequisites**: One-liner stating required prior knowledge
+3. **Numbered sections**: `## 1. Section Name`, `## 2. Section Name`, etc. with action-only prose
+4. No closing summary; the notebook ends after the last step
+
+**Example intro cell (tutorial)**:
 
 ```markdown
-# Reduction Forecasting with sklearn
+# Your First Hyperparameter Search
 
-## What You'll Learn
+In this notebook, we will run a hyperparameter search using OptunaSearchCV
+and inspect the results.
 
-- How `PointReductionForecaster` tabularizes time series data using lag features
-- The difference between `target_transformer` and `feature_transformer` parameters
-- Tuning hyperparameters with `GridSearchCV`
+**Prerequisites:** Python 3.11+ and familiarity with Scikit-Learn's fit/predict API.
+```
 
-## Prerequisites
+**Example intro cell (how-to)**:
 
-Basic familiarity with sklearn's fit/predict API and time series concepts (trend, seasonality).
+```markdown
+# How to Stop Optimization Early with Callbacks
+
+This notebook shows how to attach Optuna callbacks to OptunaSearchCV
+to stop a search after a fixed number of trials.
+
+**Prerequisites:** Familiarity with the
+OptunaSearchCV quickstart
+([View](/examples/quickstart/) · [Open in marimo](/examples/quickstart/edit/)).
 ```
 
 #### Marimo Cell Conventions
@@ -491,12 +509,11 @@ Basic familiarity with sklearn's fit/predict API and time series concepts (trend
 
 #### Content Guidelines
 
-- **Gallery metadata**: Every example notebook should include a `__gallery__` variable in the first `@app.cell` defining `title`, `description`, and `category` for the example gallery.
-- **Markdown density**: Each numbered section should open with a descriptive markdown cell explaining the concept before any code cells. Consecutive code cells within the same section are acceptable when logically grouped.
+- **Gallery metadata**: Every example notebook should include a `__gallery__` variable defining `title`, `description`, and `category` (`"tutorial"` or `"how-to"`) for the example gallery. Add a `companion` key pointing to the matching doc page path when one exists.
+- **Markdown density**: Each numbered section should open with a short markdown cell (one to two sentences) before any code cells. Tutorial sections may be slightly longer; how-to sections should be action-only.
 - **No emojis**: Do not use emojis anywhere in notebooks whether it is in headings, content bullets, or concluding remarks.
-- **API cross-links**: When mentioning yohou_optuna classes or functions in markdown cells, wrap them in backtick-link syntax pointing to the API page (e.g., `` [`SeasonalNaive`](/pages/api/generated/yohou_optuna.point.naive.SeasonalNaive/) ``).
-- **Key Takeaways format**: Use bold for key terms with plain descriptions (e.g., `- **Reduction forecasting** converts time series into tabular regression via lag features`)
-- **Next Steps format**: Use bold labels with linked notebook references (e.g., `- **Naive baselines**: See [`naive_forecasters.py`](/examples/point/naive_forecasters/) to compare`). Always link to the rendered example page, not the raw file.
+- **API cross-links**: When mentioning yohou_optuna classes or functions in markdown cells, wrap them in backtick-link syntax pointing to the API page.
+- **Voice**: Tutorials use "we" (first-person plural). How-to guides use imperative or conditional imperatives ("If you need X, pass Y").
 
 #### Testing and Documentation
 
@@ -520,13 +537,23 @@ Run the example test suite to verify your notebook passes:
     uv run pytest tests/test_examples.py -m example
     ```
 
-Add a link to your example in `docs/pages/examples.md`:
+Add a link to your example in `docs/pages/tutorials/examples.md`:
 
 ```markdown
-- [Example Name](../examples/<name>/) - Brief description
+- [Example Name](../examples/<name>/): brief description
 ```
 
 The mkdocs hooks automatically export notebooks to HTML during docs build. All notebooks in `examples/` are automatically discovered and tested by `test_examples.py` using pytest's parametrization feature, which runs them in parallel for fast validation.
+
+## Before You Open a PR
+
+- [ ] Run `just test-fast`: all fast tests pass
+- [ ] Run `just fix`: code is formatted and linted
+- [ ] Write or update tests for your changes
+- [ ] If you changed docs, run `just serve` and verify they render
+- [ ] Use conventional commit messages
+- [ ] Keep the PR focused on a single concern
+
 ## Submitting Changes
 
 1. Push your changes to your fork:
@@ -554,15 +581,15 @@ git push origin feature/my-feature
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) enforced by commitizen:
 
-- `feat:` - New features (triggers minor version bump)
-- `fix:` - Bug fixes (triggers patch version bump)
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks
-- `perf:` - Performance improvements
-- `ci:` - CI/CD changes
+- `feat:`: new features (triggers minor version bump)
+- `fix:`: bug fixes (triggers patch version bump)
+- `docs:`: documentation changes
+- `style:`: code style changes (formatting, etc.)
+- `refactor:`: code refactoring
+- `test:`: adding or updating tests
+- `chore:`: maintenance tasks
+- `perf:`: performance improvements
+- `ci:`: CI/CD changes
 
 **Breaking changes:** Add `!` after the type or add `BREAKING CHANGE:` in the footer to trigger a major version bump.
 
@@ -581,6 +608,9 @@ BREAKING CHANGE: authentication now requires API keys instead of passwords"
 The pre-commit hook will validate your commit messages and prevent commits that don't follow the convention.
 
 ## Release Process
+
+!!! note "Maintainers only"
+    The release process is managed by project maintainers. Contributors do not need to create releases. Open PRs and a maintainer will handle versioning and publishing.
 
 Releases are fully automated through GitHub Actions when a new tag is pushed, with a **manual approval gate** before publishing to PyPI to ensure quality control.
 
@@ -652,4 +682,4 @@ If you have any questions, feel free to:
 - [Open an issue on GitHub](https://github.com/stateful-y/yohou-optuna/issues/new)
 - [Start a discussion in the repository](https://github.com/stateful-y/yohou-optuna/discussions)
 
-Thank you for contributing! 🎉
+Thank you for contributing!
