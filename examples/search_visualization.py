@@ -56,12 +56,12 @@ def _():
     from optuna.distributions import CategoricalDistribution, FloatDistribution
     from sklearn.linear_model import Ridge
 
-    from yohou.datasets import load_vic_electricity
+    from yohou.datasets import fetch_electricity_demand
     from yohou.metrics import MeanAbsoluteError
     from yohou.plotting import (
         plot_cv_results_scatter,
         plot_forecast,
-        plot_residual_time_series,
+        plot_residuals,
         plot_time_series,
     )
     from yohou.point import PointReductionForecaster
@@ -78,12 +78,12 @@ def _():
         PointReductionForecaster,
         Ridge,
         Sampler,
-        load_vic_electricity,
+        fetch_electricity_demand,
         optuna,
         pl,
         plot_cv_results_scatter,
         plot_forecast,
-        plot_residual_time_series,
+        plot_residuals,
         plot_time_series,
     )
 
@@ -94,18 +94,18 @@ def _(mo):
         r"""
         ## 1. Load and Explore the Data
 
-        The Victoria Electricity dataset contains 30-minute measurements of
-        electricity demand and temperature. We use a subset of the Demand column
-        to keep the search fast.
+        The Australian Electricity Demand dataset contains 30-minute measurements
+        of electricity demand across multiple states. We use a subset of Victoria's
+        demand column to keep the search fast.
         """
     )
     return
 
 
 @app.cell
-def _(load_vic_electricity, pl):
-    y_full = load_vic_electricity()
-    y_all = y_full.select(["time", "Demand"]).head(500)
+def _(fetch_electricity_demand, pl):
+    y_full = fetch_electricity_demand().frame
+    y_all = y_full.select(["time", "vic__demand"]).rename({"vic__demand": "demand"}).head(500)
     plot_time_series_fig = None
     return y_all, y_full
 
@@ -296,8 +296,8 @@ def _(plot_forecast, y_pred, y_test, y_train):
 
 
 @app.cell
-def _(plot_residual_time_series, y_pred, y_test):
-    plot_residual_time_series(
+def _(plot_residuals, y_pred, y_test):
+    plot_residuals(
         y_pred,
         y_test,
         title="Forecast Residuals",
@@ -316,7 +316,7 @@ def _(mo):
         - **`plot_param_importances`** identifies which hyperparameters matter most
         - **`plot_slice` and `plot_contour`** show individual and joint parameter effects
         - **`plot_cv_results_scatter`** from yohou visualizes score vs parameter values
-        - **`plot_forecast` and `plot_residual_time_series`** provide forecast-level diagnostics
+        - **`plot_forecast` and `plot_residuals`** provide forecast-level diagnostics
 
         ## Next Steps
 

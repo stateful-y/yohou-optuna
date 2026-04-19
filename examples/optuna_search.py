@@ -57,7 +57,7 @@ def _():
     from optuna.distributions import CategoricalDistribution, FloatDistribution
     from sklearn.linear_model import Ridge
 
-    from yohou.datasets import load_air_passengers
+    from yohou.datasets import fetch_sunspot
     from yohou.metrics import MeanAbsoluteError
     from yohou.plotting import plot_cv_results_scatter, plot_forecast, plot_time_series
     from yohou.point import PointReductionForecaster
@@ -74,7 +74,7 @@ def _():
         PointReductionForecaster,
         Ridge,
         Sampler,
-        load_air_passengers,
+        fetch_sunspot,
         optuna,
         pl,
         plot_cv_results_scatter,
@@ -89,19 +89,19 @@ def _(mo):
         r"""
         ## 1. Load and Explore the Data
 
-        We use the classic Air Passengers dataset: 144 monthly observations of
-        international airline passenger counts from 1949 to 1960. This univariate
-        series exhibits both trend and seasonality, making it a good benchmark for
-        forecasting.
+        We use the Sunspot dataset: monthly observations of sunspot activity.
+        This univariate series exhibits strong cyclical patterns (roughly 11-year
+        solar cycles), making it a good benchmark for forecasting. We take the
+        last 144 observations to keep the search fast.
         """
     )
     return
 
 
 @app.cell
-def _(load_air_passengers, plot_time_series):
-    y = load_air_passengers()
-    plot_time_series(y, title="Air Passengers (1949-1960)")
+def _(fetch_sunspot, plot_time_series):
+    y = fetch_sunspot().frame.tail(144)
+    plot_time_series(y, title="Sunspot Activity (Last 144 Months)")
     return (y,)
 
 
