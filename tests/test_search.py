@@ -967,7 +967,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score=0.0,
@@ -999,7 +999,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score=np.nan,
@@ -1027,7 +1027,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score="raise",
@@ -1054,7 +1054,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score=np.nan,
@@ -1082,7 +1082,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score=np.nan,
@@ -1111,7 +1111,7 @@ class TestObjective:
             cv=2,
             scorers=MeanAbsoluteError(),
             fit_params={},
-            predict_params={},
+            predict_func_params={},
             score_params={},
             return_train_score=False,
             error_score=np.nan,
@@ -1617,15 +1617,13 @@ class TestIntervalPrediction:
     @pytest.mark.slow
     def test_interval_forecaster_fit_and_predict(self, y_X_factory, default_sampler):
         """Test that interval forecaster can be fitted and make predictions."""
-        from sklearn.linear_model import QuantileRegressor
         from yohou.interval import IntervalReductionForecaster
 
-        # Use single target for QuantileRegressor compatibility
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         search = OptunaSearchCV(
-            forecaster=IntervalReductionForecaster(estimator=QuantileRegressor(solver="highs")),
+            forecaster=IntervalReductionForecaster(),
             param_distributions={
-                "estimator__alpha": FloatDistribution(0.0, 1.0),
+                "estimator__estimator__alpha": FloatDistribution(0.0, 1.0),
             },
             scoring=MeanAbsoluteError(),
             sampler=default_sampler,
@@ -1633,9 +1631,44 @@ class TestIntervalPrediction:
             cv=2,
             refit=True,
         )
-        # This may fail due to QuantileRegressor requirements - mark as xfail if so
-        try:
+        search.fit(y, X, forecasting_horizon=3)
+        assert hasattr(search, "best_forecaster_")
+
+    @pytest.mark.slow
+    def test_interval_forecaster_with_interval_scorer(self, y_X_factory, default_sampler):
+        """Test that interval forecaster works with interval scorer and coverage_rates."""
+        from yohou.interval import IntervalReductionForecaster
+        from yohou.metrics import IntervalScore
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=IntervalReductionForecaster(),
+            param_distributions={
+                "estimator__estimator__alpha": FloatDistribution(0.0, 1.0),
+            },
+            scoring=IntervalScore(coverage_rates=[0.1, 0.5, 0.9]),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, X, forecasting_horizon=3)
+        assert hasattr(search, "best_forecaster_")
+
+    def test_point_forecaster_with_interval_scorer_raises(self, y_X_factory, default_sampler):
+        """Test that using an interval scorer with a point forecaster raises TypeError."""
+        from yohou.metrics import IntervalScore
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=PointReductionForecaster(estimator=Ridge()),
+            param_distributions={
+                "estimator__alpha": FloatDistribution(0.01, 10.0),
+            },
+            scoring=IntervalScore(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+        )
+        with pytest.raises(TypeError, match="Interval scorers require a forecaster"):
             search.fit(y, X, forecasting_horizon=3)
-            assert hasattr(search, "best_forecaster_")
-        except ValueError:
-            pytest.skip("IntervalReductionForecaster not compatible with test data shape")

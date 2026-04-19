@@ -20,12 +20,11 @@ from yohou.model_selection.split import check_cv
 from yohou.model_selection.utils import (
     _collect_coverage_rates,
     _needs_interval_predictions,
-    _validate_forecaster_scorer_compatibility,
 )
 from yohou.utils import validate_search_data
 
 from .objective import _Objective
-from .utils import _build_cv_results
+from .utils import _build_cv_results, _validate_forecaster_scorer_compatibility
 
 
 # TODO: Check reference and make it mkdocs-compatible
@@ -308,9 +307,7 @@ class OptunaSearchCV(BaseSearchCV):
 
         # Route predict_params for interval or point prediction
         predict_func_params = (
-            routed_params.forecaster.predict_interval
-            if needs_interval
-            else routed_params.forecaster.predict
+            routed_params.forecaster.predict_interval if needs_interval else routed_params.forecaster.predict
         )
 
         # Create objective
