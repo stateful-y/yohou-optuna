@@ -2,24 +2,44 @@
 
 Solutions to common problems when using Yohou-Optuna.
 
-## Fitting and Import Issues
+## Installation Issues
 
-**Problem: `ImportError` after installation**
-: Verify you installed in the active environment: `python -c "import yohou_optuna; print(yohou_optuna.__version__)"`
+**Problem: Package not found**
+: Verify the package name: `pip install yohou_optuna` or `uv add yohou_optuna`.
 
-**Problem: `TypeError: cannot pickle 'TPESampler' object` during `fit()`**
-: You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler("TPESampler")`. The same applies to `Storage` and `Callback`. See [Configure OptunaSearchCV](configure.md).
+**Problem: Import error after installation**
+: Make sure you installed in the active environment: `python -c "import yohou_optuna; print(yohou_optuna.__version__)"`
 
-**Problem: `AttributeError` when cloning (`__init__` parameter not found)**
-: This usually means a parameter name in `param_distributions` does not match the forecaster's API. Check spelling and use `forecaster.get_params()` to list valid parameter names.
+## Search Issues
+
+**Problem: `AttributeError: 'TPESampler' object has no attribute 'instantiate'`**
+: You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler(sampler=optuna.samplers.TPESampler)`. The same applies to `Storage` and `Callback`. See [Configure OptunaSearchCV](configure.md).
+
+**Problem: `TypeError: callbacks must be a dict of str to Callback`**
+: You passed `callbacks` as a list instead of a dictionary. Replace `callbacks=[Callback(...)]` with `callbacks={"name": Callback(...)}`. The dictionary keys are arbitrary names used for parameter routing.
+
+**Problem: Results are not reproducible**
+: Wrap the sampler with `Sampler` and pass `seed=`. Use `n_jobs=1` because parallel trial ordering is non-deterministic. See [Configure OptunaSearchCV](configure.md#choose-a-sampler).
+
+**Problem: All trials return NaN**
+: The forecaster may be failing silently. Set `error_score="raise"` to surface the underlying error. See [Handle Fitting Errors](configure.md#handle-fitting-errors).
+
+**Problem: Search is slow**
+: Reduce `n_trials` or set a `timeout` to cap execution time. Check that `n_splits` in your splitter is not too large. Consider using `n_jobs=-1` for parallel trial execution on a single machine, or distribute trials across multiple nodes with a shared database storage (see [Concepts: Parallelism](../explanation/concepts.md#parallelism)).
+
+**Problem: CMA-ES sampler raises an error**
+: CMA-ES does not support `CategoricalDistribution` parameters. Use `TPESampler` for mixed search spaces.
 
 ## Parameter Routing
 
 **Problem: `ValueError: Invalid parameter ... for estimator`**
-: The nested parameter path is wrong. For a parameter `alpha` on the `regressor` inside a `PointReductionForecaster`, use `"regressor__alpha"` (two underscores). Verify the full path with `forecaster.get_params(deep=True)`.
+: The nested parameter path is wrong. For a parameter `alpha` on the `estimator` inside a `PointReductionForecaster`, use `"estimator__alpha"` (two underscores). Verify the full path with `forecaster.get_params(deep=True)`.
 
-**Problem: Parameter distribution values cause fitting failures**
-: Set `error_score=float("nan")` to assign a penalty score for failed trials rather than aborting the search. Then inspect `cv_results_` for trials with `nan` scores to narrow down the bad region.
+**Problem: `AttributeError` when cloning (`__init__` parameter not found)**
+: This usually means a custom estimator or wrapper is missing a constructor parameter that `clone()` expects. Ensure all `__init__` parameters are stored as attributes with the same name.
+
+**Problem: Fitting failures from invalid parameter values**
+: By default, `error_score=np.nan` catches errors during cross-validation folds and records `NaN` for that trial. However, the best-found parameters are still used for refitting on the full dataset after all trials complete. If all trials failed, the refit step will raise. Check that your distribution ranges only produce valid values (e.g., `FloatDistribution(1e-4, 10.0)` instead of ranges that include negative or zero values for parameters like `alpha`).
 
 ## Cross-Validation Issues
 
@@ -29,18 +49,18 @@ Solutions to common problems when using Yohou-Optuna.
 **Problem: `ValueError: Not enough data for the requested number of splits`**
 : The training series is too short for the configured splitter. Reduce `n_splits` or `forecasting_horizon`, or use a shorter minimum training window.
 
-## Study Persistence
-
-**Problem: `Study not found` when resuming**
-: The `study_name` must match exactly between `fit()` calls. Check that the storage URL points to the same file or database.
-
-**Problem: `OperationalError: unable to open database file`**
-: The directory for the SQLite database does not exist. Create it first: `mkdir -p path/to/dir`.
-
 ## Scoring Issues
 
 **Problem: `ValueError: refit must be a string matching a scorer name` with multi-metric search**
 : When `scoring` is a list or dict, set `refit` to the string name of the metric to use for selecting the best forecaster. For example: `refit="MeanAbsoluteError"`.
+
+## Storage Issues
+
+**Problem: Study not resuming from database**
+: Make sure you use the same `study_name` and `Storage` configuration. See [Persist and Resume Studies](configure.md#persist-and-resume-studies).
+
+**Problem: `OperationalError: unable to open database file`**
+: The directory for the SQLite database does not exist. Create it first: `mkdir -p path/to/dir`.
 
 ## Getting Help
 

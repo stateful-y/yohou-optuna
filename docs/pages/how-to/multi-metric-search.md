@@ -76,5 +76,5 @@ y_pred = search.predict(forecasting_horizon=12)
 
 ## See Also
 
-- [Configure OptunaSearchCV](configure.md) - sampler, callbacks, CV options
-- [API Reference](../reference/api.md) - `OptunaSearchCV` parameter documentation
+- [Configure OptunaSearchCV](configure.md): sampler, callbacks, CV options
+- [API Reference](../reference/api.md): `OptunaSearchCV` parameter documentation

@@ -285,8 +285,8 @@ Follow these conventions when writing tests:
 The CI pipeline uses a two-tier testing strategy optimized for fast feedback:
 
 1. **Fast tests** (`test-fast` job): Runs on minimum and maximum Python versions (3.11, 3.14) only:
-   - **Draft PRs**: Ubuntu only - Quick feedback in ~2-3 minutes
-   - **Ready PRs/Main**: All OS - Ubuntu, Windows, macOS - Cross-platform validation
+   - **Draft PRs**: Ubuntu only, giving quick feedback in ~2-3 minutes
+   - **Ready PRs/Main**: all OS (Ubuntu, Windows, macOS) for cross-platform validation
 
 2. **Full test suite** (`test-full` job): Runs all tests (fast + slow + integration) on Ubuntu across all Python versions (3.11-3.14) when the PR is not in draft mode or on the main branch. This comprehensive validation includes coverage reporting on the minimum supported Python version.
 
@@ -361,13 +361,13 @@ uvx interrogate src
 
 **Required sections** (as applicable):
 
-- `Parameters` - All function/method parameters with types and descriptions
-- `Returns` - Return value type and description
-- `Raises` - Exceptions raised
-- `See Also` - Related classes/functions
-- `References` - Academic references for algorithms or methods used
-- `Notes` - Implementation details, mathematical background
-- `Examples` - Usage examples (tested via `pytest --doctest-modules`)
+- `Parameters`: all function/method parameters with types and descriptions
+- `Returns`: return value type and description
+- `Raises`: exceptions raised
+- `See Also`: related classes/functions
+- `References`: academic references for algorithms or methods used
+- `Notes`: implementation details, mathematical background
+- `Examples`: usage examples (tested via `pytest --doctest-modules`)
 
 **`See Also` format:**
 
@@ -445,7 +445,7 @@ Create a new marimo notebook in `examples/<name>.py`:
 
 #### Required Structure
 
-Notebooks serve **tutorials** or **how-to guides** only - never explanation or reference. The structure depends on the quadrant:
+Notebooks serve **tutorials** or **how-to guides** only, never explanation or reference. The structure depends on the quadrant:
 
 **Tutorial notebooks** (category: `tutorial`):
 
@@ -459,7 +459,7 @@ Notebooks serve **tutorials** or **how-to guides** only - never explanation or r
 1. **Title**: `# How to [Verb] [Object]`
 2. **Prerequisites**: One-liner stating required prior knowledge
 3. **Numbered sections**: `## 1. Section Name`, `## 2. Section Name`, etc. with action-only prose
-4. No closing summary - the notebook ends after the last step
+4. No closing summary; the notebook ends after the last step
 
 **Example intro cell (tutorial)**:
 
@@ -469,7 +469,7 @@ Notebooks serve **tutorials** or **how-to guides** only - never explanation or r
 In this notebook, we will run a hyperparameter search using OptunaSearchCV
 and inspect the results.
 
-**Prerequisites:** Python 3.11+ and familiarity with sklearn's fit/predict API.
+**Prerequisites:** Python 3.11+ and familiarity with Scikit-Learn's fit/predict API.
 ```
 
 **Example intro cell (how-to)**:
@@ -540,15 +540,15 @@ Run the example test suite to verify your notebook passes:
 Add a link to your example in `docs/pages/tutorials/examples.md`:
 
 ```markdown
-- [Example Name](../examples/<name>/) - Brief description
+- [Example Name](../examples/<name>/): brief description
 ```
 
 The mkdocs hooks automatically export notebooks to HTML during docs build. All notebooks in `examples/` are automatically discovered and tested by `test_examples.py` using pytest's parametrization feature, which runs them in parallel for fast validation.
 
 ## Before You Open a PR
 
-- [ ] Run `just test-fast` - all fast tests pass
-- [ ] Run `just fix` - code is formatted and linted
+- [ ] Run `just test-fast`: all fast tests pass
+- [ ] Run `just fix`: code is formatted and linted
 - [ ] Write or update tests for your changes
 - [ ] If you changed docs, run `just serve` and verify they render
 - [ ] Use conventional commit messages
@@ -581,15 +581,15 @@ git push origin feature/my-feature
 
 We use [Conventional Commits](https://www.conventionalcommits.org/) enforced by commitizen:
 
-- `feat:` - New features (triggers minor version bump)
-- `fix:` - Bug fixes (triggers patch version bump)
-- `docs:` - Documentation changes
-- `style:` - Code style changes (formatting, etc.)
-- `refactor:` - Code refactoring
-- `test:` - Adding or updating tests
-- `chore:` - Maintenance tasks
-- `perf:` - Performance improvements
-- `ci:` - CI/CD changes
+- `feat:`: new features (triggers minor version bump)
+- `fix:`: bug fixes (triggers patch version bump)
+- `docs:`: documentation changes
+- `style:`: code style changes (formatting, etc.)
+- `refactor:`: code refactoring
+- `test:`: adding or updating tests
+- `chore:`: maintenance tasks
+- `perf:`: performance improvements
+- `ci:`: CI/CD changes
 
 **Breaking changes:** Add `!` after the type or add `BREAKING CHANGE:` in the footer to trigger a major version bump.
 

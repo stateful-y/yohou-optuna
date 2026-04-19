@@ -22,6 +22,7 @@ from yohou.point import PointReductionForecaster
 from yohou_optuna import OptunaSearchCV, Sampler
 from optuna.distributions import CategoricalDistribution, FloatDistribution
 from sklearn.linear_model import Ridge
+import optuna
 
 # Load panel dataset: multiple regional tourism series
 y_panel = load_australian_tourism()
@@ -38,7 +39,7 @@ search = OptunaSearchCV(
     param_distributions=param_distributions,
     n_trials=30,
     cv=ExpandingWindowSplitter(n_splits=3),
-    sampler=Sampler("TPESampler", seed=42),
+    sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
 )
 
 search.fit(y_panel, forecasting_horizon=4)
@@ -52,13 +53,14 @@ Panel data searches can be slower per trial due to the larger dataset size. If y
 
 ```python
 from yohou_optuna import Sampler
+import optuna
 
 # Random sampler as baseline
 random_search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=param_distributions,
     n_trials=30,
-    sampler=Sampler("RandomSampler", seed=42),
+    sampler=Sampler(sampler=optuna.samplers.RandomSampler, seed=42),
 )
 random_search.fit(y_panel, forecasting_horizon=4)
 
@@ -67,7 +69,7 @@ tpe_search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=param_distributions,
     n_trials=30,
-    sampler=Sampler("TPESampler", seed=42),
+    sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
 )
 tpe_search.fit(y_panel, forecasting_horizon=4)
 
@@ -88,5 +90,5 @@ The output DataFrame retains the same group structure as the input `y_panel`.
 
 ## See Also
 
-- [Configure OptunaSearchCV](configure.md) - sampler options and callbacks
-- [API Reference](../reference/api.md) - full parameter documentation
+- [Configure OptunaSearchCV](configure.md): sampler options and callbacks
+- [API Reference](../reference/api.md): full parameter documentation

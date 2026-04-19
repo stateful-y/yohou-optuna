@@ -41,7 +41,7 @@ def _(mo):
         We will load the data, define a search space, fit the search, inspect
         cross-validation results, and generate a forecast with the best model.
 
-        **Prerequisites** - basic familiarity with scikit-learn's fit/predict API and time series forecasting concepts.
+        **Prerequisites**: basic familiarity with scikit-learn's fit/predict API and time series forecasting concepts.
         """
     )
     return
@@ -277,9 +277,9 @@ def _(mo):
 
         ## Next Steps
 
-        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune forecasters with feature transformers like `LagTransformer`
-        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/) - track multiple metrics (MAE, RMSE, MSE) simultaneously
-        - [How to Visualize Search Results](/examples/search_visualization/) - use Optuna's built-in optimization plots
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/): tune forecasters with feature transformers like `LagTransformer`
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/): track multiple metrics (MAE, RMSE, MSE) simultaneously
+        - [How to Visualize Search Results](/examples/search_visualization/): use Optuna's built-in optimization plots
         """
     )
     return

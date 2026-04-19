@@ -37,7 +37,7 @@ def _(mo):
 
         Run `OptunaSearchCV` on grouped time series, compare samplers, and use `MaxTrialsCallback` for early stopping.
 
-        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)) and panel data concepts.
+        **Prerequisites**: familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)) and panel data concepts.
         """
     )
     return
@@ -305,9 +305,9 @@ def _(mo):
         r"""
         ## Next Steps
 
-        - [OptunaSearchCV Quickstart](/examples/optuna_search/) - minimal end-to-end walkthrough
-        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune forecasters with feature transformers
-        - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization plots
+        - [OptunaSearchCV Quickstart](/examples/optuna_search/): minimal end-to-end walkthrough
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/): tune forecasters with feature transformers
+        - [How to Visualize Search Results](/examples/search_visualization/): Optuna's optimization plots
         """
     )
     return

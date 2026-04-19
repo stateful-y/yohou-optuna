@@ -37,7 +37,7 @@ def _(mo):
 
         Tune nested parameters across a `PointReductionForecaster` + `LagTransformer` pipeline using `__` parameter routing.
 
-        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
+        **Prerequisites**: familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -295,9 +295,9 @@ def _(mo):
         r"""
         ## Next Steps
 
-        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/) - evaluate multiple metrics simultaneously
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/): evaluate multiple metrics simultaneously
         - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization history and parameter importance plots
-        - [How to Tune on Panel Data](/examples/panel_tuning/) - tune forecasters on grouped time series
+        - [How to Tune on Panel Data](/examples/panel_tuning/): tune forecasters on grouped time series
         """
     )
     return

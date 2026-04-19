@@ -72,5 +72,5 @@ fig.show()
 
 ## See Also
 
-- [Configure OptunaSearchCV](configure.md) - persist studies for longer analysis sessions
-- [API Reference](../reference/api.md) - `study_` and `cv_results_` attributes
+- [Configure OptunaSearchCV](configure.md): persist studies for longer analysis sessions
+- [API Reference](../reference/api.md): `study_` and `cv_results_` attributes

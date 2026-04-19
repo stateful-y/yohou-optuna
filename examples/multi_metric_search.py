@@ -38,7 +38,7 @@ def _(mo):
 
         Pass multiple scorers to `OptunaSearchCV` and choose which metric drives model selection with the `refit` parameter.
 
-        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
+        **Prerequisites**: familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -313,8 +313,8 @@ def _(mo):
         ## Next Steps
 
         - [How to Visualize Search Results](/examples/search_visualization/) - Optuna's optimization history and parameter importance plots
-        - [How to Tune on Panel Data](/examples/panel_tuning/) - tune forecasters on grouped time series
-        - [How to Tune Composed Forecasters](/examples/composed_tuning/) - tune nested pipelines with feature transformers
+        - [How to Tune on Panel Data](/examples/panel_tuning/): tune forecasters on grouped time series
+        - [How to Tune Composed Forecasters](/examples/composed_tuning/): tune nested pipelines with feature transformers
         """
     )
     return

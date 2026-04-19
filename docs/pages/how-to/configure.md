@@ -9,51 +9,53 @@ This guide shows you how to configure `OptunaSearchCV` for common search scenari
 
 ## Choose a Sampler
 
-The `sampler` parameter controls the optimization strategy. The default (TPE) works well for most cases.
+The `sampler` parameter controls the optimization strategy. The default (TPE) works well for most cases. Wrap any Optuna sampler with the `Sampler` class to make it compatible with `get_params()` / `set_params()` / `clone()`.
 
 ```python
+import optuna
 from yohou_optuna import OptunaSearchCV, Sampler
 
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
     n_trials=50,
-    sampler=Sampler("TPESampler", seed=42),     # default: TPE
+    sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
 )
 ```
 
-For other strategies, swap the sampler name:
+For other strategies, swap the sampler class:
 
 ```python
 # CMA-ES: effective for continuous spaces with correlated parameters
-sampler=Sampler("CmaEsSampler", seed=42)
+sampler=Sampler(sampler=optuna.samplers.CmaEsSampler, seed=42)
 
 # Gaussian Process: best for very small budgets (< 20 trials)
-sampler=Sampler("GPSampler")
+sampler=Sampler(sampler=optuna.samplers.GPSampler)
 
 # Random: useful as a baseline or for reproducible ablations
-sampler=Sampler("RandomSampler", seed=42)
+sampler=Sampler(sampler=optuna.samplers.RandomSampler, seed=42)
 ```
 
-Pass `seed` for reproducible results. Always use the `Sampler` wrapper rather than a raw Optuna sampler object because raw Optuna objects are not compatible with `clone()`.
+Pass `seed` for reproducible results when `n_jobs=1`. Always use the `Sampler` wrapper rather than a raw Optuna sampler object because raw Optuna objects are not compatible with `clone()`.
 
 !!! tip
     Start with TPE. Switch to CMA-ES only when you have a large all-continuous search space and notice slow convergence.
 
 ## Add Callbacks
 
-Callbacks run after each completed trial. Use them for early stopping, logging, or custom logic:
+Callbacks run after each completed trial. Use them for early stopping, logging, or custom logic. Pass a dictionary mapping callback names to `Callback` instances:
 
 ```python
+from optuna.study import MaxTrialsCallback
 from yohou_optuna import Callback
 
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
     n_trials=200,
-    callbacks=[
-        Callback("MaxTrialsCallback", n_trials=50),
-    ],
+    callbacks={
+        "stop": Callback(callback=MaxTrialsCallback, n_trials=50),
+    },
 )
 ```
 
@@ -61,18 +63,44 @@ search = OptunaSearchCV(
 
 Always use the `Callback` wrapper instead of a raw Optuna callback for the same cloneability reasons as `Sampler`.
 
+## Write a Custom Callback
+
+Any callable class that accepts `study` and `trial` arguments works as a callback:
+
+```python
+class EarlyStoppingCallback:
+    def __init__(self, patience: int = 10):
+        self.patience = patience
+
+    def __call__(self, study, trial):
+        if trial.number >= self.patience:
+            best = study.best_trial.number
+            if trial.number - best >= self.patience:
+                study.stop()
+
+search = OptunaSearchCV(
+    forecaster=forecaster,
+    param_distributions=distributions,
+    n_trials=200,
+    callbacks={
+        "early_stop": Callback(callback=EarlyStoppingCallback, patience=10),
+    },
+)
+```
+
 ## Persist and Resume Studies
 
 For long-running or distributed searches, save the study to a storage backend:
 
 ```python
+import optuna
 from yohou_optuna import Storage
 
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
     n_trials=50,
-    storage=Storage("RDBStorage", url="sqlite:///my_study.db"),
+    storage=Storage(storage=optuna.storages.RDBStorage, url="sqlite:///my_study.db"),
     study_name="ridge_air_passengers",
 )
 
@@ -108,18 +136,30 @@ Use `ExpandingWindowSplitter` (default) for growing training windows. Use `Slidi
 
 ## Handle Fitting Errors
 
-If a trial's parameter combination causes a fitting error, `OptunaSearchCV` raises by default. Set `error_score` to assign a fallback score instead:
+By default, `error_score=np.nan` catches fitting errors during cross-validation folds and records `NaN` for that trial. To stop the search immediately on the first error instead, set `error_score="raise"`:
 
 ```python
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
     n_trials=50,
-    error_score=float("nan"),  # or a numeric penalty
+    error_score="raise",  # stop on first error (useful during development)
 )
 ```
 
-Use `error_score=float("nan")` when you expect occasional fitting failures (e.g., ill-conditioned matrices at extreme parameter values) and do not want to abort the entire search.
+Use `error_score="raise"` during development to catch bad parameter combinations early. In production, keep the default (`np.nan`) so the search continues past occasional failures.
+
+## Filter Failed Trials
+
+After fitting, inspect which trials failed:
+
+```python
+import polars as pl
+
+results = pl.DataFrame(search.cv_results_)
+failed = results.filter(pl.col("mean_test_score").is_nan())
+print(f"{len(failed)} trials failed out of {len(results)}")
+```
 
 ## Collect Training Scores
 
@@ -145,6 +185,6 @@ Large gaps between training and test scores suggest overfitting.
 
 ## See Also
 
-- [About OptunaSearchCV](../explanation/concepts.md) - understand samplers, temporal CV, and wrapper classes
-- [Multi-Metric Search](multi-metric-search.md) - evaluate multiple metrics simultaneously
-- [API Reference](../reference/api.md) - full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`
+- [About OptunaSearchCV](../explanation/concepts.md): understand samplers, temporal CV, and wrapper classes
+- [Multi-Metric Search](multi-metric-search.md): evaluate multiple metrics simultaneously
+- [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`

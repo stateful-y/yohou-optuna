@@ -37,7 +37,7 @@ def _(mo):
 
         Access the Optuna `study_` object from a fitted `OptunaSearchCV` and produce optimization history, parameter importance, contour, and slice plots alongside yohou's forecast diagnostics.
 
-        **Prerequisites** - familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
+        **Prerequisites**: familiarity with [`OptunaSearchCV`](/pages/api/generated/yohou_optuna.search.OptunaSearchCV/) (see [OptunaSearchCV Quickstart](/examples/optuna_search/)).
         """
     )
     return
@@ -173,7 +173,7 @@ def _(mo):
 def _(mo):
     mo.md(
         r"""
-        **Optimization History** - objective value across trials with a running best line.
+        **Optimization History**: objective value across trials with a running best line.
         """
     )
     return
@@ -189,7 +189,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Parameter Importances** - contribution of each hyperparameter to objective variation.
+        **Parameter Importances**: contribution of each hyperparameter to objective variation.
         """
     )
     return
@@ -205,7 +205,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Slice Plots** - per-parameter objective values across trials.
+        **Slice Plots**: per-parameter objective values across trials.
         """
     )
     return
@@ -221,7 +221,7 @@ def _(optuna, search):
 def _(mo):
     mo.md(
         r"""
-        **Contour Plot** - joint parameter interaction as a 2D surface.
+        **Contour Plot**: joint parameter interaction as a 2D surface.
         """
     )
     return
@@ -294,9 +294,9 @@ def _(mo):
         r"""
         ## Next Steps
 
-        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/) - track multiple metrics and compare rankings
-        - [How to Tune on Panel Data](/examples/panel_tuning/) - grouped time series optimization
-        - [OptunaSearchCV Quickstart](/examples/optuna_search/) - minimal end-to-end walkthrough
+        - [How to Run a Multi-Metric Search](/examples/multi_metric_search/): track multiple metrics and compare rankings
+        - [How to Tune on Panel Data](/examples/panel_tuning/): grouped time series optimization
+        - [OptunaSearchCV Quickstart](/examples/optuna_search/): minimal end-to-end walkthrough
         """
     )
     return

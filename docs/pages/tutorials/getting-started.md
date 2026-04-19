@@ -36,11 +36,12 @@ The output should show a version string such as `0.1.0-alpha.2`.
 
 ## Step 2: Set Up a Forecaster
 
-We will tune a `PointReductionForecaster`, a forecaster that converts a time series problem into a regression problem using lag features. `OptunaSearchCV` also works with interval forecasters - see the [API Reference](../reference/api.md) for details.
+We will tune a `PointReductionForecaster`, a forecaster that converts a time series problem into a regression problem using lag features. `OptunaSearchCV` also works with interval forecasters (see the [API Reference](../reference/api.md) for details).
 
 First, import what we need:
 
 ```python
+import optuna
 import polars as pl
 from sklearn.linear_model import Ridge
 
@@ -48,7 +49,7 @@ from yohou.datasets import load_air_passengers
 from yohou.metrics import MeanAbsoluteError
 from yohou.model_selection import ExpandingWindowSplitter
 from yohou.point import PointReductionForecaster
-from yohou_optuna import OptunaSearchCV
+from yohou_optuna import OptunaSearchCV, Sampler
 from optuna.distributions import FloatDistribution, IntDistribution
 ```
 
@@ -93,6 +94,7 @@ search = OptunaSearchCV(
     n_trials=30,
     scoring=MeanAbsoluteError(),
     cv=ExpandingWindowSplitter(n_splits=3),
+    sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
 )
 
 search.fit(y_train, forecasting_horizon=12)
@@ -140,9 +142,27 @@ You have:
 - Installed Yohou-Optuna
 - Created a `PointReductionForecaster` with a `Ridge` regressor
 - Defined a search space using `FloatDistribution` and `IntDistribution`
-- Fitted an `OptunaSearchCV` that ran 30 Bayesian trials with cross-validation
+- Fitted an `OptunaSearchCV` with a reproducible `Sampler` that ran 30 Bayesian trials with cross-validation
 - Inspected the best score and parameters
 - Predicted with the best-found forecaster
+
+## Try Interactive Examples
+
+For hands-on learning with interactive notebooks, see the [Examples](examples.md) page where you can run code directly in your browser or experiment with different parameters.
+
+Or run locally:
+
+=== "just"
+
+    ```bash
+    just example optuna_search.py
+    ```
+
+=== "uv run"
+
+    ```bash
+    uv run marimo edit examples/optuna_search.py
+    ```
 
 ## Next Steps
 

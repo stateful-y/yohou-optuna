@@ -68,6 +68,6 @@ param_distributions = {
 
 ## See Also
 
-- [Collect Training Scores](configure.md#collect-training-scores) - compare training and validation scores to detect overfitting
-- [Configure OptunaSearchCV](configure.md) - sampler and CV options
-- [API Reference](../reference/api.md) - full parameter documentation
+- [Collect Training Scores](configure.md#collect-training-scores): compare training and validation scores to detect overfitting
+- [Configure OptunaSearchCV](configure.md): sampler and CV options
+- [API Reference](../reference/api.md): full parameter documentation
