@@ -50,7 +50,7 @@ from yohou.metrics import MeanAbsoluteError
 from yohou.model_selection import ExpandingWindowSplitter
 from yohou.point import PointReductionForecaster
 from yohou_optuna import OptunaSearchCV, Sampler
-from optuna.distributions import FloatDistribution, IntDistribution
+from optuna.distributions import CategoricalDistribution, FloatDistribution
 ```
 
 Now let us load a dataset and split it into training and test sets:
@@ -67,7 +67,7 @@ Notice that `y` is a polars DataFrame with a `time` column.
 Create the base forecaster we want to tune:
 
 ```python
-forecaster = PointReductionForecaster(regressor=Ridge())
+forecaster = PointReductionForecaster(estimator=Ridge())
 ```
 
 ## Step 3: Define the Search Space
@@ -76,12 +76,12 @@ We define the search space using Optuna distribution objects:
 
 ```python
 param_distributions = {
-    "regressor__alpha": FloatDistribution(1e-4, 10.0, log=True),
-    "observation_horizon": IntDistribution(3, 30),
+    "estimator__alpha": FloatDistribution(0.001, 100.0, log=True),
+    "estimator__fit_intercept": CategoricalDistribution([True, False]),
 }
 ```
 
-Notice that `regressor__alpha` uses a double-underscore to route `alpha` to the regressor inside the forecaster. See [About OptunaSearchCV](../explanation/concepts.md) for details on distributions and parameter routing.
+Notice that `estimator__alpha` uses a double-underscore to route `alpha` to the estimator inside the forecaster. See [About OptunaSearchCV](../explanation/concepts.md) for details on distributions and parameter routing.
 
 ## Step 4: Run the Search
 
@@ -91,7 +91,7 @@ Create an `OptunaSearchCV` and call `fit()`. This will run 30 trials, each one e
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=param_distributions,
-    n_trials=30,
+    n_trials=20,
     scoring=MeanAbsoluteError(),
     cv=ExpandingWindowSplitter(n_splits=3),
     sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
@@ -115,13 +115,13 @@ The output should look something like:
 
 ```text
 Best score: 12.3456
-Best params: {'regressor__alpha': 0.0137, 'observation_horizon': 18}
+Best params: {'estimator__alpha': 0.0137, 'estimator__fit_intercept': True}
 ```
 
 The `study_` attribute gives us access to the full Optuna study, including all 30 trials with their scores and parameters:
 
 ```python
-print(f"Number of trials: {len(search.study_.trials)}")
+print(f"Number of trials: {len(search.trials_)}")
 ```
 
 ## Step 6: Predict
@@ -140,9 +140,9 @@ The prediction covers the next 12 time steps after the training period.
 You have:
 
 - Installed Yohou-Optuna
-- Created a `PointReductionForecaster` with a `Ridge` regressor
-- Defined a search space using `FloatDistribution` and `IntDistribution`
-- Fitted an `OptunaSearchCV` with a reproducible `Sampler` that ran 30 Bayesian trials with cross-validation
+- Created a `PointReductionForecaster` with a `Ridge` estimator
+- Defined a search space using `FloatDistribution` and `CategoricalDistribution`
+- Fitted an `OptunaSearchCV` with a reproducible `Sampler` that ran 20 Bayesian trials with cross-validation
 - Inspected the best score and parameters
 - Predicted with the best-found forecaster
 

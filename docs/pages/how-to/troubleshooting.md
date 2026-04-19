@@ -16,7 +16,10 @@ Solutions to common problems when using Yohou-Optuna.
 : You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler(sampler=optuna.samplers.TPESampler)`. The same applies to `Storage` and `Callback`. See [Configure OptunaSearchCV](configure.md).
 
 **Problem: `TypeError: callbacks must be a dict of str to Callback`**
-: You passed `callbacks` as a list instead of a dictionary. Replace `callbacks=[Callback(...)]` with `callbacks={"name": Callback(...)}`. The dictionary keys are arbitrary names used for parameter routing.
+: You passed `callbacks` as a list instead of a dictionary. This error appears at `fit()` time, not at construction. Replace `callbacks=[Callback(...)]` with `callbacks={"name": Callback(...)}`. The dictionary keys are arbitrary names used for parameter routing.
+
+**Problem: `ValueError: scoring parameter cannot be None`**
+: The `scoring` parameter is required. Pass a scorer instance: `scoring=MeanAbsoluteError()`. For multi-metric search, pass a dict: `scoring={"mae": MeanAbsoluteError(), "mse": MeanSquaredError()}`.
 
 **Problem: Results are not reproducible**
 : Wrap the sampler with `Sampler` and pass `seed=`. Use `n_jobs=1` because parallel trial ordering is non-deterministic. See [Configure OptunaSearchCV](configure.md#choose-a-sampler).
@@ -51,8 +54,11 @@ Solutions to common problems when using Yohou-Optuna.
 
 ## Scoring Issues
 
-**Problem: `ValueError: refit must be a string matching a scorer name` with multi-metric search**
-: When `scoring` is a list or dict, set `refit` to the string name of the metric to use for selecting the best forecaster. For example: `refit="MeanAbsoluteError"`.
+**Problem: `ValueError: scoring must be an instance of BaseScorer or a dict`**
+: You passed `scoring` as a list. Only a single scorer or a dict of scorers is supported. Replace `scoring=[MeanAbsoluteError(), MeanSquaredError()]` with `scoring={"mae": MeanAbsoluteError(), "mse": MeanSquaredError()}`.
+
+**Problem: `ValueError: For multi-metric scoring, the parameter refit must be set to a scorer key`**
+: When `scoring` is a dict, set `refit` to one of the dictionary keys. For example, with `scoring={"mae": MeanAbsoluteError(), "mse": MeanSquaredError()}`, use `refit="mae"`. If you do not need refitting, set `refit=False`.
 
 ## Storage Issues
 

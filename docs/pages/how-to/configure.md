@@ -18,6 +18,7 @@ from yohou_optuna import OptunaSearchCV, Sampler
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=50,
     sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
 )
@@ -52,6 +53,7 @@ from yohou_optuna import Callback
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=200,
     callbacks={
         "stop": Callback(callback=MaxTrialsCallback, n_trials=50),
@@ -81,6 +83,7 @@ class EarlyStoppingCallback:
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=200,
     callbacks={
         "early_stop": Callback(callback=EarlyStoppingCallback, patience=10),
@@ -99,9 +102,9 @@ from yohou_optuna import Storage
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=50,
     storage=Storage(storage=optuna.storages.RDBStorage, url="sqlite:///my_study.db"),
-    study_name="ridge_air_passengers",
 )
 
 search.fit(y_train, forecasting_horizon=12)
@@ -114,8 +117,16 @@ search.n_trials = 50  # 50 additional trials
 search.fit(y_train, forecasting_horizon=12, study=search.study_)
 ```
 
-!!! tip
-    Always set a `study_name` when using storage. Without it, Optuna generates a random name, making it harder to resume correctly.
+To name a study for easier identification, create it externally and pass it via `fit()`:
+
+```python
+study = optuna.create_study(
+    study_name="ridge_air_passengers",
+    direction="maximize",
+    storage="sqlite:///my_study.db",
+)
+search.fit(y_train, forecasting_horizon=12, study=study)
+```
 
 ## Use a Custom CV Splitter
 
@@ -126,9 +137,8 @@ from yohou.model_selection import SlidingWindowSplitter
 
 search = OptunaSearchCV(
     forecaster=forecaster,
-    param_distributions=distributions,
-    n_trials=30,
-    cv=SlidingWindowSplitter(n_splits=5, window_size=24),
+    param_distributions=distributions,    scoring=scorer,    n_trials=30,
+    cv=SlidingWindowSplitter(n_splits=5, train_size=24),
 )
 ```
 
@@ -142,6 +152,7 @@ By default, `error_score=np.nan` catches fitting errors during cross-validation 
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=50,
     error_score="raise",  # stop on first error (useful during development)
 )
@@ -169,6 +180,7 @@ To compute scores on the training folds in addition to the validation folds, set
 search = OptunaSearchCV(
     forecaster=forecaster,
     param_distributions=distributions,
+    scoring=scorer,
     n_trials=30,
     return_train_score=True,
 )

@@ -59,7 +59,7 @@ Optuna's distribution objects define the search space for each parameter. Unlike
 
 This type information lets the sampler allocate its budget more efficiently than it could with a flat grid or unstructured range.
 
-Nested parameters in composed forecasters use the double-underscore routing convention from Scikit-Learn: `"deseason__regressor__alpha"` routes `alpha` to the regressor inside the `deseason` step.
+Nested parameters in composed forecasters use the double-underscore routing convention from Scikit-Learn: `"estimator__alpha"` routes `alpha` to the estimator inside the forecaster.
 
 ## Samplers and Adaptive Search
 
@@ -78,7 +78,7 @@ Because Optuna studies can be shared through a database backend, you can distrib
 ## Limitations
 
 - **No pruning**: Optuna's pruning API (early stopping of unpromising trials) is not wired into `OptunaSearchCV`. All trials run full cross-validation.
-- **Single-objective only**: `OptunaSearchCV` creates a single-objective study (`direction="maximize"`). Multi-objective Pareto optimization requires using Optuna directly.
+- **Single-objective only**: Each trial produces one objective value (the mean CV score from the `scoring` metric). When `scoring` is a dict for multi-metric tracking, the `refit` key selects which metric drives the optimization. Optuna's multi-objective Pareto optimization is not supported.
 - **Threading-based parallelism**: Parallel trials on a single machine use threading, not multiprocessing. For multi-process or multi-node parallelism, use a shared database storage so each process runs its own `OptunaSearchCV.fit()` against the same study.
 
 ## FAQ

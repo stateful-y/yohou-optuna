@@ -9,62 +9,76 @@ This guide shows you how to evaluate multiple scoring metrics simultaneously dur
 ## Prerequisites
 
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
-- A forecaster and search space set up
+- Familiarity with `OptunaSearchCV.fit()` basics
 
 ## Define Multiple Scorers
 
-Pass a list of scorers to the `scoring` parameter. Each scorer is evaluated on every cross-validation fold:
+Pass a dictionary of scorers to the `scoring` parameter and set `refit` to the key that should drive model selection. Each scorer is evaluated on every cross-validation fold:
 
 ```python
-from yohou.metrics import MeanAbsoluteError, MeanSquaredError, MeanAbsolutePercentageError
-from yohou_optuna import OptunaSearchCV
+import optuna
+from optuna.distributions import CategoricalDistribution, FloatDistribution
+from sklearn.linear_model import Ridge
+from yohou.metrics import MeanAbsoluteError, MeanSquaredError, RootMeanSquaredError
+from yohou.point import PointReductionForecaster
+from yohou_optuna import OptunaSearchCV, Sampler
 
 search = OptunaSearchCV(
-    forecaster=forecaster,
-    param_distributions=distributions,
+    forecaster=PointReductionForecaster(estimator=Ridge()),
+    param_distributions={
+        "estimator__alpha": FloatDistribution(0.001, 100.0, log=True),
+        "estimator__fit_intercept": CategoricalDistribution([True, False]),
+    },
+    scoring={
+        "mae": MeanAbsoluteError(),
+        "rmse": RootMeanSquaredError(),
+        "mse": MeanSquaredError(),
+    },
+    sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
     n_trials=30,
-    scoring=[
-        MeanAbsoluteError(),
-        MeanSquaredError(),
-        MeanAbsolutePercentageError(),
-    ],
-    refit="MeanAbsoluteError",
+    refit="mae",
+    return_train_score=True,
 )
 
 search.fit(y_train, forecasting_horizon=12)
 ```
 
-When `scoring` is a list, set `refit` to the name of the scorer that selects the best forecaster.
+The `refit` key determines which metric selects the best forecaster. All metrics are still computed and stored for comparison.
 
-## Use a Dict for Custom Names
+## Use a List for Default Names
 
-Pass a dict to assign custom keys to scorers. The keys become the column names in `cv_results_`:
+Pass a list of scorers instead of a dict. The class name becomes the column key in `cv_results_`:
 
 ```python
 search = OptunaSearchCV(
-    forecaster=forecaster,
+    forecaster=PointReductionForecaster(estimator=Ridge()),
     param_distributions=distributions,
+    scoring=[
+        MeanAbsoluteError(),
+        RootMeanSquaredError(),
+    ],
     n_trials=30,
-    scoring={
-        "mae": MeanAbsoluteError(),
-        "rmse": MeanSquaredError(square_root=True),
-    },
-    refit="mae",
+    refit="MeanAbsoluteError",
 )
 ```
 
 ## Inspect Multi-Metric Results
 
-After fitting, `cv_results_` contains one column per metric per split. Use polars to inspect:
+After fitting, `cv_results_` contains mean scores and independent rankings for each metric. Use polars to compare:
 
 ```python
 import polars as pl
 
 results = pl.DataFrame(search.cv_results_)
 
-# Each metric has mean and std columns
-print(results.select(["params", "mean_test_mae", "mean_test_rmse"]).sort("mean_test_mae"))
+# Each metric has mean, std, and rank columns
+print(
+    results.select(["params", "mean_test_mae", "mean_test_rmse", "rank_test_mae", "rank_test_rmse"])
+    .sort("rank_test_mae")
+)
 ```
+
+Different metrics can rank trials differently. The `rank_test_*` columns let you see whether the best trial by MAE is also the best by RMSE. Setting `return_train_score=True` adds `mean_train_*` columns for overfitting diagnostics: large gaps between train and test scores suggest the model is memorizing the data.
 
 ## Predict with the Best Forecaster
 
