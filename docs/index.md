@@ -39,31 +39,14 @@
 
     [Examples](pages/tutorials/examples.md)
 
-
 </div>
-
-## Table of Contents
-
-### [Getting Started](pages/tutorials/getting-started.md)
-
-Install Yohou-Optuna and run your first Bayesian hyperparameter search.
-
-### [Examples](pages/tutorials/examples.md)
-
-Interactive marimo notebooks demonstrating real-world time series hyperparameter tuning.
-
-### [Configuration](pages/how-to/configure.md)
-
-Configure samplers, callbacks, study persistence, and cross-validation.
-
-### [API Reference](pages/reference/api.md)
-
-Complete API documentation for `OptunaSearchCV`, `Sampler`, `Storage`, and `Callback`.
-
-### [Concepts](pages/explanation/concepts.md)
-
-The object model, search lifecycle, temporal CV, and wrapper classes.
 
 ## License
 
-Yohou-Optuna is open source and licensed under the [Apache-2.0 License](https://opensource.org/licenses/Apache-2.0).
+This project is licensed under the terms of the [Apache-2.0 License](https://github.com/stateful-y/yohou-optuna/blob/main/LICENSE).
+
+## Acknowledgements
+
+This project is maintained by [stateful-y](https://stateful-y.io), an ML consultancy specializing in time series data science & engineering.
+
+![Made by stateful-y](assets/made_by_stateful-y.png){width=200}
