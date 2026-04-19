@@ -47,6 +47,6 @@ This project is licensed under the terms of the [Apache-2.0 License](https://git
 
 ## Acknowledgements
 
-This project is maintained by [stateful-y](https://stateful-y.io), an ML consultancy specializing in time series data science & engineering.
+This project is maintained by [stateful-y](https://stateful-y.io), an ML consultancy specializing in time series data science & engineering. If you're interested in collaborating or learning more about our services, please visit our website.
 
 ![Made by stateful-y](assets/made_by_stateful-y.png){width=200}
