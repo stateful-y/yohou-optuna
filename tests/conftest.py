@@ -367,6 +367,58 @@ def interval_forecaster():
 
 
 @pytest.fixture
+def class_proba_forecaster():
+    """Create a ClassProbaReductionForecaster for class probability testing.
+
+    Returns
+    -------
+    ClassProbaReductionForecaster
+        A forecaster that supports class probability prediction.
+
+    """
+    from sklearn.linear_model import LogisticRegression
+    from yohou.class_proba import ClassProbaReductionForecaster
+    from yohou.compose import FeaturePipeline
+    from yohou.preprocessing import LagTransformer
+
+    return ClassProbaReductionForecaster(
+        estimator=LogisticRegression(),
+        reduction_strategy="direct",
+        feature_transformer=FeaturePipeline([("lag", LagTransformer(lag=[1, 2, 3]))]),
+    )
+
+
+@pytest.fixture
+def y_class_proba_factory():
+    """Factory for generating binary classification time series data.
+
+    Returns a callable that generates a polars DataFrame with a ``"time"``
+    column and binary class columns suitable for class probability
+    forecasters.
+
+    Returns
+    -------
+    callable
+        Factory function accepting length and seed parameters.
+
+    """
+
+    def _factory(length=100, seed=42):
+        rng = np.random.default_rng(seed)
+        time_col = pl.datetime_range(
+            start=datetime(2021, 12, 16),
+            end=datetime(2021, 12, 16) + timedelta(seconds=length - 1),
+            interval="1s",
+            eager=True,
+        )
+        classes = rng.choice([0.0, 1.0], size=length)
+        y = pl.DataFrame({"time": time_col, "label": classes})
+        return y
+
+    return _factory
+
+
+@pytest.fixture
 def large_param_distributions():
     """Create parameter distributions with many parameters for stress testing.
 

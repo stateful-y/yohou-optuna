@@ -1618,6 +1618,7 @@ class TestIntervalPrediction:
     def test_interval_forecaster_fit_and_predict(self, y_X_factory, default_sampler):
         """Test that interval forecaster can be fitted and make predictions."""
         from yohou.interval import IntervalReductionForecaster
+        from yohou.metrics import IntervalScore
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         search = OptunaSearchCV(
@@ -1625,7 +1626,7 @@ class TestIntervalPrediction:
             param_distributions={
                 "estimator__estimator__alpha": FloatDistribution(0.0, 1.0),
             },
-            scoring=MeanAbsoluteError(),
+            scoring=IntervalScore(coverage_rates=[0.1, 0.5, 0.9]),
             sampler=default_sampler,
             n_trials=2,
             cv=2,
@@ -1656,7 +1657,7 @@ class TestIntervalPrediction:
         assert hasattr(search, "best_forecaster_")
 
     def test_point_forecaster_with_interval_scorer_raises(self, y_X_factory, default_sampler):
-        """Test that using an interval scorer with a point forecaster raises TypeError."""
+        """Test that using an interval scorer with a point forecaster raises ValueError."""
         from yohou.metrics import IntervalScore
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
@@ -1670,5 +1671,217 @@ class TestIntervalPrediction:
             n_trials=2,
             cv=2,
         )
-        with pytest.raises(TypeError, match="Interval scorers require a forecaster"):
+        with pytest.raises(ValueError, match="interval"):
             search.fit(y, X, forecasting_horizon=3)
+
+
+class TestClassProbaPrediction:
+    """Test class probability forecasting support."""
+
+    def test_class_proba_forecaster_fit_and_predict(
+        self, class_proba_forecaster, y_class_proba_factory, default_sampler
+    ):
+        """Test that class proba forecaster can be fitted and make predictions."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+        assert hasattr(search, "best_forecaster_")
+        assert hasattr(search, "best_params_")
+        assert hasattr(search, "best_score_")
+
+    def test_class_proba_predict_class_proba_after_fit(
+        self, class_proba_forecaster, y_class_proba_factory, default_sampler
+    ):
+        """Test predict_class_proba works after fit."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+        y_pred = search.predict_class_proba(forecasting_horizon=3)
+        assert y_pred is not None
+        assert len(y_pred) > 0
+
+    def test_class_proba_cv_results_structure(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test cv_results_ has expected keys for class proba search."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=3,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        cv = search.cv_results_
+        assert "params" in cv
+        assert "mean_test_score" in cv
+        assert "rank_test_score" in cv
+        assert len(cv["params"]) == 3
+
+    def test_class_proba_multimetric(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test multi-metric scoring with class proba scorers."""
+        from yohou.metrics.class_proba import Accuracy, BrierScore
+
+        y = y_class_proba_factory(length=100)
+        scoring = {
+            "brier": BrierScore(),
+            "accuracy": Accuracy(),
+        }
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=scoring,
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit="brier",
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        assert search.multimetric_
+        assert "mean_test_brier" in search.cv_results_
+        assert "mean_test_accuracy" in search.cv_results_
+        assert "rank_test_brier" in search.cv_results_
+        assert "rank_test_accuracy" in search.cv_results_
+
+    def test_class_proba_with_train_score(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test return_train_score with class proba forecaster."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=True,
+            return_train_score=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        cv = search.cv_results_
+        assert "mean_train_score" in cv
+        assert "split0_train_score" in cv
+
+    def test_point_forecaster_with_class_proba_scorer_raises(self, y_X_factory, default_sampler):
+        """Test that using a class proba scorer with a point forecaster raises ValueError."""
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=PointReductionForecaster(estimator=Ridge()),
+            param_distributions={
+                "estimator__alpha": FloatDistribution(0.01, 10.0),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+        )
+        with pytest.raises(ValueError, match="class"):
+            search.fit(y, X, forecasting_horizon=3)
+
+    def test_class_proba_forecaster_with_point_scorer_raises(
+        self, class_proba_forecaster, y_class_proba_factory, default_sampler
+    ):
+        """Test that using a point scorer with a class proba forecaster raises ValueError."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0),
+            },
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+        )
+        with pytest.raises(ValueError, match="point"):
+            search.fit(y, forecasting_horizon=3)
+
+    def test_class_proba_refit_false(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test refit=False with class proba forecaster."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=False,
+        )
+        search.fit(y, forecasting_horizon=3)
+        assert not hasattr(search, "best_forecaster_")
+
+    def test_class_proba_best_params_applied(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test that best params are correctly applied to the refitted forecaster."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=3,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        best_C = search.best_params_["estimator__C"]
+        assert search.best_forecaster_.get_params()["estimator__C"] == best_C
+
+    def test_class_proba_no_predict_interval(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
+        """Test that class proba forecaster does not expose predict_interval."""
+        y = y_class_proba_factory(length=100)
+        search = OptunaSearchCV(
+            forecaster=class_proba_forecaster,
+            param_distributions={
+                "estimator__C": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=self._brier_score(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            refit=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        with pytest.raises(AttributeError):
+            search.predict_interval(forecasting_horizon=3)
+
+    @staticmethod
+    def _brier_score():
+        from yohou.metrics.class_proba import BrierScore
+
+        return BrierScore()

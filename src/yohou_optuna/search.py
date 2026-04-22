@@ -19,12 +19,13 @@ from yohou.model_selection.search import BaseSearchCV
 from yohou.model_selection.split import check_cv
 from yohou.model_selection.utils import (
     _collect_coverage_rates,
-    _needs_interval_predictions,
+    _resolve_response_method,
+    _validate_forecaster_scorer_compatibility,
 )
 from yohou.utils import validate_search_data
 
 from .objective import _Objective
-from .utils import _build_cv_results, _validate_forecaster_scorer_compatibility
+from .utils import _build_cv_results
 
 
 # TODO: Check reference and make it mkdocs-compatible
@@ -261,9 +262,9 @@ class OptunaSearchCV(BaseSearchCV):
                 )
                 raise ValueError(msg)
 
-        # Determine interval prediction needs
-        needs_interval = _needs_interval_predictions(scorers)
-        coverage_rates = _collect_coverage_rates(scorers) if needs_interval else None
+        # Determine prediction context from scorer response methods
+        response_method = _resolve_response_method(scorers)
+        coverage_rates = _collect_coverage_rates(scorers) if response_method == "predict_interval" else None
 
         # Get routed params
         routed_params = self._get_routed_params_for_fit(params)
@@ -308,10 +309,8 @@ class OptunaSearchCV(BaseSearchCV):
                 storage=storage_instance,
             )
 
-        # Route predict_params for interval or point prediction
-        predict_func_params = (
-            routed_params.forecaster.predict_interval if needs_interval else routed_params.forecaster.predict
-        )
+        # Route predict_params for the resolved response method
+        predict_func_params = getattr(routed_params.forecaster, response_method, {})
 
         # Create objective
         objective = _Objective(

@@ -7,10 +7,6 @@ from typing import Any
 import numpy as np
 import optuna
 from scipy.stats import rankdata
-from yohou.base import BaseForecaster
-from yohou.interval.base import BaseIntervalForecaster
-from yohou.metrics.base import BaseIntervalScorer, BaseScorer
-from yohou.model_selection.utils import _MultimetricScorer
 
 
 def _build_cv_results(
@@ -253,37 +249,3 @@ def _compute_rankings(results: dict[str, Any]) -> None:
         rank_key = f"rank_test{suffix}"
 
         results[rank_key] = ranks
-
-
-def _validate_forecaster_scorer_compatibility(
-    forecaster: BaseForecaster,
-    scorers: BaseScorer | _MultimetricScorer,
-) -> None:
-    """Validate that the forecaster supports the prediction type required by scorers.
-
-    Parameters
-    ----------
-    forecaster : BaseForecaster
-        The forecaster to validate.
-    scorers : BaseScorer or _MultimetricScorer
-        The scorer(s) that will be used for evaluation.
-
-    Raises
-    ------
-    TypeError
-        If interval scorers are used with a forecaster that does not support
-        ``predict_interval``.
-
-    """
-    if isinstance(scorers, _MultimetricScorer):
-        has_interval = any(isinstance(s, BaseIntervalScorer) for s in scorers._scorers.values())
-    else:
-        has_interval = isinstance(scorers, BaseIntervalScorer)
-
-    if has_interval and not isinstance(forecaster, BaseIntervalForecaster):
-        msg = (
-            f"Interval scorers require a forecaster that supports predict_interval, "
-            f"but {type(forecaster).__name__} does not. "
-            f"Use a BaseIntervalForecaster subclass instead."
-        )
-        raise TypeError(msg)
