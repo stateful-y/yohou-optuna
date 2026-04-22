@@ -51,7 +51,7 @@ def _build_cv_results(
         return {"params": []}
 
     # Infer metric names
-    metric_names = _infer_metric_names(completed_trials[0], multimetric)
+    metric_names = _infer_metric_names(completed_trials, multimetric)
 
     # Initialize result arrays
     results = _initialize_result_arrays(completed_trials, n_trials, metric_names, return_train_score)
@@ -65,13 +65,17 @@ def _build_cv_results(
     return results
 
 
-def _infer_metric_names(trial: optuna.trial.FrozenTrial, multimetric: bool) -> list[str]:
+def _infer_metric_names(trials: list[optuna.trial.FrozenTrial], multimetric: bool) -> list[str]:
     """Infer metric names from trial user attributes.
+
+    Searches through all completed trials to find metric names,
+    since error trials (completed but scored via ``error_score``)
+    may lack ``mean_test_`` attributes.
 
     Parameters
     ----------
-    trial : FrozenTrial
-        A completed trial to inspect for metric names.
+    trials : list of FrozenTrial
+        Completed trials to inspect for metric names.
     multimetric : bool
         Whether multiple metrics are expected.
 
@@ -82,13 +86,16 @@ def _infer_metric_names(trial: optuna.trial.FrozenTrial, multimetric: bool) -> l
 
     """
     if multimetric:
-        metric_names = []
-        for key in trial.user_attrs:
-            if key.startswith("mean_test_"):
-                metric_name = key[10:]  # len("mean_test_")
-                metric_names.append(metric_name)
-        metric_names.sort()
-        return metric_names
+        for trial in trials:
+            metric_names = []
+            for key in trial.user_attrs:
+                if key.startswith("mean_test_"):
+                    metric_name = key[10:]  # len("mean_test_")
+                    metric_names.append(metric_name)
+            if metric_names:
+                metric_names.sort()
+                return metric_names
+        return []
     else:
         return ["score"]
 

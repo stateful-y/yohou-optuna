@@ -1243,6 +1243,57 @@ class TestBuildCVResults:
         assert "std_test_score" in results
         assert "std_train_score" in results
 
+    def test_build_cv_results_error_trial_before_successful_multimetric(self, mocker):
+        """Test that metric names are inferred even when the first trial has no scores."""
+        from yohou_optuna.utils import _build_cv_results
+
+        # Error trial: completed but no mean_test_ attrs (exception before _store_scores)
+        error_trial = mocker.MagicMock()
+        error_trial.state = optuna.trial.TrialState.COMPLETE
+        error_trial.user_attrs = {
+            "param_estimator__alpha": 1.0,
+            "exception": "some error",
+            "exception_type": "ValueError",
+        }
+
+        # Successful trial with multi-metric scores
+        good_trial = mocker.MagicMock()
+        good_trial.state = optuna.trial.TrialState.COMPLETE
+        good_trial.user_attrs = {
+            "param_estimator__alpha": 2.0,
+            "mean_test_mae": -0.5,
+            "mean_test_rmse": -0.7,
+            "split0_test_mae": -0.4,
+            "split1_test_mae": -0.6,
+            "split0_test_rmse": -0.6,
+            "split1_test_rmse": -0.8,
+            "mean_fit_time": 0.1,
+            "std_fit_time": 0.01,
+            "mean_score_time": 0.05,
+            "std_score_time": 0.005,
+        }
+
+        results = _build_cv_results([error_trial, good_trial], multimetric=True, return_train_score=False)
+
+        assert "rank_test_mae" in results
+        assert "rank_test_rmse" in results
+
+    def test_build_cv_results_all_error_trials_multimetric(self, mocker):
+        """Test that all error trials produce empty metric names gracefully."""
+        from yohou_optuna.utils import _build_cv_results
+
+        error_trial = mocker.MagicMock()
+        error_trial.state = optuna.trial.TrialState.COMPLETE
+        error_trial.user_attrs = {
+            "param_estimator__alpha": 1.0,
+            "exception": "some error",
+        }
+
+        results = _build_cv_results([error_trial], multimetric=True, return_train_score=False)
+
+        assert "params" in results
+        assert len(results["params"]) == 1
+
 
 @pytest.mark.integration
 class TestIntegration:
