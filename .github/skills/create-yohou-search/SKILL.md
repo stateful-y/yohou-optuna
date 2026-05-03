@@ -45,7 +45,7 @@ search = GridSearchCV(
     scoring=MeanAbsoluteError(),
     cv=ExpandingWindowSplitter(n_splits=5),
 )
-search.fit(y, X, forecasting_horizon=3)
+search.fit(y, X_actual=X, forecasting_horizon=3)
 print(search.best_params_)
 ```
 
@@ -64,7 +64,7 @@ search = RandomizedSearchCV(
     n_iter=20,
     scoring=MeanAbsoluteError(),
 )
-search.fit(y, X, forecasting_horizon=3)
+search.fit(y, X_actual=X, forecasting_horizon=3)
 ```
 
 ---

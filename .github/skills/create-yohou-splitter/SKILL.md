@@ -25,7 +25,7 @@ description: "Step-by-step guide for implementing new time series cross-validati
 ### Expanding Window (Training Set Grows)
 
 ```python
-def split(self, y, X=None):
+def split(self, y, X_actual=None):
     n_samples = len(y)
     test_size = self.test_size or n_samples // (self.n_splits + 1)
 
@@ -40,7 +40,7 @@ def split(self, y, X=None):
 ### Sliding Window (Fixed Training Size)
 
 ```python
-def split(self, y, X=None):
+def split(self, y, X_actual=None):
     n_samples = len(y)
     test_size = self.test_size or n_samples // (self.n_splits + 1)
     train_size = self.train_size or n_samples - (self.n_splits * test_size)
@@ -64,7 +64,7 @@ _parameter_constraints: dict = {
     "gap": [Interval(numbers.Integral, 0, None, closed="left"), None],
 }
 
-def split(self, y, X=None):
+def split(self, y, X_actual=None):
     gap = self.gap or 0
     for i in range(self.n_splits):
         test_start = ...

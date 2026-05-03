@@ -50,7 +50,7 @@ def test_forecaster_basic_fit_predict(y_X_factory):
     """Test basic fit and predict workflow."""
     y, X = y_X_factory(length=100)
     forecaster = MyForecaster(param1=1)
-    forecaster.fit(y[:80], X[:80] if X else None, forecasting_horizon=5)
+    forecaster.fit(y[:80], X_actual=X[:80] if X else None, forecasting_horizon=5)
 
     y_pred = forecaster.predict(forecasting_horizon=5)
 
@@ -64,10 +64,10 @@ def test_forecaster_observe_predict(y_X_factory):
     """Test observe_predict workflow."""
     y, X = y_X_factory(length=100)
     forecaster = MyForecaster(param1=1)
-    forecaster.fit(y[:80], X[:80] if X else None, forecasting_horizon=5)
+    forecaster.fit(y[:80], X_actual=X[:80] if X else None, forecasting_horizon=5)
 
     # Observe new data and predict
-    y_pred = forecaster.observe_predict(y[80:85], X[80:85] if X else None)
+    y_pred = forecaster.observe_predict(y[80:85], X_actual=X[80:85] if X else None)
     assert len(y_pred) == 5
 
 
@@ -75,7 +75,7 @@ def test_forecaster_panel_data(y_X_factory):
     """Test forecaster handles panel data (prefixed columns)."""
     y, X = y_X_factory(length=100, n_targets=2, seed=42, panel=True)
     forecaster = MyForecaster(param1=1)
-    forecaster.fit(y[:80], X[:80] if X else None, forecasting_horizon=5)
+    forecaster.fit(y[:80], X_actual=X[:80] if X else None, forecasting_horizon=5)
 
     y_pred = forecaster.predict(forecasting_horizon=5)
 

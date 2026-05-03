@@ -66,8 +66,10 @@ class MyForecaster(BasePointForecaster):
     def fit(
         self,
         y: pl.DataFrame,
-        X: pl.DataFrame | None = None,
+        X_actual: pl.DataFrame | None = None,
         forecasting_horizon: StrictInt = 1,
+        X_future: pl.DataFrame | None = None,
+        X_forecast: pl.DataFrame | None = None,
         **params,
     ) -> "MyForecaster":
         """Fit forecaster.
@@ -76,7 +78,7 @@ class MyForecaster(BasePointForecaster):
         ----------
         y : pl.DataFrame
             Target time series with "time" column.
-        X : pl.DataFrame, optional
+        X_actual : pl.DataFrame, optional
             Exogenous features with "time" column.
         forecasting_horizon : int, default=1
             Number of steps ahead to forecast.
@@ -88,7 +90,7 @@ class MyForecaster(BasePointForecaster):
         self
 
         """
-        y_t, X_t = self._pre_fit(y=y, X=X, forecasting_horizon=forecasting_horizon)
+        y_t, X_t = self._pre_fit(y=y, X=X_actual, forecasting_horizon=forecasting_horizon, X_future=X_future, X_forecast=X_forecast)
         # Your fitting logic using y_t, X_t (already transformed)
         # Must set at least one fitted attribute with trailing underscore
         self.fitted_attr_ = ...  # Example: self.model_, self.coefficients_, etc.
@@ -96,7 +98,8 @@ class MyForecaster(BasePointForecaster):
 
     def predict(
         self,
-        X: pl.DataFrame | None = None,
+        X_future: pl.DataFrame | None = None,
+        X_forecast: pl.DataFrame | None = None,
         forecasting_horizon: StrictInt | None = None,
         panel_group_names: list[str] | None = None,
         predict_transformed: bool = False,
@@ -106,8 +109,10 @@ class MyForecaster(BasePointForecaster):
 
         Parameters
         ----------
-        X : pl.DataFrame, optional
-            Exogenous features for forecast period (must have "time" column).
+        X_future : pl.DataFrame, optional
+            Known future features for forecast period.
+        X_forecast : pl.DataFrame, optional
+            External forecasts with vintage_time and time columns.
         forecasting_horizon : int, optional
             Number of steps ahead to forecast. If None, uses value from fit().
         panel_group_names : list of str, optional
