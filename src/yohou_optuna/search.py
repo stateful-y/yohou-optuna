@@ -207,17 +207,31 @@ class OptunaSearchCV(BaseSearchCV):
         """
         raise NotImplementedError("OptunaSearchCV overrides fit() directly.")
 
-    def fit(self, y, X=None, forecasting_horizon=1, *, study=None, **params) -> OptunaSearchCV:
+    def fit(
+        self,
+        y: pl.DataFrame,
+        X_actual: pl.DataFrame | None = None,
+        forecasting_horizon: int = 1,
+        X_future: pl.DataFrame | None = None,
+        X_forecast: pl.DataFrame | None = None,
+        study=None,
+        **params,
+    ) -> OptunaSearchCV:
         """Run Optuna hyperparameter optimization.
 
         Parameters
         ----------
         y : pl.DataFrame
             Target time series with a ``"time"`` column.
-        X : pl.DataFrame or None, default=None
-            Exogenous features with a ``"time"`` column.
+        X_actual : pl.DataFrame or None, default=None
+            Actual observation features with a ``"time"`` column.
         forecasting_horizon : int, default=1
             Number of steps ahead to forecast.
+        X_future : pl.DataFrame or None, default=None
+            Known future features with a ``"time"`` column.
+        X_forecast : pl.DataFrame or None, default=None
+            External forecasts with ``"vintage_time"`` and ``"time"``
+            columns.
         study : optuna.study.Study or None, default=None
             An existing Optuna study to continue from.  If ``None``, a new
             study is created.
@@ -241,13 +255,13 @@ class OptunaSearchCV(BaseSearchCV):
         _raise_for_params(params, self, "fit")
 
         # Validate input data
-        validate_search_data(y, X)
+        validate_search_data(y, X_actual)
 
         scorers, refit_metric = self._get_scorers()
 
         _validate_forecaster_scorer_compatibility(self.forecaster, scorers)
 
-        y, X = indexable(y, X)
+        y, X_actual = indexable(y, X_actual)
         params = _check_method_params(y, params=params)
 
         self.scorer_ = scorers
@@ -271,7 +285,7 @@ class OptunaSearchCV(BaseSearchCV):
 
         # Get CV splitter
         cv_orig = check_cv(self.cv, forecasting_horizon)
-        self.n_splits_ = cv_orig.get_n_splits(y, X, **routed_params.splitter.split)
+        self.n_splits_ = cv_orig.get_n_splits(y, X_actual, **routed_params.splitter.split)
 
         # Instantiate sampler from wrapper
         sampler_instance = None
@@ -317,7 +331,9 @@ class OptunaSearchCV(BaseSearchCV):
             forecaster=self.forecaster,
             param_distributions=self.param_distributions,
             y=y,
-            X=X,
+            X_actual=X_actual,
+            X_future=X_future,
+            X_forecast=X_forecast,
             forecasting_horizon=forecasting_horizon,
             cv=cv_orig,
             scorers=scorers,
@@ -369,7 +385,14 @@ class OptunaSearchCV(BaseSearchCV):
             fit_params = dict(routed_params.forecaster.fit)
             if coverage_rates is not None:
                 fit_params["coverage_rates"] = coverage_rates
-            self.best_forecaster_.fit(y, X, forecasting_horizon, **fit_params)
+            self.best_forecaster_.fit(
+                y,
+                X_actual,
+                forecasting_horizon,
+                X_future=X_future,
+                X_forecast=X_forecast,
+                **fit_params,
+            )
             self.refit_time_ = time.time() - refit_start_time
 
         return self

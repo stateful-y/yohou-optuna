@@ -70,6 +70,9 @@ Documentation = "https://yohou-optuna.readthedocs.io"
 Repository = "https://github.com/stateful-y/yohou-optuna"
 "Bug Tracker" = "https://github.com/stateful-y/yohou-optuna/issues"
 
+[tool.uv]
+sources = { yohou = { workspace = true } }
+
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"

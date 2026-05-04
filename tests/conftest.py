@@ -280,15 +280,15 @@ class FailingForecaster(BaseForecaster):
         self.fail_on = fail_on
         self.exception_cls = exception_cls
 
-    def fit(self, y, X=None, forecasting_horizon=1, **fit_params):
+    def fit(self, y, X_actual=None, forecasting_horizon=1, **fit_params):
         """Raise if fail_on includes fit.
 
         Parameters
         ----------
         y : pl.DataFrame
             Target time series.
-        X : pl.DataFrame or None, default=None
-            Exogenous features.
+        X_actual : pl.DataFrame or None, default=None
+            Actual observation features.
         forecasting_horizon : int, default=1
             Forecast horizon.
         **fit_params : dict
@@ -310,15 +310,13 @@ class FailingForecaster(BaseForecaster):
         self.is_fitted_ = True
         return self
 
-    def predict(self, forecasting_horizon=None, X=None, **predict_params):
+    def predict(self, forecasting_horizon=None, **predict_params):
         """Raise if fail_on includes predict.
 
         Parameters
         ----------
         forecasting_horizon : int or None, default=None
             Number of steps to forecast.
-        X : pl.DataFrame or None, default=None
-            Exogenous features.
         **predict_params : dict
             Additional parameters.
 

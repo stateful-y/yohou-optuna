@@ -54,7 +54,7 @@ class TestOptunaSearchCVSystematicChecks:
         )
 
         search_cv_fitted = clone(search_cv)
-        search_cv_fitted.fit(y_train, X_train, forecasting_horizon=3)
+        search_cv_fitted.fit(y_train, X_actual=X_train, forecasting_horizon=3)
 
         tags = {
             "search_type": "optuna",
@@ -76,7 +76,7 @@ class TestOptunaSearchCVFit:
     def test_fit_with_valid_data_sets_required_attributes(self, optuna_search_cv, y_X_factory):
         """Test that fit runs and sets required attributes."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(optuna_search_cv, "cv_results_")
         assert hasattr(optuna_search_cv, "best_params_")
@@ -105,7 +105,7 @@ class TestOptunaSearchCVFit:
     def test_predict_after_fit_returns_forecasts(self, optuna_search_cv, y_X_factory):
         """Test predict works after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
         y_pred = optuna_search_cv.predict(forecasting_horizon=3)
         assert y_pred is not None
         assert len(y_pred) > 0
@@ -123,7 +123,7 @@ class TestCVResults:
     def test_cv_results_keys(self, optuna_search_cv, y_X_factory):
         """Test cv_results_ contains expected keys."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv_results = optuna_search_cv.cv_results_
         assert "params" in cv_results
@@ -138,7 +138,7 @@ class TestCVResults:
     def test_cv_results_param_keys(self, optuna_search_cv, y_X_factory):
         """Test cv_results_ contains parameter columns."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv_results = optuna_search_cv.cv_results_
         assert "param_estimator__alpha" in cv_results
@@ -146,7 +146,7 @@ class TestCVResults:
     def test_cv_results_split_keys(self, optuna_search_cv, y_X_factory):
         """Test cv_results_ contains per-split scores."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv_results = optuna_search_cv.cv_results_
         assert "split0_test_score" in cv_results
@@ -166,13 +166,13 @@ class TestCVResults:
             n_trials=n_trials,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert len(search.cv_results_["params"]) == n_trials
 
     def test_cv_results_rankings(self, optuna_search_cv, y_X_factory):
         """Test that rankings are valid (1-indexed, dense)."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         ranks = optuna_search_cv.cv_results_["rank_test_score"]
         assert np.min(ranks) == 1
@@ -185,14 +185,14 @@ class TestStudyAndTrials:
     def test_study_stored(self, optuna_search_cv, y_X_factory):
         """Test that study_ is stored after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert isinstance(optuna_search_cv.study_, optuna.study.Study)
 
     def test_trials_stored(self, optuna_search_cv, y_X_factory):
         """Test that trials_ is stored after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert isinstance(optuna_search_cv.trials_, list)
         assert len(optuna_search_cv.trials_) == optuna_search_cv.n_trials
@@ -214,11 +214,11 @@ class TestStudyAndTrials:
         )
 
         # First fit
-        search.fit(y, X, forecasting_horizon=3, study=study)
+        search.fit(y, X_actual=X, forecasting_horizon=3, study=study)
         first_n_trials = len(study.trials)
 
         # Continue with same study
-        search.fit(y, X, forecasting_horizon=3, study=study)
+        search.fit(y, X_actual=X, forecasting_horizon=3, study=study)
         assert len(study.trials) == first_n_trials + 2
 
 
@@ -243,7 +243,7 @@ class TestMultiMetric:
             refit="mae",
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert search.multimetric_
         assert "mean_test_mae" in search.cv_results_
@@ -269,7 +269,7 @@ class TestMultiMetric:
             refit="mae",
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(search, "best_score_")
         assert search.best_score_ == search.cv_results_["mean_test_mae"][search.best_index_]
@@ -292,7 +292,7 @@ class TestMultiMetric:
             cv=2,
             return_train_score=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv = search.cv_results_
         assert "split0_train_mae" in cv
@@ -319,7 +319,7 @@ class TestMultiMetric:
             error_score=np.nan,
             refit=False,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv = search.cv_results_
         assert np.all(np.isnan(cv["mean_test_mae"]))
@@ -344,7 +344,7 @@ class TestMultiMetric:
             refit=False,
             return_train_score=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv = search.cv_results_
         assert np.all(np.isnan(cv["mean_train_mae"]))
@@ -367,7 +367,7 @@ class TestRefit:
             refit=False,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert not hasattr(search, "best_forecaster_")
         assert not hasattr(search, "refit_time_")
@@ -375,7 +375,7 @@ class TestRefit:
     def test_refit_true_creates_forecaster(self, optuna_search_cv, y_X_factory):
         """Test refit=True creates best_forecaster_."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(optuna_search_cv, "best_forecaster_")
         assert hasattr(optuna_search_cv, "refit_time_")
@@ -396,7 +396,7 @@ class TestRefit:
             error_score=np.nan,
             refit=False,
         )
-        result = search.fit(y, X, forecasting_horizon=3)
+        result = search.fit(y, X_actual=X, forecasting_horizon=3)
         assert result is search
 
     def test_empty_results_with_refit_true_raises_error(self, default_sampler, mocker):
@@ -433,7 +433,7 @@ class TestRefit:
             )
             y = pl.DataFrame({"time": time_col, "y_0": np.random.rand(100)})
             X = pl.DataFrame({"time": time_col, "X_0": np.random.rand(100)})
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_empty_results_with_refit_false_returns_self(self, default_sampler, mocker):
         """Test that fit returns self when no trials complete and refit=False."""
@@ -469,7 +469,7 @@ class TestRefit:
         y = pl.DataFrame({"time": time_col, "y_0": np.random.rand(100)})
         X = pl.DataFrame({"time": time_col, "X_0": np.random.rand(100)})
 
-        result = search.fit(y, X, forecasting_horizon=3)
+        result = search.fit(y, X_actual=X, forecasting_horizon=3)
         assert result is search
 
     def test_callable_refit_skips_best_score(self, y_X_factory, default_sampler):
@@ -491,7 +491,7 @@ class TestRefit:
             cv=2,
             refit=custom_refit,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(search, "best_forecaster_")
         assert hasattr(search, "best_params_")
@@ -514,7 +514,7 @@ class TestTrainScore:
             cv=2,
             return_train_score=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert "mean_train_score" in search.cv_results_
         assert "std_train_score" in search.cv_results_
@@ -523,7 +523,7 @@ class TestTrainScore:
     def test_no_train_score_by_default(self, optuna_search_cv, y_X_factory):
         """Test return_train_score=False by default."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert "mean_train_score" not in optuna_search_cv.cv_results_
 
@@ -542,7 +542,7 @@ class TestParameterValidation:
             cv=2,
         )
         with pytest.raises(ValueError, match="invalid distribution"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_clone_preserves_params(self, optuna_search_cv):
         """Test that clone preserves all constructor parameters."""
@@ -565,7 +565,7 @@ class TestParameterValidation:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert "param_estimator__alpha" in search.cv_results_
         assert "param_estimator__fit_intercept" in search.cv_results_
@@ -588,7 +588,7 @@ class TestParameterValidation:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_get_params_set_params_roundtrip(self, optuna_search_cv):
@@ -617,7 +617,7 @@ class TestParameterValidation:
             cv=2,
             n_jobs=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
         assert len(search.cv_results_["params"]) == 3
 
@@ -642,7 +642,7 @@ class TestErrorHandling:
             error_score=np.nan,
         )
         # Should not raise even if some trials fail
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_all_trials_fail_error_score_nan(self, y_X_factory, default_sampler, failing_forecaster):
         """Test that all-failing trials produce NaN scores with error_score=nan."""
@@ -659,7 +659,7 @@ class TestErrorHandling:
             error_score=np.nan,
             refit=False,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         # All trials should have NaN scores
         assert np.all(np.isnan(search.cv_results_["mean_test_score"]))
 
@@ -679,7 +679,7 @@ class TestErrorHandling:
             refit=False,
         )
         with pytest.raises(ValueError, match="intentional error"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_single_metric_error_with_train_score(self, default_sampler, y_X_factory):
         """Test error handling branch for single metric with return_train_score."""
@@ -689,7 +689,7 @@ class TestErrorHandling:
 
             _fit_count = 0
 
-            def fit(self, y, X=None, forecasting_horizon=None, **kwargs):
+            def fit(self, y, X_actual=None, forecasting_horizon=None, **kwargs):
                 """Raise on every fit call."""
                 FailOnSecondFitForecaster._fit_count += 1
                 raise RuntimeError("Intentional fit failure")
@@ -711,7 +711,7 @@ class TestErrorHandling:
         )
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(search, "cv_results_")
         assert FailOnSecondFitForecaster._fit_count > 0
@@ -734,7 +734,7 @@ class TestSamplerAndCallbacks:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_timeout(self, y_X_factory, default_sampler):
@@ -751,7 +751,7 @@ class TestSamplerAndCallbacks:
             timeout=300,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_invalid_callbacks_type_raises(self, y_X_factory, default_sampler):
@@ -769,7 +769,7 @@ class TestSamplerAndCallbacks:
             callbacks=["not", "a", "dict"],
         )
         with pytest.raises(TypeError, match="callbacks must be a dict"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_invalid_callback_value_raises(self, y_X_factory, default_sampler):
         """Test that non-Callback values in callbacks dict raises TypeError."""
@@ -786,7 +786,7 @@ class TestSamplerAndCallbacks:
             callbacks={"bad": "not_a_callback"},
         )
         with pytest.raises(TypeError, match="must be a Callback instance"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_valid_callback(self, y_X_factory, default_sampler):
         """Test that valid callback runs without error."""
@@ -804,7 +804,7 @@ class TestSamplerAndCallbacks:
             cv=2,
             callbacks={"stop": Callback(callback=optuna.study.MaxTrialsCallback, n_trials=3)},
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_storage_wrapper(self, y_X_factory, default_sampler):
@@ -823,7 +823,7 @@ class TestSamplerAndCallbacks:
             cv=2,
             storage=Storage(storage=optuna.storages.InMemoryStorage),
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_fit_with_sampler_none_uses_default(self, y_X_factory):
@@ -840,7 +840,7 @@ class TestSamplerAndCallbacks:
             cv=2,
             refit=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
     def test_existing_study_with_sampler_none(self, y_X_factory):
@@ -858,7 +858,7 @@ class TestSamplerAndCallbacks:
             cv=2,
             refit=True,
         )
-        search.fit(y, X, forecasting_horizon=3, study=existing_study)
+        search.fit(y, X_actual=X, forecasting_horizon=3, study=existing_study)
         assert search.study_ is existing_study
 
 
@@ -878,7 +878,7 @@ class TestObjective:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         for trial in search.trials_:
             assert trial.state == optuna.trial.TrialState.COMPLETE
@@ -897,7 +897,7 @@ class TestObjective:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         for trial in search.trials_:
             assert "param_estimator__alpha" in trial.user_attrs
@@ -915,7 +915,7 @@ class TestObjective:
             n_trials=2,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         trial = search.trials_[0]
         assert "mean_fit_time" in trial.user_attrs
@@ -937,7 +937,7 @@ class TestObjective:
             n_trials=2,
             cv=3,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         trial = search.trials_[0]
         assert "split0_test_score" in trial.user_attrs
@@ -962,7 +962,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -994,7 +996,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -1022,7 +1026,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -1049,7 +1055,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -1077,7 +1085,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -1106,7 +1116,9 @@ class TestObjective:
             forecaster=PointReductionForecaster(estimator=Ridge()),
             param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0)},
             y=None,
-            X=None,
+            X_actual=None,
+            X_future=None,
+            X_forecast=None,
             forecasting_horizon=3,
             cv=2,
             scorers=MeanAbsoluteError(),
@@ -1147,7 +1159,7 @@ class TestBuildCVResults:
             n_trials=5,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv = search.cv_results_
         best_idx = np.argmax(cv["mean_test_score"])
@@ -1166,7 +1178,7 @@ class TestBuildCVResults:
             n_trials=4,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert len(search.cv_results_["params"]) == 4
         for params_dict in search.cv_results_["params"]:
@@ -1176,7 +1188,7 @@ class TestBuildCVResults:
     def test_std_test_score_is_nonnegative(self, optuna_search_cv, y_X_factory):
         """Test that std of test scores is non-negative."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         std_scores = optuna_search_cv.cv_results_["std_test_score"]
         assert np.all(std_scores >= 0)
@@ -1198,7 +1210,7 @@ class TestBuildCVResults:
             refit="mae",
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv = search.cv_results_
         assert "rank_test_mae" in cv
@@ -1318,7 +1330,7 @@ class TestIntegration:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         y_pred = search.predict(forecasting_horizon=3)
         assert y_pred is not None
         assert len(y_pred) > 0
@@ -1343,7 +1355,7 @@ class TestIntegration:
             refit="mae",
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert "mean_test_mae" in search.cv_results_
         assert "mean_test_rmse" in search.cv_results_
@@ -1355,7 +1367,7 @@ class TestIntegration:
     def test_fit_duration_tracked(self, optuna_search_cv, y_X_factory):
         """Test that refit_time_ is set and is positive."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert hasattr(optuna_search_cv, "refit_time_")
         assert isinstance(optuna_search_cv.refit_time_, float)
@@ -1364,7 +1376,7 @@ class TestIntegration:
     def test_study_direction_is_maximize(self, optuna_search_cv, y_X_factory):
         """Test that the optuna study direction is maximize."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert optuna_search_cv.study_.direction == optuna.study.StudyDirection.MAXIMIZE
 
@@ -1382,14 +1394,14 @@ class TestIntegration:
             n_trials=2,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         assert isinstance(search.study_.sampler, optuna.samplers.RandomSampler)
 
     def test_trial_states_all_complete(self, optuna_search_cv, y_X_factory):
         """Test that all trials have COMPLETE state."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         for trial in optuna_search_cv.trials_:
             assert trial.state == optuna.trial.TrialState.COMPLETE
@@ -1401,7 +1413,7 @@ class TestSklearnTags:
     def test_tags_from_fitted_forecaster(self, optuna_search_cv, y_X_factory):
         """Test that tags are delegated from best_forecaster_ after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         tags = optuna_search_cv.__sklearn_tags__()
         assert tags is not None
@@ -1454,7 +1466,7 @@ class TestPanelData:
             n_trials=2,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
         assert hasattr(search, "cv_results_")
 
@@ -1471,7 +1483,7 @@ class TestPanelData:
             n_trials=3,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         cv_results = search.cv_results_
         assert len(cv_results["params"]) == 3
@@ -1492,7 +1504,7 @@ class TestPanelData:
             cv=2,
             refit=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         y_pred = search.predict(forecasting_horizon=3)
         assert y_pred is not None
         # Panel data should have columns for each group
@@ -1505,21 +1517,21 @@ class TestForecasterDelegation:
     def test_observe_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
         """Test that observe() delegates to best_forecaster_ after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         # Get new data for observe
         y_new, X_new = y_X_factory(length=10, n_targets=1, n_features=2, seed=99)
-        result = optuna_search_cv.observe(y_new, X_new)
+        result = optuna_search_cv.observe(y_new, X_actual=X_new)
         assert result is optuna_search_cv
 
     def test_observe_predict_delegates_to_best_forecaster(self, optuna_search_cv, y_X_factory):
         """Test that observe_predict() delegates to best_forecaster_ after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         # Get new data for observe_predict
         y_new, X_new = y_X_factory(length=10, n_targets=1, n_features=2, seed=99)
-        y_pred = optuna_search_cv.observe_predict(y_new, X_new, forecasting_horizon=3)
+        y_pred = optuna_search_cv.observe_predict(y_new, X_actual=X_new, forecasting_horizon=3)
         assert y_pred is not None
         assert len(y_pred) > 0
 
@@ -1527,13 +1539,13 @@ class TestForecasterDelegation:
         """Test that observe() before fit raises AttributeError."""
         y, X = y_X_factory(length=10, n_targets=1, n_features=2)
         with pytest.raises(AttributeError):
-            optuna_search_cv.observe(y, X)
+            optuna_search_cv.observe(y, X_actual=X)
 
     def test_observe_predict_before_fit_raises_error(self, optuna_search_cv, y_X_factory):
         """Test that observe_predict() before fit raises AttributeError."""
         y, X = y_X_factory(length=10, n_targets=1, n_features=2)
         with pytest.raises(AttributeError):
-            optuna_search_cv.observe_predict(y, X, forecasting_horizon=3)
+            optuna_search_cv.observe_predict(y, X_actual=X, forecasting_horizon=3)
 
 
 @pytest.mark.slow
@@ -1556,7 +1568,7 @@ class TestStress:
             n_trials=10,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert len(search.cv_results_["params"]) == 10
         for key in ["param_estimator__alpha", "param_estimator__fit_intercept"]:
             assert key in search.cv_results_
@@ -1574,7 +1586,7 @@ class TestStress:
             n_trials=20,
             cv=2,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert len(search.cv_results_["params"]) == 20
 
 
@@ -1601,7 +1613,7 @@ class TestStorageIntegration:
             cv=2,
             storage=storage,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
 
         # Verify database file was created
         assert db_path.exists()
@@ -1630,7 +1642,7 @@ class TestStorageIntegration:
             cv=2,
             refit=False,
         )
-        search1.fit(y, X, forecasting_horizon=3, study=study1)
+        search1.fit(y, X_actual=X, forecasting_horizon=3, study=study1)
         first_count = len(study1.trials)
 
         # Resume with same study
@@ -1646,7 +1658,7 @@ class TestStorageIntegration:
             cv=2,
             refit=False,
         )
-        search2.fit(y, X, forecasting_horizon=3, study=study2)
+        search2.fit(y, X_actual=X, forecasting_horizon=3, study=study2)
 
         # Should have 4 total trials
         assert len(study2.trials) == first_count + 2
@@ -1658,7 +1670,7 @@ class TestIntervalPrediction:
     def test_point_forecaster_no_predict_interval(self, optuna_search_cv, y_X_factory):
         """Test that point forecaster does not have predict_interval available."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
-        optuna_search_cv.fit(y, X, forecasting_horizon=3)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
 
         # PointReductionForecaster doesn't support interval prediction
         # The method should not be available via available_if decorator
@@ -1683,7 +1695,7 @@ class TestIntervalPrediction:
             cv=2,
             refit=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_forecaster_")
 
     @pytest.mark.slow
@@ -1704,7 +1716,7 @@ class TestIntervalPrediction:
             cv=2,
             refit=True,
         )
-        search.fit(y, X, forecasting_horizon=3)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
         assert hasattr(search, "best_forecaster_")
 
     def test_point_forecaster_with_interval_scorer_raises(self, y_X_factory, default_sampler):
@@ -1723,7 +1735,7 @@ class TestIntervalPrediction:
             cv=2,
         )
         with pytest.raises(ValueError, match="interval"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
 
 class TestClassProbaPrediction:
@@ -1856,7 +1868,7 @@ class TestClassProbaPrediction:
             cv=2,
         )
         with pytest.raises(ValueError, match="class"):
-            search.fit(y, X, forecasting_horizon=3)
+            search.fit(y, X_actual=X, forecasting_horizon=3)
 
     def test_class_proba_forecaster_with_point_scorer_raises(
         self, class_proba_forecaster, y_class_proba_factory, default_sampler

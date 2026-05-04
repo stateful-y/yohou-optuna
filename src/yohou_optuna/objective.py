@@ -15,7 +15,7 @@ from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
-from yohou.model_selection.utils import _MultimetricScorer, _score
+from yohou.model_selection.utils import _MultimetricScorer, _score, _split_forecast_data
 
 
 class _Objective:
@@ -34,8 +34,13 @@ class _Objective:
         Dictionary mapping parameter names to Optuna distributions.
     y : pl.DataFrame
         Target time series with a ``"time"`` column.
-    X : pl.DataFrame or None
-        Feature time series with a ``"time"`` column.
+    X_actual : pl.DataFrame or None
+        Actual observation features with a ``"time"`` column.
+    X_future : pl.DataFrame or None
+        Known future features with a ``"time"`` column.
+    X_forecast : pl.DataFrame or None
+        External forecasts with ``"vintage_time"`` and ``"time"``
+        columns.
     forecasting_horizon : int
         Number of steps ahead to forecast.
     cv : BaseSplitter
@@ -84,7 +89,9 @@ class _Objective:
         forecaster: BaseForecaster,
         param_distributions: dict[str, Any],
         y: pl.DataFrame,
-        X: pl.DataFrame | None,
+        X_actual: pl.DataFrame | None,
+        X_future: pl.DataFrame | None,
+        X_forecast: pl.DataFrame | None,
         forecasting_horizon: int,
         cv: Any,
         scorers: BaseScorer | _MultimetricScorer,
@@ -102,7 +109,9 @@ class _Objective:
         self.forecaster = forecaster
         self.param_distributions = param_distributions
         self.y = y
-        self.X = X
+        self.X_actual = X_actual
+        self.X_future = X_future
+        self.X_forecast = X_forecast
         self.forecasting_horizon = forecasting_horizon
         self.cv = cv
         self.scorers = scorers
@@ -207,7 +216,7 @@ class _Objective:
         cloned_forecaster = clone(self.forecaster)
         cloned_forecaster.set_params(**params)
 
-        splits = list(self.cv.split(self.y, self.X))
+        splits = list(self.cv.split(self.y, self.X_actual))
         all_test_scores: list[dict[str, float | str] | float | str] = []
         all_train_scores: list[dict[str, float | str] | float | str] = []
         all_fit_times: list[float] = []
@@ -216,8 +225,11 @@ class _Objective:
         for _split_idx, (train, test) in enumerate(splits):
             fold_forecaster = clone(cloned_forecaster)
 
-            y_train, X_train = _safe_split(fold_forecaster, self.y, self.X, train)
-            y_test, X_test = _safe_split(fold_forecaster, self.y, self.X, test, train)
+            y_train, X_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
+            y_test, X_test = _safe_split(fold_forecaster, self.y, self.X_actual, test, train)
+            X_forecast_train, X_forecast_test = _split_forecast_data(
+                self.X_forecast, self.y, train, test,
+            )
 
             # Adjust fit_params for this split
             fit_params = _check_method_params(self.y, params=self.fit_params, indices=train)
@@ -230,8 +242,10 @@ class _Objective:
                     fit_params["coverage_rates"] = self.coverage_rates
                 fold_forecaster.fit(
                     y=y_train,
-                    X=X_train,
+                    X_actual=X_train,
                     forecasting_horizon=self.forecasting_horizon,
+                    X_future=self.X_future,
+                    X_forecast=X_forecast_train,
                     **fit_params,
                 )
                 fit_time = time.time() - fit_start
@@ -248,6 +262,8 @@ class _Objective:
                     self.scorers,
                     score_params_test,
                     self.error_score,
+                    X_future=self.X_future,
+                    X_forecast=X_forecast_test,
                 )
                 score_time = time.time() - score_start
                 all_score_times.append(score_time)
@@ -260,7 +276,12 @@ class _Objective:
                     test_reset = train[-len(test) :]
                     y_train_reset, X_train_reset = _safe_split(fold_forecaster, y_train, X_train, train_reset)
                     y_train_test, X_train_test = _safe_split(fold_forecaster, y_train, X_train, test_reset, train_reset)
-                    fold_forecaster.rewind(y_train_reset, X_train_reset)
+                    fold_forecaster.rewind(
+                        y_train_reset,
+                        X_actual=X_train_reset,
+                        X_future=self.X_future,
+                        X_forecast=X_forecast_train,
+                    )
                     train_scores = _score(
                         fold_forecaster,
                         y_train_reset,
@@ -270,6 +291,8 @@ class _Objective:
                         self.scorers,
                         score_params_train,
                         self.error_score,
+                        X_future=self.X_future,
+                        X_forecast=X_forecast_train,
                     )
                     all_train_scores.append(train_scores)
 
