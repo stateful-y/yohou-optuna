@@ -209,12 +209,11 @@ class OptunaSearchCV(BaseSearchCV):
 
     def fit(
         self,
-        y,
-        X_actual=None,
-        forecasting_horizon=1,
-        *,
-        X_future=None,
-        X_forecast=None,
+        y: pl.DataFrame,
+        X_actual: pl.DataFrame | None = None,
+        forecasting_horizon: int = 1,
+        X_future: pl.DataFrame | None = None,
+        X_forecast: pl.DataFrame | None = None,
         study=None,
         **params,
     ) -> OptunaSearchCV:
