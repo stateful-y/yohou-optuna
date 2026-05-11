@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.1.0-alpha.6] - 2026-05-11
+
+This **minor release** includes 2 commits.
+
+
+### Features
+- Update API from X to X_actual, add X_future and X_forecast support  ([#24](https://github.com/stateful-y/yohou-optuna/pull/24)) by @gtauzin
+
+### Documentation
+- Update concepts.md for X_actual, X_future, X_forecast API by @gtauzin
+
+### Contributors
+
+Thanks to all contributors for this release:
+- @gtauzin
+
 ## [0.1.0-alpha.5] - 2026-04-22
 
 This **minor release** includes 1 commit.
