@@ -39,7 +39,7 @@ class TestOptunaSearchCVSystematicChecks:
 
         train_len = 80
         y_train, y_test = y[:train_len], y[train_len:]
-        X_train, X_test = X[:train_len], X[train_len:]
+        X_actual_train, X_actual_test = X[:train_len], X[train_len:]
 
         search_cv = OptunaSearchCV(
             forecaster=PointReductionForecaster(estimator=Ridge()),
@@ -54,7 +54,7 @@ class TestOptunaSearchCVSystematicChecks:
         )
 
         search_cv_fitted = clone(search_cv)
-        search_cv_fitted.fit(y_train, X_actual=X_train, forecasting_horizon=3)
+        search_cv_fitted.fit(y_train, X_actual=X_actual_train, forecasting_horizon=3)
 
         tags = {
             "search_type": "optuna",
@@ -65,7 +65,7 @@ class TestOptunaSearchCVSystematicChecks:
 
         run_checks(
             search_cv_fitted,
-            _yield_yohou_search_checks(search_cv_fitted, y_train, X_train, y_test, X_test, tags=tags),
+            _yield_yohou_search_checks(search_cv_fitted, y_train, X_actual_train, y_test, X_actual_test, tags=tags),
             expected_failures=self.EXPECTED_FAILURES,
         )
 
@@ -1332,6 +1332,32 @@ class TestIntegration:
         )
         search.fit(y, X_actual=X, forecasting_horizon=3)
         y_pred = search.predict(forecasting_horizon=3)
+        assert y_pred is not None
+        assert len(y_pred) > 0
+
+    @pytest.mark.filterwarnings("ignore::sklearn.exceptions.DataConversionWarning")
+    def test_fit_with_x_future(self, y_X_factory, default_sampler):
+        """Test OptunaSearchCV passes X_future through fit and predict."""
+        import polars as pl
+        from sklearn.ensemble import HistGradientBoostingRegressor
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        time_col = y["time"]
+        X_future = pl.DataFrame({"time": time_col, "future_feat": range(len(time_col))})
+
+        search = OptunaSearchCV(
+            forecaster=PointReductionForecaster(estimator=HistGradientBoostingRegressor(max_iter=10)),
+            param_distributions={
+                "estimator__max_iter": CategoricalDistribution([10, 20]),
+            },
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+        )
+        search.fit(y, X_actual=X, forecasting_horizon=1, X_future=X_future)
+        assert hasattr(search, "best_params_")
+        y_pred = search.predict(forecasting_horizon=1)
         assert y_pred is not None
         assert len(y_pred) > 0
 

@@ -215,7 +215,7 @@ class OptunaSearchCV(BaseSearchCV):
         forecasting_horizon: int = 1,
         X_future: pl.DataFrame | None = None,
         X_forecast: pl.DataFrame | None = None,
-        study=None,
+        study: optuna.study.Study | None = None,
         **params,
     ) -> OptunaSearchCV:
         """Run Optuna hyperparameter optimization.

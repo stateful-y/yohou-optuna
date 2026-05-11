@@ -225,8 +225,8 @@ class _Objective:
         for _split_idx, (train, test) in enumerate(splits):
             fold_forecaster = clone(cloned_forecaster)
 
-            y_train, X_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
-            y_test, X_test = _safe_split(fold_forecaster, self.y, self.X_actual, test, train)
+            y_train, X_actual_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
+            y_test, X_actual_test = _safe_split(fold_forecaster, self.y, self.X_actual, test, train)
             X_forecast_train, X_forecast_test = _split_X_forecast(
                 self.X_forecast,
                 self.y,
@@ -245,7 +245,7 @@ class _Objective:
                     fit_params["coverage_rates"] = self.coverage_rates
                 fold_forecaster.fit(
                     y=y_train,
-                    X_actual=X_train,
+                    X_actual=X_actual_train,
                     forecasting_horizon=self.forecasting_horizon,
                     X_future=self.X_future,
                     X_forecast=X_forecast_train,
@@ -260,7 +260,7 @@ class _Objective:
                     fold_forecaster,
                     y_train,
                     y_test,
-                    X_test,
+                    X_actual_test,
                     self.predict_func_params,
                     self.scorers,
                     score_params_test,
@@ -277,11 +277,15 @@ class _Objective:
                     score_params_train = _check_method_params(self.y, params=self.score_params, indices=train)
                     train_reset = train[: -len(test)]
                     test_reset = train[-len(test) :]
-                    y_train_reset, X_train_reset = _safe_split(fold_forecaster, y_train, X_train, train_reset)
-                    y_train_test, X_train_test = _safe_split(fold_forecaster, y_train, X_train, test_reset, train_reset)
+                    y_train_reset, X_actual_train_reset = _safe_split(
+                        fold_forecaster, y_train, X_actual_train, train_reset
+                    )
+                    y_train_test, X_actual_train_test = _safe_split(
+                        fold_forecaster, y_train, X_actual_train, test_reset, train_reset
+                    )
                     fold_forecaster.rewind(
                         y_train_reset,
-                        X_actual=X_train_reset,
+                        X_actual=X_actual_train_reset,
                         X_future=self.X_future,
                         X_forecast=X_forecast_train,
                     )
@@ -289,7 +293,7 @@ class _Objective:
                         fold_forecaster,
                         y_train_reset,
                         y_train_test,
-                        X_train_test,
+                        X_actual_train_test,
                         self.predict_func_params,
                         self.scorers,
                         score_params_train,

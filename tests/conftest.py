@@ -310,11 +310,15 @@ class FailingForecaster(BaseForecaster):
         self.is_fitted_ = True
         return self
 
-    def predict(self, forecasting_horizon=None, **predict_params):
+    def predict(self, X_future=None, X_forecast=None, forecasting_horizon=None, **predict_params):
         """Raise if fail_on includes predict.
 
         Parameters
         ----------
+        X_future : pl.DataFrame or None, default=None
+            Known future features.
+        X_forecast : pl.DataFrame or None, default=None
+            External forecasts.
         forecasting_horizon : int or None, default=None
             Number of steps to forecast.
         **predict_params : dict
