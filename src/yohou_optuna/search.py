@@ -7,6 +7,7 @@ from numbers import Integral, Real
 
 import numpy as np
 import optuna
+import polars as pl
 from optuna.distributions import BaseDistribution
 from sklearn.base import clone
 from sklearn.utils._param_validation import Interval

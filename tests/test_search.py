@@ -1807,7 +1807,8 @@ class TestClassProbaPrediction:
 
     def test_class_proba_multimetric(self, class_proba_forecaster, y_class_proba_factory, default_sampler):
         """Test multi-metric scoring with class proba scorers."""
-        from yohou.metrics.class_proba import Accuracy, BrierScore
+        from yohou.metrics.class_proba import BrierScore
+        from yohou.metrics.classification import Accuracy
 
         y = y_class_proba_factory(length=100)
         scoring = {

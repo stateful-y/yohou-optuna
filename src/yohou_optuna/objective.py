@@ -15,7 +15,7 @@ from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
-from yohou.model_selection.utils import _MultimetricScorer, _score, _split_forecast_data
+from yohou.model_selection.utils import _MultimetricScorer, _score, _split_X_forecast
 
 
 class _Objective:
@@ -227,8 +227,11 @@ class _Objective:
 
             y_train, X_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
             y_test, X_test = _safe_split(fold_forecaster, self.y, self.X_actual, test, train)
-            X_forecast_train, X_forecast_test = _split_forecast_data(
-                self.X_forecast, self.y, train, test,
+            X_forecast_train, X_forecast_test = _split_X_forecast(
+                self.X_forecast,
+                self.y,
+                train,
+                test,
             )
 
             # Adjust fit_params for this split
