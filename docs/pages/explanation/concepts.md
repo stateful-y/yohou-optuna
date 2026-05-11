@@ -6,17 +6,17 @@
 
 `OptunaSearchCV` inherits from Yohou's `BaseSearchCV`, which itself inherits from `BaseForecaster`. This means a fitted `OptunaSearchCV` **is** a forecaster, exposing the complete Yohou forecaster interface: `fit()`, `predict()`, `predict_interval()`, `observe()`, `observe_predict()`, and `observe_predict_interval()`.
 
-After fitting, you never need to unwrap it to access the best forecaster; `predict()` delegates to `best_forecaster_` automatically. This follows the Scikit-Learn convention that fitted search objects behave as the estimators they select. In Yohou, where the forecaster API carries temporal semantics (`fit(y, X, forecasting_horizon)`, observation windows, panel data), this inheritance is particularly valuable: `OptunaSearchCV` participates in the same compositions, pipelines, and evaluation loops as any other forecaster.
+After fitting, you never need to unwrap it to access the best forecaster; `predict()` delegates to `best_forecaster_` automatically. This follows the Scikit-Learn convention that fitted search objects behave as the estimators they select. In Yohou, where the forecaster API carries temporal semantics (`fit(y, X_actual, forecasting_horizon)`, observation windows, panel data), this inheritance is particularly valuable: `OptunaSearchCV` participates in the same compositions, pipelines, and evaluation loops as any other forecaster.
 
 `OptunaSearchCV` works with both point forecasters (e.g., `PointReductionForecaster`) and interval forecasters (e.g., `SplitConformalForecaster`). When interval scorers are used, coverage rates are routed automatically and prediction calls `predict_interval()` instead of `predict()`.
 
 ## The Search Lifecycle
 
-Calling `fit(y, X, forecasting_horizon)` triggers the following steps:
+Calling `fit(y, X_actual, forecasting_horizon)` triggers the following steps:
 
 1. An Optuna `Study` is created (or loaded from storage if `study_name` and `storage` are provided).
 2. For each of `n_trials` trials, the sampler proposes a parameter combination from `param_distributions`.
-3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The mean CV score across folds becomes the trial's objective value.
+3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The mean CV score across folds becomes the trial's objective value. If `X_future` or `X_forecast` are provided, they are forwarded to `fit()` and `predict()` within each fold.
 4. Optuna records the result and the sampler updates its internal model of the search space.
 5. After all trials, the best parameter combination is used to refit the forecaster on the full training data. The fitted forecaster is stored as `best_forecaster_`.
 
