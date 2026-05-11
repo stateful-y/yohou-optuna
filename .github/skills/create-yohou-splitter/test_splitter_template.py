@@ -30,7 +30,7 @@ def test_splitter_systematic_checks(
     expected_failures_set = set(expected_failures)
     tags = {"splitter_type": "expanding", "supports_panel_data": False}
 
-    for check_name, check_func, check_kwargs in _yield_yohou_splitter_checks(splitter, y, X, tags=tags):
+    for check_name, check_func, check_kwargs in _yield_yohou_splitter_checks(splitter, y, X_actual=X, tags=tags):
         if check_name in expected_failures_set:
             pytest.skip(f"Expected failure: {check_name}")
         else:

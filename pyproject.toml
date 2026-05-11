@@ -24,7 +24,7 @@ dependencies = [
   "optuna",
   "scipy",
   "sklearn-optuna",
-  "yohou>=0.1.0a5",
+  "yohou>=0.1.0a6",
 ]
 
 [dependency-groups]

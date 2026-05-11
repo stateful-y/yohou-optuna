@@ -56,7 +56,7 @@ def test_search_basic_fit(y_X_factory):
         param_space={"estimator__alpha": [0.1, 1.0, 10.0]},
         scoring=MeanAbsoluteError(),
     )
-    search.fit(y, X, forecasting_horizon=5)
+    search.fit(y, X_actual=X, forecasting_horizon=5)
 
     assert hasattr(search, "best_params_")
     assert hasattr(search, "best_score_")
@@ -72,7 +72,7 @@ def test_search_predict(y_X_factory):
         param_space={"estimator__alpha": [0.1, 1.0]},
         scoring=MeanAbsoluteError(),
     )
-    search.fit(y[:80], X[:80], forecasting_horizon=5)
+    search.fit(y[:80], X_actual=X[:80], forecasting_horizon=5)
     y_pred = search.predict(forecasting_horizon=5)
 
     assert len(y_pred) == 5
@@ -89,7 +89,7 @@ def test_search_best_params_valid(y_X_factory):
         param_space=param_space,
         scoring=MeanAbsoluteError(),
     )
-    search.fit(y, X, forecasting_horizon=5)
+    search.fit(y, X_actual=X, forecasting_horizon=5)
 
     assert search.best_params_["estimator__alpha"] in param_space["estimator__alpha"]
 
@@ -103,7 +103,7 @@ def test_search_cv_results(y_X_factory):
         param_space={"estimator__alpha": [0.1, 1.0]},
         scoring=MeanAbsoluteError(),
     )
-    search.fit(y, X, forecasting_horizon=5)
+    search.fit(y, X_actual=X, forecasting_horizon=5)
 
     assert hasattr(search, "cv_results_")
     assert len(search.cv_results_) >= 2
@@ -118,7 +118,7 @@ def test_search_clone(y_X_factory):
         param_space={"estimator__alpha": [0.1, 1.0]},
         scoring=MeanAbsoluteError(),
     )
-    search.fit(y, X, forecasting_horizon=5)
+    search.fit(y, X_actual=X, forecasting_horizon=5)
 
     cloned = clone(search)
     assert not hasattr(cloned, "best_params_")

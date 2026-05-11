@@ -49,7 +49,7 @@ class MySplitter(BaseSplitter):
     def split(
         self,
         y: pl.DataFrame,
-        X: pl.DataFrame | None = None,
+        X_actual: pl.DataFrame | None = None,
     ) -> Iterator[tuple[np.ndarray[Any, np.dtype[np.intp]], np.ndarray[Any, np.dtype[np.intp]]]]:
         """Generate indices to split time series data.
 
@@ -57,7 +57,7 @@ class MySplitter(BaseSplitter):
         ----------
         y : pl.DataFrame
             Target time series with mandatory "time" column.
-        X : pl.DataFrame, optional
+        X_actual : pl.DataFrame, optional
             Exogenous features (for signature compatibility, not used in splitting logic).
 
         Yields
@@ -69,11 +69,11 @@ class MySplitter(BaseSplitter):
 
         """
         # Validate data
-        y = validate_splitter_data(self, y=y, X=X)
+        y = validate_splitter_data(self, y=y, X=X_actual)
         _n_samples = len(y)  # noqa: F841
 
         # Generate test indices
-        for test_indices in self._iter_test_indices(y, X):
+        for test_indices in self._iter_test_indices(y, X_actual):
             # Compute train indices (all indices before test start)
             train_indices = np.arange(0, test_indices[0])
             yield train_indices, test_indices
@@ -81,7 +81,7 @@ class MySplitter(BaseSplitter):
     def _iter_test_indices(
         self,
         y: pl.DataFrame,
-        X: pl.DataFrame | None = None,
+        X_actual: pl.DataFrame | None = None,
     ) -> Iterator[np.ndarray[Any, np.dtype[np.intp]]]:
         """Generate test indices for each split.
 
@@ -89,7 +89,7 @@ class MySplitter(BaseSplitter):
         ----------
         y : pl.DataFrame
             Target time series.
-        X : pl.DataFrame, optional
+        X_actual : pl.DataFrame, optional
             Exogenous features.
 
         Yields
@@ -110,7 +110,7 @@ class MySplitter(BaseSplitter):
     def get_n_splits(
         self,
         y: pl.DataFrame | None = None,
-        X: pl.DataFrame | None = None,
+        X_actual: pl.DataFrame | None = None,
     ) -> int:
         """Returns the number of splitting iterations in the cross-validator.
 
@@ -118,7 +118,7 @@ class MySplitter(BaseSplitter):
         ----------
         y : pl.DataFrame, optional
             Target time series.
-        X : pl.DataFrame, optional
+        X_actual : pl.DataFrame, optional
             Exogenous features.
 
         Returns

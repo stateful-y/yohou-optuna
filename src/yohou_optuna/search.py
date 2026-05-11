@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from numbers import Integral, Real
+from typing import Any
 
 import numpy as np
 import optuna
+import polars as pl
 from optuna.distributions import BaseDistribution
 from sklearn.base import clone
 from sklearn.utils._param_validation import Interval
@@ -15,14 +18,17 @@ from sklearn.utils.metadata_routing import (
 )
 from sklearn.utils.validation import _check_method_params, indexable
 from sklearn_optuna.optuna import Callback, Sampler, Storage
+from yohou.base import BaseForecaster
+from yohou.metrics.base import BaseScorer
 from yohou.model_selection.search import BaseSearchCV
-from yohou.model_selection.split import check_cv
+from yohou.model_selection.split import BaseSplitter, check_cv
 from yohou.model_selection.utils import (
     _collect_coverage_rates,
     _resolve_response_method,
     _validate_forecaster_scorer_compatibility,
 )
 from yohou.utils import validate_search_data
+from yohou.utils.tags import Tags
 
 from .objective import _Objective
 from .utils import _build_cv_results
@@ -156,23 +162,23 @@ class OptunaSearchCV(BaseSearchCV):
 
     def __init__(
         self,
-        forecaster,
-        param_distributions,
+        forecaster: BaseForecaster,
+        param_distributions: dict[str, BaseDistribution],
         *,
-        scoring=None,
-        sampler=None,
-        storage=None,
-        callbacks=None,
-        n_trials=10,
-        timeout=None,
-        n_jobs=None,
-        refit=True,
-        cv=None,
-        verbose=0,
-        pre_dispatch="2*n_jobs",
-        error_score=np.nan,
-        return_train_score=False,
-    ):
+        scoring: BaseScorer | dict[str, BaseScorer] | None = None,
+        sampler: Sampler | None = None,
+        storage: Storage | None = None,
+        callbacks: dict[str, Callback] | None = None,
+        n_trials: int | None = 10,
+        timeout: float | None = None,
+        n_jobs: int | None = None,
+        refit: bool | str | Callable[..., int] = True,
+        cv: int | BaseSplitter | None = None,
+        verbose: int = 0,
+        pre_dispatch: int | str = "2*n_jobs",
+        error_score: float | str = np.nan,
+        return_train_score: bool = False,
+    ) -> None:
         super().__init__(
             forecaster=forecaster,
             scoring=scoring,
@@ -191,7 +197,7 @@ class OptunaSearchCV(BaseSearchCV):
         self.timeout = timeout
         self.callbacks = callbacks
 
-    def _run_search(self, evaluate_candidates):
+    def _run_search(self, evaluate_candidates: Callable[..., Any]) -> None:
         """Not used. OptunaSearchCV overrides fit() directly.
 
         Parameters
@@ -207,17 +213,31 @@ class OptunaSearchCV(BaseSearchCV):
         """
         raise NotImplementedError("OptunaSearchCV overrides fit() directly.")
 
-    def fit(self, y, X=None, forecasting_horizon=1, *, study=None, **params) -> OptunaSearchCV:
+    def fit(
+        self,
+        y: pl.DataFrame,
+        X_actual: pl.DataFrame | None = None,
+        forecasting_horizon: int = 1,
+        X_future: pl.DataFrame | None = None,
+        X_forecast: pl.DataFrame | None = None,
+        study: optuna.study.Study | None = None,
+        **params,
+    ) -> OptunaSearchCV:
         """Run Optuna hyperparameter optimization.
 
         Parameters
         ----------
         y : pl.DataFrame
             Target time series with a ``"time"`` column.
-        X : pl.DataFrame or None, default=None
-            Exogenous features with a ``"time"`` column.
+        X_actual : pl.DataFrame or None, default=None
+            Actual observation features with a ``"time"`` column.
         forecasting_horizon : int, default=1
             Number of steps ahead to forecast.
+        X_future : pl.DataFrame or None, default=None
+            Known future features with a ``"time"`` column.
+        X_forecast : pl.DataFrame or None, default=None
+            External forecasts with ``"vintage_time"`` and ``"time"``
+            columns.
         study : optuna.study.Study or None, default=None
             An existing Optuna study to continue from.  If ``None``, a new
             study is created.
@@ -241,13 +261,13 @@ class OptunaSearchCV(BaseSearchCV):
         _raise_for_params(params, self, "fit")
 
         # Validate input data
-        validate_search_data(y, X)
+        validate_search_data(y, X_actual)
 
         scorers, refit_metric = self._get_scorers()
 
         _validate_forecaster_scorer_compatibility(self.forecaster, scorers)
 
-        y, X = indexable(y, X)
+        y, X_actual = indexable(y, X_actual)
         params = _check_method_params(y, params=params)
 
         self.scorer_ = scorers
@@ -271,7 +291,7 @@ class OptunaSearchCV(BaseSearchCV):
 
         # Get CV splitter
         cv_orig = check_cv(self.cv, forecasting_horizon)
-        self.n_splits_ = cv_orig.get_n_splits(y, X, **routed_params.splitter.split)
+        self.n_splits_ = cv_orig.get_n_splits(y, X_actual, **routed_params.splitter.split)
 
         # Instantiate sampler from wrapper
         sampler_instance = None
@@ -317,7 +337,9 @@ class OptunaSearchCV(BaseSearchCV):
             forecaster=self.forecaster,
             param_distributions=self.param_distributions,
             y=y,
-            X=X,
+            X_actual=X_actual,
+            X_future=X_future,
+            X_forecast=X_forecast,
             forecasting_horizon=forecasting_horizon,
             cv=cv_orig,
             scorers=scorers,
@@ -369,12 +391,19 @@ class OptunaSearchCV(BaseSearchCV):
             fit_params = dict(routed_params.forecaster.fit)
             if coverage_rates is not None:
                 fit_params["coverage_rates"] = coverage_rates
-            self.best_forecaster_.fit(y, X, forecasting_horizon, **fit_params)
+            self.best_forecaster_.fit(
+                y,
+                X_actual,
+                forecasting_horizon,
+                X_future=X_future,
+                X_forecast=X_forecast,
+                **fit_params,
+            )
             self.refit_time_ = time.time() - refit_start_time
 
         return self
 
-    def __sklearn_tags__(self):
+    def __sklearn_tags__(self) -> Tags:
         """Get tags for this search estimator.
 
         Adds ``search_type = "optuna"`` to the tags returned by

@@ -44,8 +44,8 @@ Validation timing: (1) automatic at fit via `@_fit_context`, (2) domain-specific
 ## Panel Data Support
 
 ```python
-def fit(self, y, X, forecasting_horizon, **params):
-    y_t, X_t = self._pre_fit(y=y, X=X, forecasting_horizon=forecasting_horizon)
+def fit(self, y, X_actual, forecasting_horizon, *, X_future=None, X_forecast=None, **params):
+    y_t, X_t = self._pre_fit(y=y, X=X_actual, forecasting_horizon=forecasting_horizon, X_future=X_future, X_forecast=X_forecast)
     if self.panel_group_names_ is not None:
         for col_name in self.local_y_schema_:
             pass  # Process each series (local_y_schema_ is dict[str, pl.DataType])
@@ -60,14 +60,14 @@ def fit(self, y, X, forecasting_horizon, **params):
 All forecasters MUST set at least one fitted attribute (trailing underscore `_`) in `fit()`:
 
 ```python
-def fit(self, y, X, forecasting_horizon, **params):
-    y_t, X_t = self._pre_fit(y=y, X=X, forecasting_horizon=forecasting_horizon)
+def fit(self, y, X_actual, forecasting_horizon, *, X_future=None, X_forecast=None, **params):
+    y_t, X_t = self._pre_fit(y=y, X=X_actual, forecasting_horizon=forecasting_horizon, X_future=X_future, X_forecast=X_forecast)
 
     # Base class sets these automatically:
     # - self._forecasting_horizon
     # - self._observation_horizon
     # - self._y_observed (last observation_horizon rows)
-    # - self._X_observed (if X provided)
+    # - self._X_observed (if X_actual provided)
     # - self.panel_group_names_ (if panel data)
     # - self.local_y_schema_ (dict[str, pl.DataType], if panel data)
 
