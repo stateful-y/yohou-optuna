@@ -15,7 +15,7 @@ from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
-from yohou.model_selection.utils import _MultimetricScorer, _score, _split_X_forecast
+from yohou.model_selection.utils import _MultimetricScorer, _predict, _score, _split_X_forecast
 
 
 class _Objective:
@@ -254,19 +254,27 @@ class _Objective:
                 fit_time = time.time() - fit_start
                 all_fit_times.append(fit_time)
 
-                # Score test
+                # Score test. yohou's ``_score`` takes precomputed predictions,
+                # so predict first, then score.
                 score_start = time.time()
+                y_pred = _predict(
+                    fold_forecaster,
+                    y_test,
+                    X_actual_test,
+                    self.scorers,
+                    predict_func_params=self.predict_func_params,
+                    coverage_rates=self.coverage_rates,
+                    X_future=self.X_future,
+                    X_forecast=X_forecast_test,
+                )
                 test_scores = _score(
                     fold_forecaster,
                     y_train,
                     y_test,
-                    X_actual_test,
-                    self.predict_func_params,
+                    y_pred,
                     self.scorers,
                     score_params_test,
                     self.error_score,
-                    X_future=self.X_future,
-                    X_forecast=X_forecast_test,
                 )
                 score_time = time.time() - score_start
                 all_score_times.append(score_time)
@@ -289,17 +297,24 @@ class _Objective:
                         X_future=self.X_future,
                         X_forecast=X_forecast_train,
                     )
+                    y_pred_train = _predict(
+                        fold_forecaster,
+                        y_train_test,
+                        X_actual_train_test,
+                        self.scorers,
+                        predict_func_params=self.predict_func_params,
+                        coverage_rates=self.coverage_rates,
+                        X_future=self.X_future,
+                        X_forecast=X_forecast_train,
+                    )
                     train_scores = _score(
                         fold_forecaster,
                         y_train_reset,
                         y_train_test,
-                        X_actual_train_test,
-                        self.predict_func_params,
+                        y_pred_train,
                         self.scorers,
                         score_params_train,
                         self.error_score,
-                        X_future=self.X_future,
-                        X_forecast=X_forecast_train,
                     )
                     all_train_scores.append(train_scores)
 

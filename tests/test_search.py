@@ -29,6 +29,14 @@ class TestOptunaSearchCVSystematicChecks:
         "check_randomized_search_n_iter",
         "check_randomized_search_reproducibility",
         "check_randomized_search_distributions",
+        # Structurally incompatible with an Optuna search space: this check
+        # materializes candidate parameters via sklearn's ``ParameterSampler``,
+        # which only understands lists and scipy ``rv_frozen`` distributions and
+        # raises ``TypeError`` on Optuna ``BaseDistribution`` objects. The
+        # error_score behaviour it exercises (failing candidates recorded as NaN
+        # without raising, alongside valid candidates) is covered natively by
+        # ``TestErrorHandling`` and ``TestBuildCVResults``.
+        "check_search_error_score_handling",
     }
 
     def test_systematic_checks(self, y_X_factory, default_sampler):
