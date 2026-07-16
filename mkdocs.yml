@@ -165,7 +165,6 @@ nav:
   - Tutorials:
     - pages/tutorials/index.md
     - Getting Started: pages/tutorials/getting-started.md
-    - Examples: pages/tutorials/examples.md
   - How-to Guides:
     - pages/how-to/index.md
     - Configuration: pages/how-to/configure.md
@@ -175,6 +174,8 @@ nav:
     - Visualization: pages/how-to/visualize-study.md
     - Troubleshooting: pages/how-to/troubleshooting.md
     - Contributing: pages/how-to/contribute.md
+  - Examples:
+    - pages/examples/index.md
   - Reference:
     - pages/reference/index.md
     - API: pages/reference/api.md

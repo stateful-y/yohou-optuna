@@ -7,6 +7,8 @@ This guide shows you how to use `OptunaSearchCV` with panel (grouped) time serie
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
 - Familiarity with Yohou's panel data format (a DataFrame with a `time` column and one or more group columns)
 
+<!-- COMPANION_NOTEBOOKS -->
+
 ## Pass Panel Data Directly
 
 `OptunaSearchCV` handles panel data transparently via `fit()`. The cross-validation splitter partitions rows by time index, preserving all groups in every fold:

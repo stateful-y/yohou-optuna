@@ -7,6 +7,8 @@ This guide shows you how to analyze and visualize the results of an `OptunaSearc
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
 - A fitted `OptunaSearchCV` with at least 10-20 trials
 
+<!-- COMPANION_NOTEBOOKS -->
+
 ## Set Up a Fitted Search
 
 The examples below assume a fitted search. Here is a minimal setup:

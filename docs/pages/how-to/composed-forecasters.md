@@ -7,6 +7,8 @@ This guide shows you how to tune hyperparameters in composed forecasters (pipeli
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
 - Familiarity with Yohou's composition API (`DecompositionPipeline`, `ColumnForecaster`)
 
+<!-- COMPANION_NOTEBOOKS -->
+
 ## Use Double-Underscore for Nested Parameters
 
 Composed forecasters expose their components' parameters via the double-underscore convention. A `PointReductionForecaster` with an `estimator` and a `feature_transformer` exposes nested parameters like `estimator__alpha` and `feature_transformer__lag`:

@@ -7,6 +7,8 @@ This guide shows you how to evaluate multiple scoring metrics simultaneously dur
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
 - Familiarity with `OptunaSearchCV.fit()` basics
 
+<!-- COMPANION_NOTEBOOKS -->
+
 ## Define Multiple Scorers
 
 Pass a dictionary of scorers to the `scoring` parameter and set `refit` to the key that should drive model selection. Each scorer is evaluated on every cross-validation fold:
