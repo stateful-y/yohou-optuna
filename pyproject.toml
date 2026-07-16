@@ -95,7 +95,10 @@ line-length = 120
 target-version = "py311"
 src = ["src", "tests"]
 show-fixes = true
-exclude = ["src/yohou_optuna/_version.py", "examples/", ".github/skills/"]
+# Skill scaffolds are teaching templates, not project source: they are deliberately
+# incomplete (placeholder bodies, unused signature args mirroring the real API).
+# .claude/skills is the tracked source of truth; .github/skills is its gitignored mirror.
+exclude = ["src/yohou_optuna/_version.py", "examples/", ".claude/skills/", ".github/skills/"]
 
 [tool.ruff.format]
 preview = true

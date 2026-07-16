@@ -504,25 +504,24 @@ Notebooks serve **tutorials** or **how-to guides** only, never explanation or re
 **Example intro cell (tutorial)**:
 
 ```markdown
-# Your First Hyperparameter Search
+# Your First Pipeline
 
-In this notebook, we will run a hyperparameter search using OptunaSearchCV
-and inspect the results.
+In this notebook, we will build a small Yohou-Optuna pipeline end to end
+and inspect what it produces.
 
-**Prerequisites:** Python 3.11+ and familiarity with Scikit-Learn's fit/predict API.
+**Prerequisites:** Python 3.11+ and basic familiarity with yohou_optuna.
 ```
 
 **Example intro cell (how-to)**:
 
 ```markdown
-# How to Stop Optimization Early with Callbacks
+# How to Handle Missing Values
 
-This notebook shows how to attach Optuna callbacks to OptunaSearchCV
-to stop a search after a fixed number of trials.
+This notebook shows how to configure yohou_optuna to drop incomplete
+records before processing.
 
 **Prerequisites:** Familiarity with the
-OptunaSearchCV quickstart
-([View](/examples/quickstart/) · [Open in marimo](/examples/quickstart/edit/)).
+quickstart ([View](/examples/quickstart/) · [Open in marimo](/examples/quickstart/edit/)).
 ```
 
 #### Marimo Cell Conventions
