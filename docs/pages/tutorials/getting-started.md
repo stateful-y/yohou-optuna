@@ -6,10 +6,6 @@ description: Run your first Bayesian hyperparameter search, from installing the 
 
 In this tutorial, we will run our first Bayesian hyperparameter search for a time series forecaster. Along the way, we will install Yohou-Optuna, define a search space using Optuna distributions, fit an `OptunaSearchCV`, and predict with the best-found forecaster.
 
-!!! tip "Interactive notebook"
-    Follow along in the Quickstart notebook for a hands-on version of this tutorial.
-    [View](/examples/optuna_search/) · [Open in marimo](/examples/optuna_search/edit/)
-
 ## Prerequisites
 
 - Python 3.11+ installed
