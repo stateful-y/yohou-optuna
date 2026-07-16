@@ -1,3 +1,7 @@
+---
+description: Run your first Bayesian hyperparameter search, from installing the package to predicting with the best-found forecaster.
+---
+
 # Getting Started
 
 In this tutorial, we will run our first Bayesian hyperparameter search for a time series forecaster. Along the way, we will install Yohou-Optuna, define a search space using Optuna distributions, fit an `OptunaSearchCV`, and predict with the best-found forecaster.

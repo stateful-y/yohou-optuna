@@ -1,5 +1,6 @@
 ---
 template: api-index.html
+description: Every public Yohou-Optuna class and function, with signatures and parameters, generated from the source.
 ---
 
 # API Reference

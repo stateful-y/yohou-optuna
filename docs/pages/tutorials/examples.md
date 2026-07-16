@@ -1,3 +1,7 @@
+---
+description: Interactive marimo notebooks you can read online, run locally, or edit in the browser.
+---
+
 # Examples
 
 Interactive [marimo](https://marimo.io) notebooks organized by purpose: **Tutorials** walk through concepts step-by-step, while **How-to Guides** solve specific tasks.

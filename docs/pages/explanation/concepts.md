@@ -1,3 +1,7 @@
+---
+description: How OptunaSearchCV fits into Yohou's object model, what happens during a search, and why the design works the way it does.
+---
+
 # About OptunaSearchCV
 
 `OptunaSearchCV` is Yohou's integration of Optuna's Bayesian hyperparameter optimization. This page explores how it fits into Yohou's object model, how the search operates internally, and how the design connects to the broader ecosystem.
