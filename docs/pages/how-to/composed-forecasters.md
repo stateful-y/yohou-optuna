@@ -11,7 +11,7 @@ This guide shows you how to tune hyperparameters in composed forecasters (pipeli
 
 ## Use Double-Underscore for Nested Parameters
 
-Composed forecasters expose their components' parameters via the double-underscore convention. A `PointReductionForecaster` with an `estimator` and a `actual_transformer` exposes nested parameters like `estimator__alpha` and `actual_transformer__lag`:
+Composed forecasters expose their components' parameters via the double-underscore convention. A `PointReductionForecaster` with an `estimator` and an `actual_transformer` exposes nested parameters like `estimator__alpha` and `actual_transformer__lag`:
 
 ```python
 import optuna

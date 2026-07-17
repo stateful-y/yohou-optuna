@@ -33,7 +33,7 @@ _parameter_constraints: dict = {
     "float_param": [Interval(numbers.Real, 0.0, 1.0, closed="both")],      # Float in [0, 1]
     "positive_float": [Interval(numbers.Real, 0.0, None, closed="neither")], # Float > 0
     "optional_param": [Interval(numbers.Real, 0.0, 1.0, closed="both"), None],
-    "transformer_param": [BaseTransformer, None],
+    "transformer_param": [BaseActualTransformer, None],
 }
 ```
 
@@ -103,7 +103,8 @@ tags = {
     "uses_reduction": False,             # True for ReductionForecasters
     "supports_panel_data": True,
     "uses_target_transformer": False,    # True if target_transformer parameter exists
-    "uses_actual_transformer": False,   # True if actual_transformer parameter exists
+    "uses_actual_transformer": False,    # True if actual_transformer parameter exists
+    "uses_forecast_transformer": False,  # True if forecast_transformer parameter exists
     "tracks_observations": True,         # False for meta-forecasters delegating to children
 }
 ```

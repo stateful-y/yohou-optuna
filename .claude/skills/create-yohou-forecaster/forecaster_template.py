@@ -6,7 +6,7 @@ import polars as pl
 from pydantic import StrictInt
 from sklearn.base import _fit_context
 from sklearn.utils._param_validation import Interval
-from yohou.base import BaseTransformer
+from yohou.base import BaseActualTransformer, BaseForecastTransformer
 
 from .base import BasePointForecaster
 
@@ -18,10 +18,13 @@ class MyForecaster(BasePointForecaster):
     ----------
     param1 : int
         Description.
-    target_transformer : BaseTransformer, optional
+    target_transformer : BaseActualTransformer, optional
         Transformer for target variable (applied before forecasting).
-    actual_transformer : BaseTransformer, optional
-        Transformer for exogenous features X (applied before forecasting).
+    actual_transformer : BaseActualTransformer, optional
+        Transformer for past-only exogenous features (`X_actual`), applied before forecasting.
+    forecast_transformer : BaseForecastTransformer, optional
+        Transformer for external forecasts (`X_forecast`), applied before step columns
+        are derived. Must be forecast-kind (vintage-indexed).
 
     Attributes
     ----------
@@ -52,12 +55,15 @@ class MyForecaster(BasePointForecaster):
     def __init__(
         self,
         param1: int,
-        target_transformer: BaseTransformer | None = None,
-        actual_transformer: BaseTransformer | None = None,
+        *,
+        target_transformer: BaseActualTransformer | None = None,
+        actual_transformer: BaseActualTransformer | None = None,
+        forecast_transformer: BaseForecastTransformer | None = None,
     ):
         super().__init__(
             target_transformer=target_transformer,
             actual_transformer=actual_transformer,
+            forecast_transformer=forecast_transformer,
         )
         self.param1 = param1
         # DO NOT validate parameters here — validation happens at fit time via @_fit_context
