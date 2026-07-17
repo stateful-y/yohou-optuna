@@ -1,0 +1,10 @@
+# Reference
+
+Information-oriented description of what Yohou-Optuna provides: the API,
+its behaviour, and its release history. Reference material is for looking
+things up, not for learning. It describes the machinery and stays out of your
+way.
+
+<!-- SUBPAGES -->
+
+For the reasoning behind the design, see [Explanation](../explanation/index.md).

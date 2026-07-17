@@ -37,7 +37,7 @@
 
     Explore interactive example notebooks.
 
-    [Examples](pages/tutorials/examples.md)
+    [Examples](pages/examples/index.md)
 
 </div>
 

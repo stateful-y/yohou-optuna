@@ -1,3 +1,7 @@
+---
+description: Interactive marimo notebooks you can read online, run locally, or edit in the browser.
+---
+
 # Examples
 
 Interactive [marimo](https://marimo.io) notebooks organized by purpose: **Tutorials** walk through concepts step-by-step, while **How-to Guides** solve specific tasks.
@@ -29,6 +33,6 @@ Replace `optuna_search.py` with any example filename from the gallery above.
 
 ## Next Steps
 
-- Work through the [Getting Started](getting-started.md) tutorial if you are new to Yohou-Optuna
+- Work through the [Getting Started](../tutorials/getting-started.md) tutorial if you are new to Yohou-Optuna
 - Read [About OptunaSearchCV](../explanation/concepts.md) to understand how the search works
 - Browse the [API Reference](../reference/api.md) for full parameter documentation

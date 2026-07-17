@@ -2,14 +2,12 @@
 
 This guide shows you how to use `OptunaSearchCV` with panel (grouped) time series data, where multiple related series share a common time index.
 
-!!! tip "Interactive notebook"
-    See the companion notebook for a runnable example.
-    [View](/examples/panel_tuning/) · [Open in marimo](/examples/panel_tuning/edit/)
-
 ## Prerequisites
 
 - Yohou-Optuna installed ([Getting Started](../tutorials/getting-started.md))
 - Familiarity with Yohou's panel data format (a DataFrame with a `time` column and one or more group columns)
+
+<!-- COMPANION_NOTEBOOKS -->
 
 ## Pass Panel Data Directly
 

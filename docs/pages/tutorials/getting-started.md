@@ -1,10 +1,12 @@
+---
+description: Run your first Bayesian hyperparameter search, from installing the package to predicting with the best-found forecaster.
+---
+
 # Getting Started
 
 In this tutorial, we will run our first Bayesian hyperparameter search for a time series forecaster. Along the way, we will install Yohou-Optuna, define a search space using Optuna distributions, fit an `OptunaSearchCV`, and predict with the best-found forecaster.
 
-!!! tip "Interactive notebook"
-    Follow along in the Quickstart notebook for a hands-on version of this tutorial.
-    [View](/examples/optuna_search/) · [Open in marimo](/examples/optuna_search/edit/)
+<!-- COMPANION_NOTEBOOKS -->
 
 ## Prerequisites
 
@@ -146,27 +148,9 @@ You have:
 - Inspected the best score and parameters
 - Predicted with the best-found forecaster
 
-## Try Interactive Examples
-
-For hands-on learning with interactive notebooks, see the [Examples](examples.md) page where you can run code directly in your browser or experiment with different parameters.
-
-Or run locally:
-
-=== "just"
-
-    ```bash
-    just example optuna_search.py
-    ```
-
-=== "uv run"
-
-    ```bash
-    uv run marimo edit examples/optuna_search.py
-    ```
-
 ## Next Steps
 
 - **Understand the design**: Read [About OptunaSearchCV](../explanation/concepts.md) to understand the object model, the search lifecycle, and wrapper classes
-- **Explore more examples**: Browse the [Examples](examples.md) for interactive notebooks covering panel data, multi-metric search, and visualization
+- **Explore more examples**: Browse the [Examples](../examples/index.md) for interactive notebooks covering panel data, multi-metric search, and visualization
 - **Configure the search**: See [Configure OptunaSearchCV](../how-to/configure.md) for sampler selection, callbacks, and study persistence
 - **Browse the API**: See the [API Reference](../reference/api.md) for all parameters and attributes

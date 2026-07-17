@@ -48,6 +48,7 @@ def _(mo):
 def _():
     import numpy as np
     import optuna
+    import plotly.graph_objects as go
     import polars as pl
     from optuna.distributions import CategoricalDistribution, FloatDistribution
     from sklearn.linear_model import Ridge
@@ -58,7 +59,6 @@ def _():
     from yohou.plotting import (
         plot_correlation_heatmap,
         plot_forecast,
-        plot_model_comparison_bar,
         plot_time_series,
     )
     from yohou.point import PointReductionForecaster
@@ -78,12 +78,12 @@ def _():
         RootMeanSquaredError,
         Sampler,
         fetch_electricity_demand,
+        go,
         np,
         optuna,
         pl,
         plot_correlation_heatmap,
         plot_forecast,
-        plot_model_comparison_bar,
         plot_time_series,
     )
 
@@ -258,7 +258,7 @@ def _(mo):
 
 
 @app.cell
-def _(np, plot_model_comparison_bar, search):
+def _(go, np, search):
     best_by_mae_idx = search.best_index_
     best_by_rmse_idx = int(np.argmin(search.cv_results_["rank_test_rmse"]))
 
@@ -274,11 +274,21 @@ def _(np, plot_model_comparison_bar, search):
             "MSE": abs(search.cv_results_["mean_test_mse"][best_by_rmse_idx]),
         },
     }
-    plot_model_comparison_bar(
-        comparison,
-        group_by="model",
+
+    comparison_fig = go.Figure()
+    for metric in ("MAE", "RMSE", "MSE"):
+        comparison_fig.add_bar(
+            name=metric,
+            x=list(comparison),
+            y=[comparison[model][metric] for model in comparison],
+        )
+    comparison_fig.update_layout(
+        barmode="group",
         title="Best by MAE vs Best by RMSE",
+        xaxis_title="Model",
+        yaxis_title="Score",
     )
+    comparison_fig
     return
 
 
