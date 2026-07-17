@@ -11,7 +11,7 @@ This guide shows you how to tune hyperparameters in composed forecasters (pipeli
 
 ## Use Double-Underscore for Nested Parameters
 
-Composed forecasters expose their components' parameters via the double-underscore convention. A `PointReductionForecaster` with an `estimator` and a `feature_transformer` exposes nested parameters like `estimator__alpha` and `feature_transformer__lag`:
+Composed forecasters expose their components' parameters via the double-underscore convention. A `PointReductionForecaster` with an `estimator` and a `actual_transformer` exposes nested parameters like `estimator__alpha` and `actual_transformer__lag`:
 
 ```python
 import optuna
@@ -26,12 +26,12 @@ from yohou_optuna import OptunaSearchCV, Sampler
 
 forecaster = PointReductionForecaster(
     estimator=Ridge(),
-    feature_transformer=LagTransformer(lag=6),
+    actual_transformer=LagTransformer(lag=6),
 )
 
 param_distributions = {
     "estimator__alpha": FloatDistribution(0.001, 100.0, log=True),
-    "feature_transformer__lag": IntDistribution(3, 24),
+    "actual_transformer__lag": IntDistribution(3, 24),
 }
 
 search = OptunaSearchCV(

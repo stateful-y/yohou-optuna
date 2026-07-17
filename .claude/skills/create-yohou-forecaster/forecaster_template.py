@@ -20,7 +20,7 @@ class MyForecaster(BasePointForecaster):
         Description.
     target_transformer : BaseTransformer, optional
         Transformer for target variable (applied before forecasting).
-    feature_transformer : BaseTransformer, optional
+    actual_transformer : BaseTransformer, optional
         Transformer for exogenous features X (applied before forecasting).
 
     Attributes
@@ -53,11 +53,11 @@ class MyForecaster(BasePointForecaster):
         self,
         param1: int,
         target_transformer: BaseTransformer | None = None,
-        feature_transformer: BaseTransformer | None = None,
+        actual_transformer: BaseTransformer | None = None,
     ):
         super().__init__(
             target_transformer=target_transformer,
-            feature_transformer=feature_transformer,
+            actual_transformer=actual_transformer,
         )
         self.param1 = param1
         # DO NOT validate parameters here — validation happens at fit time via @_fit_context

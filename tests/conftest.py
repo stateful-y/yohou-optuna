@@ -386,7 +386,7 @@ def class_proba_forecaster():
     return ClassProbaReductionForecaster(
         estimator=LogisticRegression(),
         reduction_strategy="direct",
-        feature_transformer=FeaturePipeline([("lag", LagTransformer(lag=[1, 2, 3]))]),
+        actual_transformer=FeaturePipeline([("lag", LagTransformer(lag=[1, 2, 3]))]),
     )
 
 

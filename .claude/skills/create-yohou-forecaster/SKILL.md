@@ -103,7 +103,7 @@ tags = {
     "uses_reduction": False,             # True for ReductionForecasters
     "supports_panel_data": True,
     "uses_target_transformer": False,    # True if target_transformer parameter exists
-    "uses_feature_transformer": False,   # True if feature_transformer parameter exists
+    "uses_actual_transformer": False,   # True if actual_transformer parameter exists
     "tracks_observations": True,         # False for meta-forecasters delegating to children
 }
 ```
