@@ -132,8 +132,8 @@ def _(mo):
         r"""
         ## 3. Compose the Forecaster and Define the Search Space
 
-        Add a `LagTransformer` as the `feature_transformer` and define distributions
-        for both `estimator__alpha` and `feature_transformer__lag`. The `__` routing
+        Add a `LagTransformer` as the `actual_transformer` and define distributions
+        for both `estimator__alpha` and `actual_transformer__lag`. The `__` routing
         addresses parameters inside the composed pipeline.
         """
     )
@@ -162,14 +162,14 @@ def _(
 ):
     forecaster = PointReductionForecaster(
         estimator=Ridge(),
-        feature_transformer=LagTransformer(lag=6),
+        actual_transformer=LagTransformer(lag=6),
     )
 
     search = OptunaSearchCV(
         forecaster=forecaster,
         param_distributions={
             "estimator__alpha": FloatDistribution(0.001, 100.0, log=True),
-            "feature_transformer__lag": IntDistribution(3, 24),
+            "actual_transformer__lag": IntDistribution(3, 24),
         },
         scoring=MeanAbsoluteError(),
         sampler=Sampler(sampler=optuna.samplers.TPESampler, seed=42),
@@ -217,7 +217,7 @@ def _(pl, search):
         {
             "trial": list(range(len(search.cv_results_["params"]))),
             "alpha": [p.get("estimator__alpha", None) for p in search.cv_results_["params"]],
-            "lag": [p.get("feature_transformer__lag", None) for p in search.cv_results_["params"]],
+            "lag": [p.get("actual_transformer__lag", None) for p in search.cv_results_["params"]],
             "mean_test_score": search.cv_results_["mean_test_score"],
             "rank": search.cv_results_["rank_test_score"],
         }
@@ -241,7 +241,7 @@ def _(plot_cv_results_scatter, search):
 def _(plot_cv_results_scatter, search):
     plot_cv_results_scatter(
         search.cv_results_,
-        param_name="feature_transformer__lag",
+        param_name="actual_transformer__lag",
         higher_is_better=False,
         title="CV Score vs Number of Lags",
     )
@@ -295,7 +295,7 @@ def _(mo):
         r"""
         ## Key Takeaways
 
-        - **Nested parameter routing** uses `__` to address parameters inside composed pipelines (e.g., `estimator__alpha`, `feature_transformer__lag`)
+        - **Nested parameter routing** uses `__` to address parameters inside composed pipelines (e.g., `estimator__alpha`, `actual_transformer__lag`)
         - **`LagTransformer`** creates lag-based features automatically, turning time series forecasting into tabular regression
         - **Autocorrelation analysis** helps motivate the range of lags to search over
         - **`ExpandingWindowSplitter`** provides time-respecting cross-validation that avoids data leakage

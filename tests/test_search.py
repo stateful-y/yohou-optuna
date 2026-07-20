@@ -586,7 +586,7 @@ class TestParameterValidation:
         search = OptunaSearchCV(
             forecaster=PointReductionForecaster(
                 estimator=Ridge(),
-                feature_transformer=LagTransformer(lag=[1, 2, 3]),
+                actual_transformer=LagTransformer(lag=[1, 2, 3]),
             ),
             param_distributions={
                 "estimator__alpha": FloatDistribution(0.01, 10.0, log=True),
@@ -1326,7 +1326,7 @@ class TestIntegration:
 
         forecaster = PointReductionForecaster(
             estimator=Ridge(),
-            feature_transformer=LagTransformer(lag=[1, 2, 3]),
+            actual_transformer=LagTransformer(lag=[1, 2, 3]),
         )
         search = OptunaSearchCV(
             forecaster=forecaster,
