@@ -11,10 +11,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This **minor release** includes 3 commits.
 
 
+### Breaking Changes
+- Follow yohou rename of `feature_transformer` to `actual_transformer`  ([#34](https://github.com/stateful-y/yohou-optuna/pull/34)) by @gtauzin
+  - No deprecation alias: `param_distributions` keys become `actual_transformer__*`
+  - Transformer slots are keyword-only, and a third slot `forecast_transformer` joins them
+  - yohou pin narrows from `>=0.1.0a6` to `>=0.1.0a11,<0.2.0`
+  - Only docs, examples, tests and the bundled forecaster skill changed; this package's source never named the slot
+  - `create-yohou-forecaster` template switches `BaseTransformer` to `BaseActualTransformer`
+
 ### Miscellaneous Tasks
 - Update from template v0.26.1  ([#32](https://github.com/stateful-y/yohou-optuna/pull/32)) by @gtauzin
+  - Examples become a top-level docs section; companion notebook cards replace hand-rolled tips
+  - All five example notebooks execute again: `yohou[plotting]` added, and the never-existing `plot_model_comparison_bar` replaced with a plotly grouped bar
+  - Notebook tests no longer skip on `ImportError`, so a broken notebook fails instead of passing silently
+  - Custom skills move from `.github/skills/` to `.claude/skills/` as the tracked source of truth
+  - `uv.lock` added as the single source of truth for lint tooling
+  - `docs/hooks.py` unforked and back byte-identical to the template
 - Update from template v0.27.0  ([#35](https://github.com/stateful-y/yohou-optuna/pull/35)) by @gtauzin
-- Follow yohou rename of feature_transformer to actual_transformer  ([#34](https://github.com/stateful-y/yohou-optuna/pull/34)) by @gtauzin
+  - `pre-commit` replaced by `prek`; run `just install` to rewire the git hooks
+  - Builtin hooks now pinned by prek's version in `uv.lock` instead of a frozen rev
+  - `default_install_hook_types` installs the `commit-msg` hook that was declared but never wired up
+  - New Validate Commit Message workflow checks the squash title of single-commit PRs
+  - Changelog workflow now fails loudly when the hook runner cannot run, instead of `|| true`
+  - Ruff gains `T10` (flake8-debugger), replacing the dropped `debug-statements` hook
+  - Notebook tests get a 300s timeout and closed stdin, so a stray `breakpoint()` fails instead of hanging
 
 ### Contributors
 
