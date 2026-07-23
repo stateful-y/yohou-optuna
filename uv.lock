@@ -3052,6 +3052,7 @@ dev = [
     { name = "ruff" },
     { name = "rumdl" },
     { name = "ty" },
+    { name = "watchdog" },
     { name = "yohou", extra = ["plotting"] },
 ]
 docs = [
@@ -3063,6 +3064,7 @@ docs = [
     { name = "pygments" },
     { name = "pymdown-extensions" },
     { name = "pyyaml" },
+    { name = "watchdog" },
 ]
 examples = [
     { name = "marimo" },
@@ -3118,6 +3120,7 @@ dev = [
     { name = "ruff", specifier = ">=0.8.0" },
     { name = "rumdl", specifier = ">=0.1.33" },
     { name = "ty", specifier = ">=0.0.12" },
+    { name = "watchdog", specifier = ">=4.0" },
     { name = "yohou", extras = ["plotting"] },
 ]
 docs = [
@@ -3129,6 +3132,7 @@ docs = [
     { name = "pygments", specifier = ">=2.19,<2.21" },
     { name = "pymdown-extensions", specifier = ">=10.20.1" },
     { name = "pyyaml", specifier = ">=6.0" },
+    { name = "watchdog", specifier = ">=4.0" },
 ]
 examples = [
     { name = "marimo", specifier = ">=0.19.0" },
