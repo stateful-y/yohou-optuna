@@ -530,7 +530,7 @@ class _Objective:
             raise exception
 
         error_value = self.error_score
-        assert isinstance(error_value, int | float)
+        assert isinstance(error_value, int | float)  # noqa: S101  # internal type-narrowing invariant
 
         if np.isnan(error_value):
             return float("-inf")

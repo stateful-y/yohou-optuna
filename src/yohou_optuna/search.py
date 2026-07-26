@@ -417,6 +417,6 @@ class OptunaSearchCV(BaseSearchCV):
 
         """
         tags = super().__sklearn_tags__()
-        assert tags.forecaster_tags is not None
+        assert tags.forecaster_tags is not None  # noqa: S101  # internal type-narrowing invariant
         tags.forecaster_tags.search_type = "optuna"
         return tags
