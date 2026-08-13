@@ -8,14 +8,14 @@ If you use Yohou-Optuna in work you publish, please cite it.
 
 ## Plain text
 
-Guillaume Tauzin. Yohou-Optuna. https://github.com/stateful-y/yohou-optuna
+Guillaume Tauzin. Yohou-Optuna: An Optuna integration for hyperparameter tuning in Yohou. https://github.com/stateful-y/yohou-optuna
 
 ## BibTeX
 
 ```bibtex
 @software{yohou_optuna,
   author  = "Guillaume Tauzin",
-  title   = "{Yohou-Optuna}",
+  title   = "{Yohou-Optuna: An Optuna integration for hyperparameter tuning in Yohou}",
   url     = "https://github.com/stateful-y/yohou-optuna",
   license = "Apache-2.0"
 }
