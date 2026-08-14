@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import optuna
 import pytest
@@ -185,6 +187,52 @@ class TestCVResults:
         ranks = optuna_search_cv.cv_results_["rank_test_score"]
         assert np.min(ranks) == 1
         assert np.max(ranks) <= len(ranks)
+
+
+class TestTrialStartLogging:
+    """Each trial logs one line when it starts.
+
+    Optuna itself logs a trial only at completion, so a process that dies
+    mid-trial (a native crash, an out-of-memory kill) leaves no record of which
+    trials were in flight. The start line is that record, and it carries the
+    sampled parameters so a crash can be tied to the configuration being fitted.
+    """
+
+    def test_each_trial_logs_its_start_with_its_parameters(self, optuna_search_cv, y_X_factory, caplog):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        with caplog.at_level(logging.INFO, logger="yohou_optuna.objective"):
+            optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
+
+        started = [r.getMessage() for r in caplog.records if "started with parameters" in r.getMessage()]
+        assert len(started) == len(optuna_search_cv.trials_)
+        for trial in optuna_search_cv.trials_:
+            line = next(m for m in started if m.startswith(f"Trial {trial.number} "))
+            for name, value in trial.params.items():
+                assert name in line and repr(value) in line
+
+    def test_a_trial_that_dies_mid_evaluation_has_already_announced_itself(
+        self, y_X_factory, default_sampler, failing_forecaster, caplog
+    ):
+        """The line fires before cross-validation, so a trial whose evaluation
+        never returns still leaves its start on record."""
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=failing_forecaster,
+            param_distributions={
+                "fail_on": CategoricalDistribution(["fit"]),
+            },
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            error_score=np.nan,
+            refit=False,
+        )
+        with caplog.at_level(logging.INFO, logger="yohou_optuna.objective"):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        started = [r for r in caplog.records if "started with parameters" in r.getMessage()]
+        assert len(started) == 2
 
 
 class TestStudyAndTrials:

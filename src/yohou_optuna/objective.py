@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import numbers
 import time
 import warnings
@@ -16,6 +17,8 @@ from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
 from yohou.model_selection.utils import _MultimetricScorer, _predict, _score, _split_X_forecast
+
+logger = logging.getLogger(__name__)
 
 
 class _Objective:
@@ -152,6 +155,10 @@ class _Objective:
 
         # Store parameters as user attributes
         self._store_parameters(trial, study_params)
+
+        # Optuna logs a trial only at completion, so a process that dies mid-trial
+        # leaves no record of which trials were in flight; this line is that record.
+        logger.info("Trial %d started with parameters: %s", trial.number, study_params)
 
         try:
             # Run cross-validation
