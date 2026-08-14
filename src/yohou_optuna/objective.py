@@ -444,10 +444,10 @@ class _Objective:
                 trial.set_user_attr(f"split{i}_test_{metric_name}", val)
                 test_vals.append(val)
 
-            # A plain mean, never nanmean: the folds are shared across trials, so a
-            # trial scored on the folds it survived was scored on the easy end of a
-            # shared exam. A failed fold contributes its error_score, and the NaN
-            # default sinks the trial, matching sklearn.
+            # A plain mean, never nanmean: the folds are shared across trials, and the
+            # folds a trial fails are usually the harder ones, so a mean over only the
+            # surviving folds is optimistic. A failed fold contributes its error_score,
+            # and the NaN default sinks the trial, matching sklearn.
             mean_val = float(np.mean(test_vals))
             trial.set_user_attr(f"mean_test_{metric_name}", mean_val)
 

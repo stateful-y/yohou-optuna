@@ -20,7 +20,7 @@ Calling `fit(y, X_actual, forecasting_horizon)` triggers the following steps:
 
 1. An Optuna `Study` is created (or loaded from storage if `study_name` and `storage` are provided).
 2. For each of `n_trials` trials, the sampler proposes a parameter combination from `param_distributions`.
-3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The mean CV score across folds becomes the trial's objective value. If `X_future` or `X_forecast` are provided, they are forwarded to `fit()` and `predict()` within each fold.
+3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The plain mean of the fold scores becomes the trial's objective value; [Fold Failures and Trial Scores](#fold-failures-and-trial-scores) explains what happens when a fold raises. If `X_future` or `X_forecast` are provided, they are forwarded to `fit()` and `predict()` within each fold.
 4. Optuna records the result and the sampler updates its internal model of the search space.
 5. After all trials, the best parameter combination is used to refit the forecaster on the full training data. The fitted forecaster is stored as `best_forecaster_`.
 
@@ -33,6 +33,16 @@ Hyperparameter search for time series differs from iid settings: using future da
 `OptunaSearchCV` delegates cross-validation to Yohou's splitter API. By default it uses a 5-fold expanding window split. You can supply any splitter from `yohou.model_selection`, such as `ExpandingWindowSplitter`, `SlidingWindowSplitter`, or a custom subclass. The splitter determines how the training data is partitioned into fold (past) and validation (future) windows, preserving temporal ordering throughout the search.
 
 This is why the `cv` parameter accepts Yohou splitters rather than Scikit-Learn cross-validators: time series folds are defined by their position in time, not by random index shuffles.
+
+## Fold Failures and Trial Scores
+
+A trial's objective value is the plain mean of its fold scores, and a fold that raises does not disappear from that mean. It contributes the configured `error_score`, so with the default `error_score=np.nan` a trial with any failed fold scores `NaN` and receives the sentinel objective. A trial is never scored on only the folds it survived.
+
+The reason is comparability. Every trial is evaluated on the same folds, and the folds a fragile configuration fails are usually the harder ones. Averaging only the surviving folds would give exactly the trials that crashed an optimistic score, so the search could rank a candidate evaluated on its easiest folds above one that completed everything. Contributing the error value to a plain mean is also what Scikit-Learn's searches do, so a score means the same thing in both ecosystems.
+
+A trial sunk this way still completes, deliberately. Optuna's samplers learn from completed trials and ignore failed ones, so completing at the sentinel keeps the crashing region visible to the sampler, which steers away from it instead of resampling it. This matches Optuna's own guidance for infeasible points.
+
+The failure is recorded rather than discarded. A trial with absorbed fold failures carries three user attributes: `exception` and `exception_type` for the first exception, and `failed_splits` for the indices of the folds that raised. `failed_splits` is the reliable mark of a failure: with a numeric `error_score` the trial's aggregate stays finite, so the score's value alone cannot say whether a fold failed. The search warns once per failing trial and summarises once per search, and it exposes `n_completed_` and `n_scored_` so the count of trials that produced a usable score is readable without recomputation. [Handle Fitting Errors](../how-to/configure.md#handle-fitting-errors) covers the operational side.
 
 ## Wrapper Classes and Cloneability
 
