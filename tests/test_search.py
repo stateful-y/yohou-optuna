@@ -2031,3 +2031,239 @@ class TestClassProbaPrediction:
         from yohou.metrics.class_proba import BrierScore
 
         return BrierScore()
+
+
+class _RewindFailingForecaster(PointReductionForecaster):
+    """Fits and scores normally, then fails at rewind.
+
+    Train scoring is the only consumer of rewind, and it runs after the
+    fold's test score and timings are recorded, so this is the forecaster
+    that exercises a failure landing on a partially recorded fold.
+    """
+
+    def rewind(self, *args, **kwargs):
+        raise ValueError("intentional error in rewind")
+
+
+class TestFoldFailureDiagnostics:
+    """A failed fold records why, the mark is explicit, and the search reports what it produced."""
+
+    def _failing_search(self, forecaster, sampler, *, n_trials=2, fail_on="fit", **kwargs):
+        return OptunaSearchCV(
+            forecaster=forecaster,
+            param_distributions={"fail_on": CategoricalDistribution([fail_on])},
+            scoring=MeanAbsoluteError(),
+            sampler=sampler,
+            n_trials=n_trials,
+            cv=2,
+            error_score=np.nan,
+            refit=False,
+            **kwargs,
+        )
+
+    def test_absorbed_fold_failure_records_reason_on_trial(self, y_X_factory, default_sampler, failing_forecaster):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = self._failing_search(failing_forecaster, default_sampler)
+        search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        for trial in search.trials_:
+            assert trial.user_attrs["exception_type"] == "ValueError"
+            assert "intentional error in fit" in trial.user_attrs["exception"]
+            assert trial.user_attrs["failed_splits"] == [0, 1]
+
+    def test_absorbed_fold_failure_warns_with_trial_and_splits(
+        self, y_X_factory, default_sampler, failing_forecaster, caplog
+    ):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = self._failing_search(failing_forecaster, default_sampler)
+        with caplog.at_level(logging.WARNING, logger="yohou_optuna.objective"):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        lines = [r.getMessage() for r in caplog.records if "fold(s) failed" in r.getMessage()]
+        assert len(lines) == len(search.trials_)
+        for trial in search.trials_:
+            line = next(m for m in lines if m.startswith(f"Trial {trial.number}:"))
+            assert "[0, 1]" in line
+            assert "ValueError" in line
+
+    def test_universal_failure_stays_bounded(self, y_X_factory, default_sampler, failing_forecaster, caplog):
+        """Sixteen trials by four folds must not mean sixty-four lines: one per trial, one summary."""
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = self._failing_search(failing_forecaster, default_sampler, n_trials=3)
+        with caplog.at_level(logging.WARNING):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        per_trial = [r for r in caplog.records if "fold(s) failed" in r.getMessage()]
+        summaries = [r for r in caplog.records if "had at least one failed fold" in r.getMessage()]
+        assert len(per_trial) == 3
+        assert len(summaries) == 1
+
+    def test_partial_failure_marks_only_the_failed_folds(
+        self, y_X_factory, default_sampler, threshold_failing_forecaster
+    ):
+        from yohou.model_selection.split import check_cv
+
+        y, _ = y_X_factory(length=100, n_targets=1, n_features=0)
+        cv = check_cv(2, 3)
+        splits = list(cv.split(y, None))
+        longest = max(len(train) for train, _ in splits)
+        expected_failed = [i for i, (train, _) in enumerate(splits) if len(train) < longest]
+        assert expected_failed, "the threshold must fail at least one fold for this test to mean anything"
+
+        search = OptunaSearchCV(
+            forecaster=threshold_failing_forecaster,
+            param_distributions={"min_length": CategoricalDistribution([longest])},
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            error_score=np.nan,
+            refit=False,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        for trial in search.trials_:
+            assert trial.user_attrs["failed_splits"] == expected_failed
+            assert trial.user_attrs["exception_type"] == "ValueError"
+
+    def test_clean_trial_carries_no_mark(self, optuna_search_cv, y_X_factory):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
+
+        for trial in optuna_search_cv.trials_:
+            assert "failed_splits" not in trial.user_attrs
+            assert "exception" not in trial.user_attrs
+
+    def test_scored_count_is_zero_for_an_all_failed_search(
+        self, y_X_factory, default_sampler, failing_forecaster, caplog
+    ):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = self._failing_search(failing_forecaster, default_sampler)
+        with caplog.at_level(logging.WARNING, logger="yohou_optuna.search"):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        assert search.n_completed_ == 2
+        assert search.n_scored_ == 0
+        assert any("no usable score" in r.getMessage() for r in caplog.records)
+
+    def test_scored_count_equals_completed_for_a_clean_search(self, optuna_search_cv, y_X_factory):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
+
+        assert optuna_search_cv.n_completed_ == len(optuna_search_cv.trials_)
+        assert optuna_search_cv.n_scored_ == optuna_search_cv.n_completed_
+
+    def test_scored_count_matches_the_finite_objectives(
+        self, y_X_factory, default_sampler, threshold_failing_forecaster
+    ):
+        """Pinned to the trials' actual values, not to a literal, so the count stays
+        correct whichever aggregation rule turns a fold failure into a trial score."""
+        from yohou.model_selection.split import check_cv
+
+        y, _ = y_X_factory(length=100, n_targets=1, n_features=0)
+        cv = check_cv(2, 3)
+        longest = max(len(train) for train, _ in cv.split(y, None))
+        search = OptunaSearchCV(
+            forecaster=threshold_failing_forecaster,
+            param_distributions={"min_length": CategoricalDistribution([longest])},
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            error_score=np.nan,
+            refit=False,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        finite = sum(
+            1
+            for t in search.trials_
+            if t.state == optuna.trial.TrialState.COMPLETE and t.value is not None and np.isfinite(t.value)
+        )
+        assert search.n_scored_ == finite
+
+    def test_error_score_raise_still_propagates(self, y_X_factory, default_sampler, failing_forecaster):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=failing_forecaster,
+            param_distributions={"fail_on": CategoricalDistribution(["fit"])},
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=2,
+            error_score="raise",
+            refit=False,
+        )
+        with pytest.raises(ValueError, match="intentional error in fit"):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
+    def test_one_timing_entry_per_fold_when_scoring_fails(
+        self, y_X_factory, default_sampler, failing_forecaster, monkeypatch
+    ):
+        """A fold that fit and then failed in predict must not record its fit time twice:
+        the doubled zero halved mean_fit_time and made a scoring failure look like a fit one."""
+        from yohou_optuna.objective import _Objective
+
+        captured = {}
+        original = _Objective._store_timing
+
+        def spy(self, trial, fit_times, score_times):
+            captured["fit_times"] = list(fit_times)
+            captured["score_times"] = list(score_times)
+            return original(self, trial, fit_times, score_times)
+
+        monkeypatch.setattr(_Objective, "_store_timing", spy)
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = self._failing_search(failing_forecaster, default_sampler, n_trials=1, fail_on="predict")
+        search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        assert len(captured["fit_times"]) == 2
+        assert captured["score_times"] == [0.0, 0.0]
+
+    def test_failure_after_the_fold_scored_keeps_one_entry_per_fold(self, y_X_factory, default_sampler, monkeypatch):
+        """A train-scoring failure lands after the fold's test score and timings were
+        recorded; it must not append a second test score or a second timing entry."""
+        from yohou_optuna.objective import _Objective
+
+        captured = {}
+        original_scores = _Objective._store_scores
+        original_timing = _Objective._store_timing
+
+        def spy_scores(self, trial, all_test_scores, all_train_scores):
+            captured["test"] = list(all_test_scores)
+            captured["train"] = list(all_train_scores)
+            return original_scores(self, trial, all_test_scores, all_train_scores)
+
+        def spy_timing(self, trial, fit_times, score_times):
+            captured["fit_times"] = list(fit_times)
+            captured["score_times"] = list(score_times)
+            return original_timing(self, trial, fit_times, score_times)
+
+        monkeypatch.setattr(_Objective, "_store_scores", spy_scores)
+        monkeypatch.setattr(_Objective, "_store_timing", spy_timing)
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=_RewindFailingForecaster(estimator=Ridge()),
+            param_distributions={"estimator__alpha": FloatDistribution(0.01, 10.0, log=True)},
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=1,
+            cv=2,
+            error_score=np.nan,
+            return_train_score=True,
+            refit=False,
+        )
+        search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        trial = search.trials_[0]
+        assert trial.user_attrs["failed_splits"] == [0, 1]
+        assert trial.user_attrs["exception_type"] == "ValueError"
+        assert len(captured["test"]) == 2
+        assert len(captured["train"]) == 2
+        assert len(captured["fit_times"]) == 2
+        assert len(captured["score_times"]) == 2
+        # The fold's real test score survives; only the train side carries the error value.
+        assert np.isfinite(captured["test"][0])
+        assert np.isnan(captured["train"][0])

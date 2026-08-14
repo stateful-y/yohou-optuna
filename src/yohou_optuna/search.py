@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+import math
 import time
 from collections.abc import Callable
 from numbers import Integral, Real
@@ -32,6 +34,8 @@ from yohou.utils.tags import Tags
 
 from .objective import _Objective
 from .utils import _build_cv_results
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: Check reference and make it mkdocs-compatible
@@ -107,6 +111,14 @@ class OptunaSearchCV(BaseSearchCV):
         The Optuna study containing all trial information.
     trials_ : list of optuna.trial.FrozenTrial
         All trials executed during the search.
+    n_completed_ : int
+        Number of trials in state COMPLETE. On a study backed by shared
+        storage this counts the whole study, including trials written by
+        other processes.
+    n_scored_ : int
+        Number of completed trials whose objective is finite. A completed
+        trial whose every fold failed carries a sentinel value, so this is
+        the count of trials that actually produced a usable score.
 
     See Also
     --------
@@ -366,6 +378,29 @@ class OptunaSearchCV(BaseSearchCV):
         # Store study and trials
         self.study_ = optuna_study
         self.trials_ = optuna_study.trials
+
+        # What the search actually produced, on the search rather than derived by
+        # each consumer. A trial whose objective raised on every fold still reports
+        # COMPLETE with a sentinel value, so the completed count alone reads as
+        # usable results right up until a selection turns out to be arbitrary.
+        completed_trials = [t for t in self.trials_ if t.state == optuna.trial.TrialState.COMPLETE]
+        self.n_completed_ = len(completed_trials)
+        self.n_scored_ = sum(1 for t in completed_trials if t.value is not None and math.isfinite(t.value))
+        n_fold_failed = sum(1 for t in completed_trials if "failed_splits" in t.user_attrs)
+        if n_fold_failed:
+            logger.warning(
+                "%d of %d completed trial(s) had at least one failed fold; each such trial "
+                "carries the reason in its exception, exception_type and failed_splits "
+                "user attributes.",
+                n_fold_failed,
+                self.n_completed_,
+            )
+        if self.n_completed_ and self.n_scored_ == 0:
+            logger.warning(
+                "Search produced no usable score: %d trial(s) completed and none achieved "
+                "a finite objective, so any selection from this search is arbitrary.",
+                self.n_completed_,
+            )
 
         # Build cv_results_ from trials
         self.cv_results_ = _build_cv_results(self.trials_, self.multimetric_, self.return_train_score)

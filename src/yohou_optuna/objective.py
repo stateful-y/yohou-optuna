@@ -85,6 +85,12 @@ class _Objective:
     ``error_score``.  If ``'raise'``, the exception propagates.  Otherwise,
     the error score value is stored and ``-inf`` is returned to Optuna.
 
+    A fold failure that is absorbed is recorded on the trial: the first
+    exception's type and message under ``exception`` and ``exception_type``
+    (the same keys the trial-level handler uses), and the failed split
+    indices under ``failed_splits``.  One warning is emitted per failing
+    trial, so a universal failure stays readable at any trial count.
+
     """
 
     def __init__(
@@ -228,8 +234,10 @@ class _Objective:
         all_train_scores: list[dict[str, float | str] | float | str] = []
         all_fit_times: list[float] = []
         all_score_times: list[float] = []
+        failed_splits: list[int] = []
+        first_exception: Exception | None = None
 
-        for _split_idx, (train, test) in enumerate(splits):
+        for split_idx, (train, test) in enumerate(splits):
             fold_forecaster = clone(cloned_forecaster)
 
             y_train, X_actual_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
@@ -325,21 +333,50 @@ class _Objective:
                     )
                     all_train_scores.append(train_scores)
 
-            except Exception:
+            except Exception as exc:
                 if self.error_score == "raise":
                     raise
+                if first_exception is None:
+                    first_exception = exc
+                failed_splits.append(split_idx)
                 error_val = float(self.error_score) if isinstance(self.error_score, numbers.Number) else np.nan
-                if isinstance(self.scorers, _MultimetricScorer):
-                    error_scores: dict[str, float | str] | float = dict.fromkeys(self.scorers._scorers, error_val)
-                    all_test_scores.append(error_scores)
-                    if self.return_train_score:
-                        all_train_scores.append(dict.fromkeys(self.scorers._scorers, error_val))
-                else:
-                    all_test_scores.append(error_val)
-                    if self.return_train_score:
-                        all_train_scores.append(error_val)
-                all_fit_times.append(0.0)
-                all_score_times.append(0.0)
+                multimetric = isinstance(self.scorers, _MultimetricScorer)
+                # One entry per fold, even when the failure struck after part of the
+                # fold was already recorded: a fold that fit and then failed scoring
+                # would otherwise append a second fit time and a second test score,
+                # skewing every mean computed over them.
+                if len(all_test_scores) <= split_idx:
+                    all_test_scores.append(
+                        dict.fromkeys(self.scorers._scorers, error_val) if multimetric else error_val
+                    )
+                if self.return_train_score and len(all_train_scores) <= split_idx:
+                    all_train_scores.append(
+                        dict.fromkeys(self.scorers._scorers, error_val) if multimetric else error_val
+                    )
+                if len(all_fit_times) <= split_idx:
+                    all_fit_times.append(0.0)
+                if len(all_score_times) <= split_idx:
+                    all_score_times.append(0.0)
+
+        if failed_splits:
+            assert first_exception is not None  # noqa: S101  # set with the first failed split
+            # The same keys the trial-level handler uses, so a consumer reads one
+            # shape whether a failure was absorbed in the fold loop or escaped it.
+            # `failed_splits` is the explicit mark that the trial's score carries
+            # absorbed failures; it is never inferred from the score's value, which
+            # a numeric error_score would make finite.
+            trial.set_user_attr("exception", str(first_exception))
+            trial.set_user_attr("exception_type", type(first_exception).__name__)
+            trial.set_user_attr("failed_splits", failed_splits)
+            logger.warning(
+                "Trial %d: %d of %d fold(s) failed (splits %s), first failure %s: %s",
+                trial.number,
+                len(failed_splits),
+                len(splits),
+                failed_splits,
+                type(first_exception).__name__,
+                first_exception,
+            )
 
         # Store results as trial user attributes
         self._store_scores(trial, all_test_scores, all_train_scores)
