@@ -85,7 +85,11 @@ class OptunaSearchCV(BaseSearchCV):
         Controls the number of jobs dispatched during parallel execution.
         Not directly used by Optuna but kept for API compatibility.
     error_score : 'raise' or numeric, default=np.nan
-        Value to assign to the score if an error occurs.
+        Value a failed cross-validation fold contributes to the trial's
+        fold mean, or ``'raise'`` to propagate the exception.  With the
+        NaN default, one failed fold makes the trial's aggregate NaN and
+        the trial carries the sentinel objective; a trial is never scored
+        on only the folds it survived.
     return_train_score : bool, default=False
         Whether to include training scores in ``cv_results_``.
 

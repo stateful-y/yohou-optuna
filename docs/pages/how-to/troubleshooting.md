@@ -25,7 +25,7 @@ Solutions to common problems when using Yohou-Optuna.
 : Wrap the sampler with `Sampler` and pass `seed=`. Use `n_jobs=1` because parallel trial ordering is non-deterministic. See [Configure OptunaSearchCV](configure.md#choose-a-sampler).
 
 **Problem: All trials return NaN**
-: The forecaster may be failing silently. Set `error_score="raise"` to surface the underlying error. See [Handle Fitting Errors](configure.md#handle-fitting-errors).
+: The forecaster is failing during cross-validation. The search warns once per failing trial and records the reason on each trial (`exception`, `exception_type`, and `failed_splits` user attributes), so check the log and the trial attributes first. Set `error_score="raise"` to get the full traceback. See [Handle Fitting Errors](configure.md#handle-fitting-errors).
 
 **Problem: Search is slow**
 : Reduce `n_trials` or set a `timeout` to cap execution time. Check that `n_splits` in your splitter is not too large. Consider using `n_jobs=-1` for parallel trial execution on a single machine, or distribute trials across multiple nodes with a shared database storage (see [Concepts: Parallelism](../explanation/concepts.md#parallelism)).
@@ -42,7 +42,7 @@ Solutions to common problems when using Yohou-Optuna.
 : This usually means a custom estimator or wrapper is missing a constructor parameter that `clone()` expects. Ensure all `__init__` parameters are stored as attributes with the same name.
 
 **Problem: Fitting failures from invalid parameter values**
-: By default, `error_score=np.nan` catches errors during cross-validation folds and records `NaN` for that trial. However, the best-found parameters are still used for refitting on the full dataset after all trials complete. If all trials failed, the refit step will raise. Check that your distribution ranges only produce valid values (e.g., `FloatDistribution(1e-4, 10.0)` instead of ranges that include negative or zero values for parameters like `alpha`).
+: By default, `error_score=np.nan` absorbs errors during cross-validation folds; a failed fold contributes `NaN` to the trial's fold mean, so a trial with any failed fold scores `NaN`. However, the best-found parameters are still used for refitting on the full dataset after all trials complete. If all trials failed, the refit step will raise. Check that your distribution ranges only produce valid values (e.g., `FloatDistribution(1e-4, 10.0)` instead of ranges that include negative or zero values for parameters like `alpha`).
 
 ## Cross-Validation Issues
 

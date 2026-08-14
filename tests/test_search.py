@@ -2267,3 +2267,88 @@ class TestFoldFailureDiagnostics:
         # The fold's real test score survives; only the train side carries the error value.
         assert np.isfinite(captured["test"][0])
         assert np.isnan(captured["train"][0])
+
+
+class TestFullFoldAggregation:
+    """A trial's aggregate covers every fold; a failed fold contributes, never disappears."""
+
+    @staticmethod
+    def _longest_train(y):
+        from yohou.model_selection.split import check_cv
+
+        cv = check_cv(2, 3)
+        return max(len(train) for train, _ in cv.split(y, None))
+
+    def _partial_search(self, forecaster, sampler, longest, **kwargs):
+        return OptunaSearchCV(
+            forecaster=forecaster,
+            param_distributions={"min_length": CategoricalDistribution([longest])},
+            scoring=MeanAbsoluteError(),
+            sampler=sampler,
+            n_trials=1,
+            cv=2,
+            refit=False,
+            **kwargs,
+        )
+
+    def test_a_partially_failed_trial_sinks_rather_than_scoring_its_survivors(
+        self, y_X_factory, default_sampler, threshold_failing_forecaster
+    ):
+        """The folds are shared across trials, so a trial scored only on the folds it
+        survived was scored on the easy end of a shared exam."""
+        y, _ = y_X_factory(length=100, n_targets=1, n_features=0)
+        search = self._partial_search(
+            threshold_failing_forecaster, default_sampler, self._longest_train(y), error_score=np.nan
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        trial = search.trials_[0]
+        assert np.isnan(trial.user_attrs["mean_test_score"])
+        assert trial.value == float("-inf")
+        assert trial.state == optuna.trial.TrialState.COMPLETE
+        # The per-split evidence stays auditable: the failed fold carries the error
+        # value, the surviving fold its real score.
+        assert np.isnan(trial.user_attrs["split0_test_score"])
+        assert np.isfinite(trial.user_attrs["split1_test_score"])
+
+    def test_a_fully_evaluated_trial_keeps_the_plain_mean(self, optuna_search_cv, y_X_factory):
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        optuna_search_cv.fit(y, X_actual=X, forecasting_horizon=3)
+
+        for trial in optuna_search_cv.trials_:
+            splits = [trial.user_attrs["split0_test_score"], trial.user_attrs["split1_test_score"]]
+            assert trial.user_attrs["mean_test_score"] == pytest.approx(np.mean(splits))
+
+    def test_a_numeric_error_score_participates_at_face_value(
+        self, y_X_factory, default_sampler, threshold_failing_forecaster
+    ):
+        """A user who declared a penalty keeps partially failing trials in the
+        ranking at the declared penalty, matching sklearn."""
+        y, _ = y_X_factory(length=100, n_targets=1, n_features=0)
+        search = self._partial_search(
+            threshold_failing_forecaster, default_sampler, self._longest_train(y), error_score=-10.0
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        trial = search.trials_[0]
+        assert trial.user_attrs["split0_test_score"] == -10.0
+        expected = np.mean([-10.0, trial.user_attrs["split1_test_score"]])
+        assert trial.user_attrs["mean_test_score"] == pytest.approx(expected)
+        assert trial.value == pytest.approx(expected)
+
+    def test_a_failed_fold_sinks_the_train_aggregate_too(
+        self, y_X_factory, default_sampler, threshold_failing_forecaster
+    ):
+        y, _ = y_X_factory(length=100, n_targets=1, n_features=0)
+        search = self._partial_search(
+            threshold_failing_forecaster,
+            default_sampler,
+            self._longest_train(y),
+            error_score=np.nan,
+            return_train_score=True,
+        )
+        search.fit(y, forecasting_horizon=3)
+
+        trial = search.trials_[0]
+        assert np.isnan(trial.user_attrs["mean_test_score"])
+        assert np.isnan(trial.user_attrs["mean_train_score"])

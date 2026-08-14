@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import numbers
 import time
-import warnings
 from typing import Any
 
 import numpy as np
@@ -61,7 +60,10 @@ class _Objective:
     return_train_score : bool, default=False
         Whether to include training scores.
     error_score : numeric or 'raise', default=np.nan
-        Value to assign on error, or ``'raise'`` to propagate exceptions.
+        Value a failed fold contributes to the trial's fold mean, or
+        ``'raise'`` to propagate exceptions.  With the NaN default, one
+        failed fold makes the aggregate NaN and the trial carries the
+        sentinel objective.
     multimetric : bool, default=False
         Whether multiple metrics are being optimized.
     refit : bool or str, default=True
@@ -82,8 +84,13 @@ class _Objective:
     6. Return the mean test score (or primary metric in multi-metric mode).
 
     If an error occurs during evaluation, behavior depends on
-    ``error_score``.  If ``'raise'``, the exception propagates.  Otherwise,
-    the error score value is stored and ``-inf`` is returned to Optuna.
+    ``error_score``.  If ``'raise'``, the exception propagates.  Otherwise
+    the failed fold contributes ``error_score`` to a plain mean over every
+    fold, exactly as sklearn does: a numeric value participates at face
+    value, and the NaN default makes the aggregate NaN, in which case the
+    objective returns ``-inf``.  A trial is never scored on only the folds
+    it survived; the folds are shared across trials, so a subset score
+    would be built from the trial's easiest evidence.
 
     A fold failure that is absorbed is recorded on the trial: the first
     exception's type and message under ``exception`` and ``exception_type``
@@ -437,9 +444,11 @@ class _Objective:
                 trial.set_user_attr(f"split{i}_test_{metric_name}", val)
                 test_vals.append(val)
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", RuntimeWarning)
-                mean_val = float(np.nanmean(test_vals))
+            # A plain mean, never nanmean: the folds are shared across trials, so a
+            # trial scored on the folds it survived was scored on the easy end of a
+            # shared exam. A failed fold contributes its error_score, and the NaN
+            # default sinks the trial, matching sklearn.
+            mean_val = float(np.mean(test_vals))
             trial.set_user_attr(f"mean_test_{metric_name}", mean_val)
 
             if self.return_train_score and all_train_scores:
@@ -450,9 +459,7 @@ class _Objective:
                     trial.set_user_attr(f"split{i}_train_{metric_name}", val)
                     train_vals.append(val)
 
-                with warnings.catch_warnings():
-                    warnings.simplefilter("ignore", RuntimeWarning)
-                    mean_train = float(np.nanmean(train_vals))
+                mean_train = float(np.mean(train_vals))
                 trial.set_user_attr(f"mean_train_{metric_name}", mean_train)
 
     def _store_single_metric_scores(
@@ -479,9 +486,8 @@ class _Objective:
             trial.set_user_attr(f"split{i}_test_score", val)
             test_vals.append(val)
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", RuntimeWarning)
-            mean_test = float(np.nanmean(test_vals))
+        # A plain mean, never nanmean: see _store_multimetric_scores.
+        mean_test = float(np.mean(test_vals))
         trial.set_user_attr("mean_test_score", mean_test)
 
         if self.return_train_score and all_train_scores:
@@ -491,9 +497,7 @@ class _Objective:
                 trial.set_user_attr(f"split{i}_train_score", val)
                 train_vals.append(val)
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", RuntimeWarning)
-                mean_train = float(np.nanmean(train_vals))
+            mean_train = float(np.mean(train_vals))
             trial.set_user_attr("mean_train_score", mean_train)
 
     def _store_timing(
