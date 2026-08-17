@@ -146,7 +146,7 @@ Use `ExpandingWindowSplitter` (default) for growing training windows. Use `Slidi
 
 ## Handle Fitting Errors
 
-By default, `error_score=np.nan` catches fitting errors during cross-validation folds and records `NaN` for that trial. To stop the search immediately on the first error instead, set `error_score="raise"`:
+By default, `error_score=np.nan` absorbs errors during cross-validation folds. A failed fold contributes `error_score` to a plain mean over every fold, so with the `NaN` default a trial with any failed fold scores `NaN`; a trial is never scored on only the folds it survived. Each absorbed failure is also recorded on the trial (the `exception`, `exception_type`, and `failed_splits` user attributes) and logged as a warning naming the trial and the failed splits. To stop the search immediately on the first error instead, set `error_score="raise"`:
 
 ```python
 search = OptunaSearchCV(
@@ -170,6 +170,14 @@ import polars as pl
 results = pl.DataFrame(search.cv_results_)
 failed = results.filter(pl.col("mean_test_score").is_nan())
 print(f"{len(failed)} trials failed out of {len(results)}")
+```
+
+The search also exposes the counts directly: `search.n_scored_` is the number of completed trials with a finite objective, alongside `search.n_completed_`. A trial that carries absorbed fold failures marks them in its `failed_splits` user attribute, so a failure is distinguishable from a genuinely poor score even when `error_score` is a finite number:
+
+```python
+for trial in search.trials_:
+    if "failed_splits" in trial.user_attrs:
+        print(trial.number, trial.user_attrs["exception_type"], trial.user_attrs["failed_splits"])
 ```
 
 ## Collect Training Scores

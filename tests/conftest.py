@@ -368,6 +368,80 @@ def failing_forecaster():
     return FailingForecaster(fail_on="fit")
 
 
+class ThresholdFailingForecaster(PointReductionForecaster):
+    """A real reduction forecaster whose fit fails when the training series is short.
+
+    With an expanding-window cross-validation, earlier folds train on less
+    data, so a threshold strictly between two folds' training lengths fails
+    exactly the earlier folds and passes the later ones. That makes partial
+    fold failure deterministic without any call counting. Folds above the
+    threshold fit and score as the parent class, so this mock exercises the
+    real scoring path rather than a stub.
+
+    Parameters
+    ----------
+    estimator : object or None
+        Passed to ``PointReductionForecaster``.
+    min_length : int
+        Minimum training length below which ``fit`` raises ValueError.
+
+    """
+
+    _parameter_constraints: dict = {
+        **PointReductionForecaster._parameter_constraints,
+        "min_length": [int],
+    }
+
+    def __init__(self, estimator=None, min_length=50):
+        super().__init__(estimator=estimator)
+        self.min_length = min_length
+
+    def fit(self, y, X_actual=None, forecasting_horizon=1, **fit_params):
+        """Raise below ``min_length``, otherwise fit as the parent class.
+
+        Parameters
+        ----------
+        y : pl.DataFrame
+            Target time series.
+        X_actual : pl.DataFrame or None, default=None
+            Actual observation features.
+        forecasting_horizon : int, default=1
+            Forecast horizon.
+        **fit_params : dict
+            Additional parameters.
+
+        Returns
+        -------
+        self
+
+        Raises
+        ------
+        ValueError
+            If the training series is shorter than ``min_length``.
+
+        """
+        if len(y) < self.min_length:
+            msg = f"training series of length {len(y)} is shorter than {self.min_length}"
+            raise ValueError(msg)
+        return super().fit(y, X_actual=X_actual, forecasting_horizon=forecasting_horizon, **fit_params)
+
+
+@pytest.fixture
+def threshold_failing_forecaster():
+    """Create a ThresholdFailingForecaster with its default threshold.
+
+    Tests set the effective threshold per trial through the search's
+    parameter distributions, so the default here is irrelevant.
+
+    Returns
+    -------
+    ThresholdFailingForecaster
+        A forecaster that raises in fit below a training-length threshold.
+
+    """
+    return ThresholdFailingForecaster(estimator=Ridge())
+
+
 @pytest.fixture
 def interval_forecaster():
     """Create an IntervalReductionForecaster for interval prediction testing.
