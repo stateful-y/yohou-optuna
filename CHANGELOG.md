@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.1.0-alpha.10] - 2026-08-17
+
+This **minor release** includes 5 commits.
+
+
+### Features
+- Log each trial's start with its sampled parameters  ([#84](https://github.com/stateful-y/yohou-optuna/pull/84)) by @gtauzin
+- Record fold failures and score trials on every fold  ([#85](https://github.com/stateful-y/yohou-optuna/pull/85)) by @gtauzin
+
+### Documentation
+- Tell users how to cite yohou-optuna  ([#70](https://github.com/stateful-y/yohou-optuna/pull/70)) by @gtauzin
+
+### Miscellaneous Tasks
+- Gate on signed tags, allow publish retry, automerge deps  ([#69](https://github.com/stateful-y/yohou-optuna/pull/69)) by @gtauzin
+- Drain the dependency queue one PR at a time  ([#78](https://github.com/stateful-y/yohou-optuna/pull/78)) by @gtauzin
+
+### Contributors
+
+Thanks to all contributors for this release:
+- @gtauzin
+
 ## [0.1.0-alpha.9] - 2026-08-12
 
 This **minor release** includes 21 commits.
