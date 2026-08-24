@@ -112,6 +112,44 @@ class TestOptunaSearchCVFit:
         search.fit(y, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
+    def test_routed_split_metadata_reaches_every_trial(self, y_X_factory, default_sampler):
+        """A requested split key passed to fit arrives on each per-trial split call."""
+        from conftest import MarkerRecordingSplitter
+
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        splitter = MarkerRecordingSplitter(n_splits=2, test_size=3)
+        splitter.set_split_request(split_marker=True)
+
+        search = OptunaSearchCV(
+            forecaster=PointReductionForecaster(estimator=Ridge()),
+            param_distributions={
+                "estimator__alpha": FloatDistribution(0.01, 10.0, log=True),
+            },
+            scoring=MeanAbsoluteError(),
+            sampler=default_sampler,
+            n_trials=2,
+            cv=splitter,
+            refit=False,
+        )
+        search.fit(y, X_actual=X, forecasting_horizon=3, split_marker="routed")
+
+        assert search.n_splits_ == 2
+        assert splitter.split_calls_ == ["routed", "routed"]
+
+    def test_scoring_none_fails_with_the_clear_valueerror(
+        self, default_forecaster, default_param_distributions, y_X_factory
+    ):
+        """Fit without scoring raises the scoring ValueError, never an AttributeError."""
+        y, X = y_X_factory(length=50, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=default_forecaster,
+            param_distributions=default_param_distributions,
+            n_trials=1,
+            cv=2,
+        )
+        with pytest.raises(ValueError, match="scoring parameter cannot be None"):
+            search.fit(y, X_actual=X, forecasting_horizon=3)
+
     def test_predict_after_fit_returns_forecasts(self, optuna_search_cv, y_X_factory):
         """Test predict works after fit."""
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
@@ -1027,6 +1065,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score=0.0,
             multimetric=False,
@@ -1061,6 +1100,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=False,
@@ -1091,6 +1131,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score="raise",
             multimetric=False,
@@ -1120,6 +1161,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,
@@ -1150,6 +1192,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,
@@ -1181,6 +1224,7 @@ class TestObjective:
             fit_params={},
             predict_func_params={},
             score_params={},
+            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,

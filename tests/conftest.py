@@ -16,6 +16,7 @@ from optuna.distributions import FloatDistribution
 from sklearn.linear_model import Ridge
 from yohou.base import BaseForecaster
 from yohou.metrics import MeanAbsoluteError
+from yohou.model_selection import ExpandingWindowSplitter
 from yohou.point import PointReductionForecaster
 
 from yohou_optuna import OptunaSearchCV, Sampler
@@ -440,6 +441,77 @@ def threshold_failing_forecaster():
 
     """
     return ThresholdFailingForecaster(estimator=Ridge())
+
+
+class MarkerRecordingSplitter(ExpandingWindowSplitter):
+    """An expanding-window splitter whose ``split`` accepts a metadata key.
+
+    The extra ``split_marker`` parameter on ``split`` makes the key
+    requestable through sklearn's signature scraping, so after
+    ``set_split_request(split_marker=True)`` a search routes it via the
+    splitter bucket. Every ``split`` call records the received marker in
+    ``split_calls_``, which lets a test assert the routed value reached each
+    per-trial split. ``get_n_splits`` accepts the key as well because the
+    search forwards the same bucket there.
+
+    Parameters
+    ----------
+    n_splits : int, default=3
+        Number of expanding-window folds.
+    max_train_size : int or None, default=None
+        As in ``ExpandingWindowSplitter``.
+    test_size : int or None, default=None
+        As in ``ExpandingWindowSplitter``.
+
+    """
+
+    def __init__(self, n_splits=3, *, max_train_size=None, test_size=None):
+        super().__init__(n_splits, max_train_size=max_train_size, test_size=test_size)
+        self.split_calls_: list = []
+
+    def split(self, y, X_actual=None, split_marker=None):
+        """Record the marker, then split as the parent class.
+
+        Parameters
+        ----------
+        y : pl.DataFrame
+            Target time series.
+        X_actual : pl.DataFrame or None, default=None
+            Actual features.
+        split_marker : object, default=None
+            Requestable metadata key recorded in ``split_calls_``.
+
+        Yields
+        ------
+        train : ndarray
+            Training set row indices for that split.
+        test : ndarray
+            Test set row indices for that split.
+
+        """
+        self.split_calls_.append(split_marker)
+        yield from super().split(y, X_actual)
+
+    def get_n_splits(self, y=None, X_actual=None, split_marker=None):
+        """Return the fold count, accepting the routed key.
+
+        Parameters
+        ----------
+        y : pl.DataFrame or None, default=None
+            Not used.
+        X_actual : pl.DataFrame or None, default=None
+            Not used.
+        split_marker : object, default=None
+            Accepted and ignored; the search forwards the splitter bucket
+            here as well as to ``split``.
+
+        Returns
+        -------
+        int
+            The number of cross-validation folds.
+
+        """
+        return super().get_n_splits(y, X_actual)
 
 
 @pytest.fixture

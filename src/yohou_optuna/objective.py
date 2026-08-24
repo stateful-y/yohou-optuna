@@ -55,6 +55,8 @@ class _Objective:
         Additional parameters passed to ``forecaster.predict()`` or ``forecaster.predict_interval()``.
     score_params : dict
         Additional parameters passed to scorer.
+    split_params : dict
+        Additional parameters passed to ``cv.split()``.
     verbose : int, default=0
         Verbosity level.
     return_train_score : bool, default=False
@@ -114,6 +116,7 @@ class _Objective:
         fit_params: dict[str, Any],
         predict_func_params: dict[str, Any],
         score_params: dict[str, Any],
+        split_params: dict[str, Any],
         *,
         verbose: int = 0,
         return_train_score: bool = False,
@@ -134,6 +137,7 @@ class _Objective:
         self.fit_params = fit_params
         self.predict_func_params = predict_func_params
         self.score_params = score_params
+        self.split_params = split_params
         self.verbose = verbose
         self.return_train_score = return_train_score
         self.error_score = error_score
@@ -236,7 +240,7 @@ class _Objective:
         cloned_forecaster = clone(self.forecaster)
         cloned_forecaster.set_params(**params)
 
-        splits = list(self.cv.split(self.y, self.X_actual))
+        splits = list(self.cv.split(self.y, self.X_actual, **self.split_params))
         all_test_scores: list[dict[str, float | str] | float | str] = []
         all_train_scores: list[dict[str, float | str] | float | str] = []
         all_fit_times: list[float] = []
