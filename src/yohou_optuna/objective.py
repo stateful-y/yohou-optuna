@@ -15,7 +15,14 @@ from sklearn.utils.metaestimators import _safe_split
 from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
-from yohou.model_selection.utils import _MultimetricScorer, _predict, _score, _split_X_forecast
+from yohou.model_selection.utils import (
+    _MultimetricScorer,
+    _predict,
+    _score,
+    _score_train_window,
+    _split_X_forecast,
+    _train_window_predictions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -306,41 +313,31 @@ class _Objective:
                 all_score_times.append(score_time)
                 all_test_scores.append(test_scores)
 
-                # Score train if requested
+                # Score train if requested, through yohou's recipe: the stretch ends
+                # before the rows the forecaster held back (a split-conformal model's
+                # calibration rows), positions are relative to the training window,
+                # score params are sliced to the scored rows, and a window too short to
+                # leave room scores NaN with a warning instead of scoring other rows.
                 if self.return_train_score:
-                    score_params_train = _check_method_params(self.y, params=self.score_params, indices=train)
-                    train_reset = train[: -len(test)]
-                    test_reset = train[-len(test) :]
-                    y_train_reset, X_actual_train_reset = _safe_split(
-                        fold_forecaster, y_train, X_actual_train, train_reset
-                    )
-                    y_train_test, X_actual_train_test = _safe_split(
-                        fold_forecaster, y_train, X_actual_train, test_reset, train_reset
-                    )
-                    fold_forecaster.rewind(
-                        y_train_reset,
-                        X_actual=X_actual_train_reset,
-                        X_future=self.X_future,
-                        X_forecast=X_forecast_train,
-                    )
-                    y_pred_train = _predict(
+                    window = _train_window_predictions(
                         fold_forecaster,
-                        y_train_test,
-                        X_actual_train_test,
-                        self.scorers,
+                        y_train,
+                        X_actual_train,
+                        n_rows=len(test),
+                        scorer=self.scorers,
                         predict_func_params=self.predict_func_params,
                         coverage_rates=self.coverage_rates,
                         X_future=self.X_future,
-                        X_forecast=X_forecast_train,
+                        X_forecast_train=X_forecast_train,
                     )
-                    train_scores = _score(
+                    train_scores = _score_train_window(
                         fold_forecaster,
-                        y_train_reset,
-                        y_train_test,
-                        y_pred_train,
+                        window,
                         self.scorers,
-                        score_params_train,
-                        self.error_score,
+                        y=self.y,
+                        score_params=self.score_params,
+                        train=train,
+                        error_score=self.error_score,
                     )
                     all_train_scores.append(train_scores)
 
