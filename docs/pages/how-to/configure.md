@@ -203,6 +203,14 @@ print(results.select(["params", "mean_test_score", "mean_train_score"]))
 
 Large gaps between training and test scores suggest overfitting.
 
+Training scores are computed by yohou's own train-score recipe, so a trial's `split{i}_train_score` equals what yohou's `cross_validate(..., return_train_score=True)` reports for the same forecaster, parameters and split:
+
+- **Which rows are scored.** Each split's training score covers a stretch as long as the test window, predicted the way the test window is (the fitted forecaster is rewound and walked forward, without refitting). The stretch ends before any rows the forecaster holds back from learning, which it declares in its `holdout_size` tag. For a `SplitConformalForecaster` those are its `calibration_size` calibration rows, so its training score measures the point forecaster on data it was fitted on, not the rows that sized its intervals.
+- **Short training windows.** When a split's training window is no longer than the test window plus the held-back rows, that split's training score is `NaN` and yohou emits a `UserWarning` naming the three lengths. This is common on the first splits of an expanding window with a large `test_size`. `mean_train_score` then rests on fewer splits than `mean_test_score`.
+- **Failures.** An error while computing a training score is handled like any other fold failure: it raises under `error_score="raise"`, and otherwise the split is recorded in the trial's `failed_splits`.
+
+See yohou's [model selection explanation](https://yohou.readthedocs.io/en/latest/pages/explanation/model-selection/) for why the training score is measured this way.
+
 ## See Also
 
 - [About OptunaSearchCV](../explanation/concepts.md): understand samplers, temporal CV, and wrapper classes

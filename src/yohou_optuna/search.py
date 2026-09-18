@@ -91,7 +91,14 @@ class OptunaSearchCV(BaseSearchCV):
         the trial carries the sentinel objective; a trial is never scored
         on only the folds it survived.
     return_train_score : bool, default=False
-        Whether to include training scores in ``cv_results_``.
+        Whether to include training scores in ``cv_results_``. They are
+        computed through yohou's train-score recipe, so they equal what
+        ``yohou.model_selection.cross_validate`` reports for the same
+        forecaster, parameters and split. Each split's training score covers
+        a stretch as long as the test window that ends before the rows the
+        forecaster holds back from learning (its ``holdout_size`` tag, such as
+        a split-conformal forecaster's calibration rows), and is NaN with a
+        warning when the training window is too short to leave one.
 
     Attributes
     ----------
