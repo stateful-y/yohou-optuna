@@ -34,6 +34,8 @@ Hyperparameter search for time series differs from iid settings: using future da
 
 This is why the `cv` parameter accepts Yohou splitters rather than Scikit-Learn cross-validators: time series folds are defined by their position in time, not by random index shuffles.
 
+Each fold is also fitted and scored by Yohou's own fold evaluation, the same functions Yohou's `GridSearchCV` and `RandomizedSearchCV` use for a candidate. A trial's per-split test and train scores therefore equal what those searches report for the same parameters and splits. With `validation="cv"`, the whole trial is evaluated by Yohou's shared-round early stopping; see [Early-Stop Boosting Estimators](../how-to/configure.md#early-stop-boosting-estimators).
+
 ## Fold Failures and Trial Scores
 
 A trial's objective value is the plain mean of its fold scores, and a fold that raises does not disappear from that mean. It contributes the configured `error_score`, so with the default `error_score=np.nan` a trial with any failed fold scores `NaN` and receives the sentinel objective. A trial is never scored on only the folds it survived.
@@ -42,7 +44,7 @@ The reason is comparability. Every trial is evaluated on the same folds, and the
 
 A trial sunk this way still completes, deliberately. Optuna's samplers learn from completed trials and ignore failed ones, so completing at the sentinel keeps the crashing region visible to the sampler, which steers away from it instead of resampling it. This matches Optuna's own guidance for infeasible points.
 
-The failure is recorded rather than discarded. A trial with absorbed fold failures carries three user attributes: `exception` and `exception_type` for the first exception, and `failed_splits` for the indices of the folds that raised. `failed_splits` is the reliable mark of a failure: with a numeric `error_score` the trial's aggregate stays finite, so the score's value alone cannot say whether a fold failed. The search warns once per failing trial and summarises once per search, and it exposes `n_completed_` and `n_scored_` so the count of trials that produced a usable score is readable without recomputation. [Handle Fitting Errors](../how-to/configure.md#handle-fitting-errors) covers the operational side.
+The failure is recorded rather than discarded. A trial with absorbed fold failures carries three user attributes: `exception` and `exception_type` for the first exception, and `failed_splits` for the indices of the folds that raised. A fold counts as failed when fitting, predicting the test window, or computing its train score raises. A train-score failure keeps the fold's real test score and replaces only its train score. A scorer that raises while scoring predictions that were produced is handled inside Yohou, which substitutes `error_score` with a warning, exactly as in its own searches. `failed_splits` is the reliable mark of a failure: with a numeric `error_score` the trial's aggregate stays finite, so the score's value alone cannot say whether a fold failed. The search warns once per failing trial and summarises once per search, and it exposes `n_completed_` and `n_scored_` so the count of trials that produced a usable score is readable without recomputation. [Handle Fitting Errors](../how-to/configure.md#handle-fitting-errors) covers the operational side.
 
 ## Wrapper Classes and Cloneability
 

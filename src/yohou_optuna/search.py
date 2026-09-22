@@ -91,7 +91,35 @@ class OptunaSearchCV(BaseSearchCV):
         the trial carries the sentinel objective; a trial is never scored
         on only the folds it survived.
     return_train_score : bool, default=False
-        Whether to include training scores in ``cv_results_``.
+        Whether to include training scores in ``cv_results_``. They are
+        computed through yohou's train-score recipe, so they equal what
+        ``yohou.model_selection.cross_validate`` reports for the same
+        forecaster, parameters and split. Each split's training score covers
+        a stretch as long as the test window that ends before the rows the
+        forecaster holds back from learning (its ``holdout_size`` tag, such as
+        a split-conformal forecaster's calibration rows or a reduction
+        forecaster's ``validation_size`` tail), and is NaN with a
+        warning when the training window is too short to leave one.
+    validation : {"cv"} or None, default=None
+        Early-stopping mode, as in yohou's ``GridSearchCV``. ``None`` fits each
+        fold as configured. ``"cv"`` gives every fold its own test window as
+        the boosting estimator's evaluation set: each trial's folds train
+        every round up to the estimator's ceiling, one round per fitted
+        estimator is chosen from the stopping metric averaged over the folds,
+        every fold is scored cut to that round, and the refit trains that
+        many rounds on all data with early stopping off. Requires a reduction
+        forecaster with a supported boosting estimator; see yohou's early
+        stopping how-to for what is rejected. A sampled parameter yohou
+        rejects for this mode (such as ``reduction_strategy="dir-rec"``)
+        raises and stops the study, as it stops ``GridSearchCV``, rather than
+        being recorded as a failed trial. The chosen round is
+        selected on the rows that produce the trial's score, so ``"cv"``
+        scores are optimistic; the forecaster's own ``validation_size`` inside
+        each fold is the unbiased alternative and needs no search setting.
+    early_stopping_adapter : BaseEarlyStoppingAdapter or None, default=None
+        Adapter used with ``validation="cv"``, or ``None`` to resolve yohou's
+        built-in adapter for the estimator (LightGBM, XGBoost, CatBoost or
+        scikit-learn histogram gradient boosting).
 
     Attributes
     ----------
@@ -99,6 +127,11 @@ class OptunaSearchCV(BaseSearchCV):
         Cross-validation results dictionary.
     best_forecaster_ : BaseForecaster
         Forecaster refitted on the full dataset with best parameters.
+    best_rounds_ : dict of str to int
+        Only with ``validation="cv"``: the best trial's chosen boosting round
+        for each fitted estimator position, which the refit trains. With
+        ``validation="cv"``, ``cv_results_`` also carries ``rounds``,
+        ``rounds_at_boundary`` and ``split<i>_curve_length``.
     best_score_ : float
         Mean cross-validated score of the best forecaster.
     best_params_ : dict
@@ -194,6 +227,8 @@ class OptunaSearchCV(BaseSearchCV):
         pre_dispatch: int | str = "2*n_jobs",
         error_score: float | str = np.nan,
         return_train_score: bool = False,
+        validation: str | None = None,
+        early_stopping_adapter: Any = None,
     ) -> None:
         super().__init__(
             forecaster=forecaster,
@@ -205,6 +240,8 @@ class OptunaSearchCV(BaseSearchCV):
             pre_dispatch=pre_dispatch,
             error_score=error_score,
             return_train_score=return_train_score,
+            validation=validation,
+            early_stopping_adapter=early_stopping_adapter,
         )
         self.param_distributions = param_distributions
         self.n_trials = n_trials
@@ -275,6 +312,10 @@ class OptunaSearchCV(BaseSearchCV):
 
         """
         _raise_for_params(params, self, "fit")
+        if self.validation == "cv":
+            # The checks no trial can change: a reduction forecaster, and no
+            # caller-supplied evaluation set the folds would overwrite.
+            self._check_shared_round_setup(params)
 
         # Validate input data
         validate_search_data(y, X_actual)
@@ -369,6 +410,8 @@ class OptunaSearchCV(BaseSearchCV):
             multimetric=self.multimetric_,
             refit=self.refit,
             coverage_rates=coverage_rates,
+            validation=self.validation,
+            early_stopping_adapter=self.early_stopping_adapter,
         )
 
         # Run optimization
@@ -409,6 +452,9 @@ class OptunaSearchCV(BaseSearchCV):
 
         # Build cv_results_ from trials
         self.cv_results_ = _build_cv_results(self.trials_, self.multimetric_, self.return_train_score)
+        if self.validation == "cv" and self.cv_results_["params"]:
+            records = [_shared_round_record(t, self.n_splits_) for t in completed_trials]
+            self.cv_results_.update(self._shared_round_columns(self.cv_results_["params"], records, self.n_splits_))
 
         # Handle empty results
         if not self.cv_results_["params"] or len(self.cv_results_["params"]) == 0:
@@ -423,11 +469,15 @@ class OptunaSearchCV(BaseSearchCV):
             if not callable(self.refit):
                 self.best_score_ = self.cv_results_[f"mean_test_{refit_metric}"][self.best_index_]
             self.best_params_ = self.cv_results_["params"][self.best_index_]
+            if self.validation == "cv":
+                self.best_rounds_ = dict(self.cv_results_["rounds"][self.best_index_])
 
         # Refit best forecaster on full data
         if self.refit:
             self.best_forecaster_ = clone(self.forecaster).set_params(**clone(self.best_params_, safe=False))
             refit_start_time = time.time()
+            # validation="cv": train exactly the chosen rounds, with early stopping off.
+            refit_adapter = self._prepare_shared_round_refit(self.best_forecaster_) if self.validation == "cv" else None
             fit_params = dict(routed_params.forecaster.fit)
             if coverage_rates is not None:
                 fit_params["coverage_rates"] = coverage_rates
@@ -439,6 +489,9 @@ class OptunaSearchCV(BaseSearchCV):
                 X_forecast=X_forecast,
                 **fit_params,
             )
+            if refit_adapter is not None:
+                for position, estimator in self.best_forecaster_._fitted_estimator_positions():
+                    refit_adapter.truncate(estimator, self.best_rounds_[position])
             self.refit_time_ = time.time() - refit_start_time
 
         return self
@@ -460,3 +513,32 @@ class OptunaSearchCV(BaseSearchCV):
         assert tags.forecaster_tags is not None  # noqa: S101  # internal type-narrowing invariant
         tags.forecaster_tags.search_type = "optuna"
         return tags
+
+
+def _shared_round_record(trial: optuna.trial.FrozenTrial, n_splits: int) -> dict[str, Any]:
+    """The ``validation="cv"`` round record a trial stored, in yohou's record shape.
+
+    A trial that failed before any fold was evaluated stored none, and gets an
+    empty record: no chosen round and no stopping curve for any split.
+
+    Parameters
+    ----------
+    trial : optuna.trial.FrozenTrial
+        A completed trial.
+    n_splits : int
+        Number of cross-validation splits.
+
+    Returns
+    -------
+    dict
+        ``rounds``, ``rounds_at_boundary``, ``boundary_positions`` and
+        ``curve_lengths``, as ``BaseSearchCV._shared_round_columns`` expects.
+
+    """
+    attrs = trial.user_attrs
+    return {
+        "rounds": dict(attrs.get("rounds", {})),
+        "rounds_at_boundary": bool(attrs.get("rounds_at_boundary", False)),
+        "boundary_positions": list(attrs.get("boundary_positions", [])),
+        "curve_lengths": list(attrs.get("curve_lengths", [None] * n_splits)),
+    }

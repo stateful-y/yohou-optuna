@@ -203,8 +203,75 @@ print(results.select(["params", "mean_test_score", "mean_train_score"]))
 
 Large gaps between training and test scores suggest overfitting.
 
+Training scores are computed by yohou's own train-score recipe, so a trial's `split{i}_train_score` equals what yohou's `cross_validate(..., return_train_score=True)` reports for the same forecaster, parameters and split:
+
+- **Which rows are scored.** Each split's training score covers a stretch as long as the test window, predicted the way the test window is (the fitted forecaster is rewound and walked forward, without refitting). The stretch ends before any rows the forecaster holds back from learning, which it declares in its `holdout_size` tag. For a `SplitConformalForecaster` those are its `calibration_size` calibration rows, so its training score measures the point forecaster on data it was fitted on, not the rows that sized its intervals. For a reduction forecaster with a `validation_size`, they are the early-stopping holdout at the end of each fold's training window.
+- **Short training windows.** When a split's training window is no longer than the test window plus the held-back rows, that split's training score is `NaN` and yohou emits a `UserWarning` naming the three lengths. This is common on the first splits of an expanding window with a large `test_size`. `mean_train_score` then rests on fewer splits than `mean_test_score`.
+- **Failures.** An error while computing a training score is handled like any other fold failure: it raises under `error_score="raise"`, and otherwise the split is recorded in the trial's `failed_splits`.
+
+See yohou's [model selection explanation](https://yohou.readthedocs.io/en/latest/pages/explanation/model-selection/) for why the training score is measured this way.
+
+## Early-Stop Boosting Estimators
+
+A reduction forecaster wrapping a gradient boosting estimator (LightGBM, XGBoost, CatBoost, or scikit-learn's histogram gradient boosting) stops early only when its `fit` receives an evaluation set. There are two ways to give it one inside a search.
+
+**Hold out a tail in every fold** with the forecaster's own `validation_size`. Each fold's fit sets its last `validation_size` rows aside as the evaluation set and stops on its own patience. It needs no search setting, and the fold's test window is never used to choose the round, so the scores stay unbiased:
+
+```python
+from lightgbm import LGBMRegressor
+from yohou.point import PointReductionForecaster
+from yohou.preprocessing import LagTransformer
+
+forecaster = PointReductionForecaster(
+    estimator=LGBMRegressor(n_estimators=1000, early_stopping_round=20, verbose=-1),
+    reduction_strategy="direct",
+    actual_transformer=LagTransformer(lag=[1, 2, 24]),
+    validation_size=96,
+)
+```
+
+**Share one round across folds** with `validation="cv"`, the mode yohou's `GridSearchCV` and `RandomizedSearchCV` provide. Every fold of a trial uses its own test window as the evaluation set and trains every round up to the estimator's ceiling. One round per fitted estimator is chosen from the stopping metric averaged over the folds, and every fold is scored cut to that round. The refit then trains exactly that many rounds on all the data, with early stopping off:
+
+```python
+from lightgbm import LGBMRegressor
+from optuna.distributions import FloatDistribution, IntDistribution
+from yohou.point import PointReductionForecaster
+from yohou.preprocessing import LagTransformer
+from yohou_optuna import OptunaSearchCV
+
+search = OptunaSearchCV(
+    forecaster=PointReductionForecaster(
+        estimator=LGBMRegressor(n_estimators=1000, verbose=-1),
+        reduction_strategy="direct",
+        actual_transformer=LagTransformer(lag=[1, 2, 24]),
+    ),
+    param_distributions={
+        "estimator__num_leaves": IntDistribution(8, 128),
+        "estimator__learning_rate": FloatDistribution(0.01, 0.2, log=True),
+    },
+    scoring=scorer,
+    n_trials=30,
+    validation="cv",
+)
+search.fit(y_train, forecasting_horizon=12)
+
+search.best_rounds_                  # chosen round per fitted estimator, e.g. {"step_1": 412, ...}
+search.cv_results_["rounds"]         # each trial's chosen rounds
+search.cv_results_["rounds_at_boundary"]  # True when a round hit the ceiling
+```
+
+A few things to know about `validation="cv"`:
+
+- **The scores are optimistic.** The round is chosen on the same rows that produce the trial's score, as if `n_estimators` were searched on the test folds. Prefer `validation_size` when the score itself matters, and use `validation="cv"` to find a round count for the refit.
+- **The ceiling is the cost.** Folds train to `n_estimators` (or `iterations`, or `max_iter`), which is also the largest round the search can choose. A trial whose chosen round sits at the ceiling sets `rounds_at_boundary` and emits a warning: raise the ceiling.
+- **Some configurations are refused, and stop the search.** yohou rejects non-reduction forecasters, a forecaster that sets `validation_size`, `reduction_strategy="dir-rec"`, LightGBM or XGBoost dart boosting, and CatBoost without an explicit `learning_rate`. A forecaster or fit parameter it rejects fails `fit` before any trial runs. A sampled parameter it rejects, such as `reduction_strategy` drawn as `"dir-rec"`, raises and stops the study rather than being recorded as a failed trial, the way the same configuration stops `GridSearchCV`. Keep such values out of `param_distributions`.
+- **Fold failures still follow `error_score`**, exactly as without `validation="cv"`: a fold whose fit raises contributes `error_score`, is listed in the trial's `failed_splits`, and adds no stopping curve.
+
+Pass `early_stopping_adapter=` to use a custom `BaseEarlyStoppingAdapter` for an estimator yohou has no built-in adapter for. See yohou's [early stopping how-to](https://yohou.readthedocs.io/en/latest/pages/how-to/early-stopping/) for how the estimator is configured and how adapters work.
+
 ## See Also
 
 - [About OptunaSearchCV](../explanation/concepts.md): understand samplers, temporal CV, and wrapper classes
+- yohou's [early stopping how-to](https://yohou.readthedocs.io/en/latest/pages/how-to/early-stopping/): configuring the estimator, `validation_size`, and `validation="cv"` in yohou's own searches
 - [Multi-Metric Search](multi-metric-search.md): evaluate multiple metrics simultaneously
 - [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`
