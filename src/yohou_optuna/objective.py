@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import numbers
 import time
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import optuna
@@ -16,6 +16,7 @@ from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
 from yohou.model_selection.utils import (
+    _evaluate_candidate_shared_rounds,
     _MultimetricScorer,
     _predict,
     _score,
@@ -25,6 +26,14 @@ from yohou.model_selection.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class _SharedRoundConfigurationError(ValueError):
+    """A trial's parameters that yohou refuses for ``validation="cv"``, raised before any fold is fitted.
+
+    Distinct from a fold failure, which ``error_score`` governs: it stops the
+    search, as the same configuration stops yohou's ``GridSearchCV``.
+    """
 
 
 class _Objective:
@@ -80,6 +89,14 @@ class _Objective:
     coverage_rates : list of float or None, default=None
         Coverage rates for interval forecasters.  Passed to
         ``forecaster.fit()``.
+    validation : {"cv"} or None, default=None
+        ``"cv"`` evaluates each trial through yohou's shared-round early
+        stopping (``_evaluate_candidate_shared_rounds``): every fold's test
+        window is its evaluation set, one round per estimator is chosen from
+        the fold-average stopping curve, and every fold is scored cut to it.
+        ``None`` fits and scores each fold as configured.
+    early_stopping_adapter : BaseEarlyStoppingAdapter or None, default=None
+        Adapter for ``validation="cv"``, or ``None`` for yohou's built-in one.
 
     Notes
     -----
@@ -131,6 +148,8 @@ class _Objective:
         multimetric: bool = False,
         refit: bool | str = True,
         coverage_rates: list[float] | None = None,
+        validation: str | None = None,
+        early_stopping_adapter: Any = None,
     ) -> None:
         self.forecaster = forecaster
         self.param_distributions = param_distributions
@@ -151,6 +170,8 @@ class _Objective:
         self.multimetric = multimetric
         self.refit = refit
         self.coverage_rates = coverage_rates
+        self.validation = validation
+        self.early_stopping_adapter = early_stopping_adapter
 
     def __call__(self, trial: optuna.trial.Trial) -> float:
         """Evaluate a single trial.
@@ -197,6 +218,10 @@ class _Objective:
                     return float("-inf")
                 return mean_score
 
+        except _SharedRoundConfigurationError:
+            # A candidate yohou refuses for validation="cv" stops the search, as it
+            # stops GridSearchCV, instead of being recorded as a failed trial.
+            raise
         except Exception as e:
             return self._handle_error(trial, e)
 
@@ -248,6 +273,9 @@ class _Objective:
         cloned_forecaster.set_params(**params)
 
         splits = list(self.cv.split(self.y, self.X_actual, **self.split_params))
+        if self.validation == "cv":
+            self._run_shared_round_cross_validation(trial, params, splits)
+            return
         all_test_scores: list[dict[str, float | str] | float | str] = []
         all_train_scores: list[dict[str, float | str] | float | str] = []
         all_fit_times: list[float] = []
@@ -389,6 +417,125 @@ class _Objective:
         # Store results as trial user attributes
         self._store_scores(trial, all_test_scores, all_train_scores)
         self._store_timing(trial, all_fit_times, all_score_times)
+
+    def _run_shared_round_cross_validation(
+        self,
+        trial: optuna.trial.Trial,
+        params: dict[str, Any],
+        splits: list[tuple[np.ndarray, np.ndarray]],
+    ) -> None:
+        """Evaluate the trial with ``validation="cv"`` and store its results on the trial.
+
+        yohou's ``_evaluate_candidate_shared_rounds`` fits every fold with its
+        test window as the evaluation set, chooses one round per estimator from
+        the fold-average stopping curve, and scores every fold cut to that
+        round, exactly as ``GridSearchCV(validation="cv")`` evaluates one
+        candidate. Its per-fold results map onto the same user attributes as the
+        default loop, and its round record is stored beside them.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            Optuna trial for storing results.
+        params : dict
+            Parameter settings for the forecaster.
+        splits : list of tuple of np.ndarray
+            ``(train, test)`` row indices for every fold.
+
+        """
+        try:
+            results, record = self._evaluate_shared_rounds(params, splits)
+        except Exception as exc:
+            if self.error_score == "raise":
+                raise
+            # With a numeric error_score, a failed fold is absorbed inside the call and
+            # recorded in its result, so what escapes is a configuration yohou refuses
+            # before fitting any fold (dir-rec, dart boosting, CatBoost without an
+            # explicit learning_rate, a validation_size on the forecaster, ...).
+            raise _SharedRoundConfigurationError(str(exc)) from exc
+        # yohou types the record and results as dict[str, object]; these are their documented shapes.
+        rounds = cast("dict[str, int]", record["rounds"])
+        boundary_positions = cast("list[str]", record["boundary_positions"])
+        curve_lengths = cast("list[dict[str, int] | None]", record["curve_lengths"])
+        # Plain JSON types: a storage backend serialises user attributes.
+        trial.set_user_attr("rounds", {str(k): int(v) for k, v in rounds.items()})
+        trial.set_user_attr("rounds_at_boundary", bool(record["rounds_at_boundary"]))
+        trial.set_user_attr("boundary_positions", [str(p) for p in boundary_positions])
+        trial.set_user_attr(
+            "curve_lengths",
+            [None if lengths is None else {str(k): int(v) for k, v in lengths.items()} for lengths in curve_lengths],
+        )
+
+        failed_splits = [i for i, result in enumerate(results) if result.get("fit_error") is not None]
+        if failed_splits:
+            fit_error = cast("str", results[failed_splits[0]]["fit_error"])
+            exception_type, exception = _exception_from_traceback(fit_error)
+            # The same keys the default loop sets, so a consumer reads one shape.
+            trial.set_user_attr("exception", exception)
+            trial.set_user_attr("exception_type", exception_type)
+            trial.set_user_attr("failed_splits", failed_splits)
+            logger.warning(
+                "Trial %d: %d of %d fold(s) failed (splits %s), first failure %s: %s",
+                trial.number,
+                len(failed_splits),
+                len(splits),
+                failed_splits,
+                exception_type,
+                exception,
+            )
+
+        self._store_scores(
+            trial,
+            [result["test_scores"] for result in results],
+            [result["train_scores"] for result in results] if self.return_train_score else [],
+        )
+        self._store_timing(
+            trial,
+            [cast("float", result["fit_time"]) for result in results],
+            [cast("float", result["score_time"]) for result in results],
+        )
+
+    def _evaluate_shared_rounds(
+        self, params: dict[str, Any], splits: list[tuple[np.ndarray, np.ndarray]]
+    ) -> tuple[list[dict[str, object]], dict[str, object]]:
+        """Run yohou's shared-round evaluation of one candidate on every split.
+
+        Parameters
+        ----------
+        params : dict
+            Parameter settings for the forecaster.
+        splits : list of tuple of np.ndarray
+            ``(train, test)`` row indices for every fold.
+
+        Returns
+        -------
+        results : list of dict
+            One ``_fit_and_score``-shaped result per fold, in ``splits`` order.
+        record : dict
+            The round record: ``rounds``, ``rounds_at_boundary``,
+            ``boundary_positions`` and ``curve_lengths``.
+
+        """
+        return _evaluate_candidate_shared_rounds(
+            self.forecaster,
+            self.y,
+            self.X_actual,
+            self.forecasting_horizon,
+            X_future=self.X_future,
+            X_forecast=self.X_forecast,
+            splits=splits,
+            parameters=params,
+            early_stopping_adapter=None if self.early_stopping_adapter is None else clone(self.early_stopping_adapter),
+            scorer=self.scorers,
+            verbose=self.verbose,
+            fit_params=self.fit_params,
+            predict_func_params=self.predict_func_params,
+            score_params=self.score_params,
+            return_train_score=self.return_train_score,
+            return_times=True,
+            error_score=self.error_score,
+            coverage_rates=self.coverage_rates,
+        )
 
     def _store_scores(
         self,
@@ -585,3 +732,31 @@ class _Objective:
             return float("-inf")
 
         return float(error_value)
+
+
+def _exception_from_traceback(traceback: str) -> tuple[str, str]:
+    """The exception type name and message on the last line of a formatted traceback.
+
+    yohou records a failed fold's fit as ``traceback.format_exc()`` text rather
+    than the exception object; this recovers what the default loop stores.
+
+    Parameters
+    ----------
+    traceback : str
+        A formatted traceback.
+
+    Returns
+    -------
+    tuple of (str, str)
+        The exception's class name (without its module path) and its message.
+
+    Examples
+    --------
+    >>> _exception_from_traceback("sklearn.exceptions.NotFittedError: not fitted")
+    ('NotFittedError', 'not fitted')
+
+    """
+    lines = [line for line in traceback.strip().splitlines() if line.strip()]
+    last = lines[-1] if lines else ""
+    name, _, message = last.partition(": ")
+    return name.rsplit(".", 1)[-1], message
