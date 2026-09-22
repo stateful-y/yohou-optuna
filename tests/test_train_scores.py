@@ -12,7 +12,7 @@ from optuna.distributions import CategoricalDistribution
 from yohou.interval import SplitConformalForecaster
 from yohou.metrics import MeanAbsoluteError
 from yohou.metrics.interval import IntervalScore
-from yohou.model_selection import ExpandingWindowSplitter, SlidingWindowSplitter, cross_validate
+from yohou.model_selection import ExpandingWindowSplitter, GridSearchCV, SlidingWindowSplitter, cross_validate
 from yohou.model_selection import utils as ms_utils
 from yohou.point import SeasonalNaive
 
@@ -106,20 +106,19 @@ class TestShortTrainingWindow:
 
 
 class TestScoreParams:
-    """Score params reach train scoring sliced to the scored rows."""
+    """Score params reach test and train scoring sliced to the rows each scores."""
 
     def test_sliced_to_scored_rows(self, monkeypatch):
         y = _hourly(1000)
         cv = ExpandingWindowSplitter(n_splits=2, test_size=168)
         captured: list[np.ndarray] = []
 
-        def capture_train(forecaster, y_train, y_test, y_pred, scorer, score_params, error_score):
+        def capture(forecaster, y_train, y_test, y_pred, scorer, score_params, error_score):
             captured.append(score_params["row_id"])
             return 0.0
 
-        # Test scoring goes through the objective's own reference; train scoring through yohou's.
-        monkeypatch.setattr(objective_module, "_score", lambda *args, **kwargs: 0.0)
-        monkeypatch.setattr(ms_utils, "_score", capture_train)
+        # Test and train scoring both go through yohou's _score.
+        monkeypatch.setattr(ms_utils, "_score", capture)
         objective = _Objective(
             forecaster=SeasonalNaive(seasonality=24),
             param_distributions={"seasonality": CategoricalDistribution([24])},
@@ -138,8 +137,14 @@ class TestScoreParams:
             error_score="raise",
         )
         optuna.create_study(direction="maximize").optimize(objective, n_trials=1)
-        # Split 0 trains on rows 0-663 and scores 496-663; split 1 trains on 0-831 and scores 664-831.
-        assert [ids.tolist() for ids in captured] == [list(range(496, 664)), list(range(664, 832))]
+        # Per split, the test window, then the train stretch: split 0 tests on 664-831 and
+        # train-scores 496-663; split 1 tests on 832-999 and train-scores 664-831.
+        assert [ids.tolist() for ids in captured] == [
+            list(range(664, 832)),
+            list(range(496, 664)),
+            list(range(832, 1000)),
+            list(range(664, 832)),
+        ]
 
 
 class TestTrainScoreFailure:
@@ -183,3 +188,24 @@ class TestTrainScoreFailure:
         search.param_distributions = {"seasonality": CategoricalDistribution([24])}
         with pytest.raises(ValueError, match="intentional train-score failure"):
             search.fit(y, forecasting_horizon=FH)
+
+
+class TestAgreementWithGridSearch:
+    """Without validation="cv", a trial also scores its candidate exactly as GridSearchCV does."""
+
+    def test_split_test_and_train_scores_match(self):
+        y = _hourly(1168)
+        cv = ExpandingWindowSplitter(n_splits=2, test_size=168)
+        search = _search(cv).fit(y, forecasting_horizon=FH)
+        grid = GridSearchCV(
+            forecaster=_conformal(),
+            param_grid={"point_forecaster__seasonality": [24]},
+            scoring=IntervalScore(coverage_rates=COVERAGE),
+            cv=cv,
+            return_train_score=True,
+            refit=False,
+        ).fit(y, forecasting_horizon=FH)
+        for i in range(2):
+            for side in ("test", "train"):
+                key = f"split{i}_{side}_score"
+                assert search.cv_results_[key][0] == pytest.approx(grid.cv_results_[key][0])

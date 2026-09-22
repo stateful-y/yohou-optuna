@@ -4,28 +4,51 @@ from __future__ import annotations
 
 import logging
 import numbers
-import time
+from dataclasses import dataclass
 from typing import Any, cast
 
 import numpy as np
 import optuna
 import polars as pl
 from sklearn.base import clone
-from sklearn.utils.metaestimators import _safe_split
-from sklearn.utils.validation import _check_method_params
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
 from yohou.model_selection.utils import (
     _evaluate_candidate_shared_rounds,
+    _fit_fold,
     _MultimetricScorer,
-    _predict,
-    _score,
+    _score_fold,
     _score_train_window,
-    _split_X_forecast,
     _train_window_predictions,
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class _FoldOutcome:
+    """What one fold contributes to a trial.
+
+    Attributes
+    ----------
+    test_scores : dict, float or str
+        The fold's test score, or ``error_score`` when it failed.
+    train_scores : dict, float, str or None
+        The fold's train score when train scores are requested, else ``None``.
+    fit_time : float
+        Seconds spent fitting, up to the error for a failed fit.
+    score_time : float
+        Seconds spent predicting and scoring the test window, ``0.0`` when it failed.
+    failure : tuple of (str, str) or None
+        The first failure's exception type name and message, or ``None``.
+
+    """
+
+    test_scores: Any
+    train_scores: Any
+    fit_time: float
+    score_time: float
+    failure: tuple[str, str] | None = None
 
 
 class _SharedRoundConfigurationError(ValueError):
@@ -261,6 +284,13 @@ class _Objective:
     def _run_cross_validation(self, trial: optuna.trial.Trial, params: dict[str, Any]) -> None:
         """Run cross-validation with given parameters and store results on trial.
 
+        Every fold is fitted and scored by yohou's own fold evaluation, so a
+        trial scores its parameters as yohou's ``GridSearchCV`` scores the same
+        candidate: ``_fit_fold`` and ``_score_fold`` by default, and
+        ``_evaluate_candidate_shared_rounds`` with ``validation="cv"``. Each fold
+        yields one outcome, and the outcomes are recorded on the trial the same
+        way in both modes.
+
         Parameters
         ----------
         trial : optuna.trial.Trial
@@ -269,178 +299,176 @@ class _Objective:
             Parameter settings for the forecaster.
 
         """
-        cloned_forecaster = clone(self.forecaster)
-        cloned_forecaster.set_params(**params)
-
         splits = list(self.cv.split(self.y, self.X_actual, **self.split_params))
         if self.validation == "cv":
-            self._run_shared_round_cross_validation(trial, params, splits)
-            return
-        all_test_scores: list[dict[str, float | str] | float | str] = []
-        all_train_scores: list[dict[str, float | str] | float | str] = []
-        all_fit_times: list[float] = []
-        all_score_times: list[float] = []
-        failed_splits: list[int] = []
-        first_exception: Exception | None = None
+            outcomes = self._shared_round_outcomes(trial, params, splits)
+        else:
+            outcomes = [
+                self._evaluate_fold(params, train, test, split_idx, len(splits))
+                for split_idx, (train, test) in enumerate(splits)
+            ]
+        self._record_folds(trial, outcomes)
 
-        for split_idx, (train, test) in enumerate(splits):
-            fold_forecaster = clone(cloned_forecaster)
+    def _evaluate_fold(
+        self, params: dict[str, Any], train: np.ndarray, test: np.ndarray, split_idx: int, n_splits: int
+    ) -> _FoldOutcome:
+        """Fit and score one fold through yohou's fold evaluation.
 
-            y_train, X_actual_train = _safe_split(fold_forecaster, self.y, self.X_actual, train)
-            y_test, X_actual_test = _safe_split(fold_forecaster, self.y, self.X_actual, test, train)
-            X_forecast_train, X_forecast_test = _split_X_forecast(
-                self.X_forecast,
-                self.y,
-                train,
-                test,
+        The test side is scored by ``_score_fold``, and the train side by the
+        same helpers ``_score_fold`` uses, in a separate step: a failure while
+        train scoring then keeps the fold's real test score and fails only the
+        train side, where scoring both in one call would lose it.
+
+        Parameters
+        ----------
+        params : dict
+            Parameter settings for the forecaster.
+        train, test : np.ndarray
+            The fold's training and test row indices.
+        split_idx : int
+            Zero-based index of the fold.
+        n_splits : int
+            Number of folds, for verbose progress.
+
+        Returns
+        -------
+        _FoldOutcome
+            The fold's scores, times, and first failure, if any.
+
+        Raises
+        ------
+        Exception
+            Any failure, when ``error_score`` is ``"raise"``.
+
+        """
+        fold = _fit_fold(
+            clone(self.forecaster),
+            self.y,
+            self.X_actual,
+            self.forecasting_horizon,
+            X_future=self.X_future,
+            X_forecast=self.X_forecast,
+            scorer=self.scorers,
+            train=train,
+            test=test,
+            verbose=self.verbose,
+            parameters=params,
+            fit_params=self.fit_params,
+            score_params=self.score_params,
+            return_train_score=self.return_train_score,
+            split_progress=(split_idx, n_splits),
+            candidate_progress=None,
+            error_score=self.error_score,
+            coverage_rates=self.coverage_rates,
+        )
+        if fold.fit_error is not None:
+            # yohou filled the fold's scores with error_score when it recorded the failure.
+            return _FoldOutcome(
+                test_scores=fold.test_scores,
+                train_scores=fold.train_scores,
+                fit_time=fold.fit_time,
+                score_time=0.0,
+                failure=_exception_from_traceback(fold.fit_error),
             )
 
-            # Adjust fit_params for this split
-            fit_params = _check_method_params(self.y, params=self.fit_params, indices=train)
-            score_params_test = _check_method_params(self.y, params=self.score_params, indices=test)
+        try:
+            result = _score_fold(
+                fold,
+                X_future=self.X_future,
+                scorer=self.scorers,
+                verbose=self.verbose,
+                predict_func_params=self.predict_func_params,
+                return_train_score=False,
+                return_parameters=False,
+                return_n_test_samples=False,
+                return_times=True,
+                return_forecaster=False,
+                return_predictions=False,
+                predict_forecasting_horizon=None,
+                predict_stride=None,
+                predict_method=None,
+                error_score=self.error_score,
+                coverage_rates=self.coverage_rates,
+            )
+        except Exception as exc:
+            if self.error_score == "raise":
+                raise
+            error = self._error_scores()
+            return _FoldOutcome(
+                test_scores=error,
+                train_scores=error if self.return_train_score else None,
+                fit_time=fold.fit_time,
+                score_time=0.0,
+                failure=(type(exc).__name__, str(exc)),
+            )
 
+        outcome = _FoldOutcome(
+            test_scores=result["test_scores"],
+            train_scores=None,
+            fit_time=cast("float", result["fit_time"]),
+            score_time=cast("float", result["score_time"]),
+        )
+        if self.return_train_score:
             try:
-                # Fit
-                fit_start = time.time()
-                if self.coverage_rates is not None:
-                    fit_params["coverage_rates"] = self.coverage_rates
-                fold_forecaster.fit(
-                    y=y_train,
-                    X_actual=X_actual_train,
-                    forecasting_horizon=self.forecasting_horizon,
-                    X_future=self.X_future,
-                    X_forecast=X_forecast_train,
-                    **fit_params,
-                )
-                fit_time = time.time() - fit_start
-                all_fit_times.append(fit_time)
-
-                # Score test. yohou's ``_score`` takes precomputed predictions,
-                # so predict first, then score.
-                score_start = time.time()
-                y_pred = _predict(
-                    fold_forecaster,
-                    y_test,
-                    X_actual_test,
-                    self.scorers,
+                window = _train_window_predictions(
+                    fold.forecaster,
+                    fold.y_train,
+                    fold.X_actual_train,
+                    n_rows=len(test),
+                    scorer=self.scorers,
                     predict_func_params=self.predict_func_params,
                     coverage_rates=self.coverage_rates,
                     X_future=self.X_future,
-                    X_forecast=X_forecast_test,
+                    X_forecast_train=fold.X_forecast_train,
                 )
-                test_scores = _score(
-                    fold_forecaster,
-                    y_train,
-                    y_test,
-                    y_pred,
+                outcome.train_scores = _score_train_window(
+                    fold.forecaster,
+                    window,
                     self.scorers,
-                    score_params_test,
-                    self.error_score,
+                    y=self.y,
+                    score_params=self.score_params,
+                    train=train,
+                    error_score=self.error_score,
                 )
-                score_time = time.time() - score_start
-                all_score_times.append(score_time)
-                all_test_scores.append(test_scores)
-
-                # Score train if requested, through yohou's recipe: the stretch ends
-                # before the rows the forecaster held back (a split-conformal model's
-                # calibration rows), positions are relative to the training window,
-                # score params are sliced to the scored rows, and a window too short to
-                # leave room scores NaN with a warning instead of scoring other rows.
-                if self.return_train_score:
-                    window = _train_window_predictions(
-                        fold_forecaster,
-                        y_train,
-                        X_actual_train,
-                        n_rows=len(test),
-                        scorer=self.scorers,
-                        predict_func_params=self.predict_func_params,
-                        coverage_rates=self.coverage_rates,
-                        X_future=self.X_future,
-                        X_forecast_train=X_forecast_train,
-                    )
-                    train_scores = _score_train_window(
-                        fold_forecaster,
-                        window,
-                        self.scorers,
-                        y=self.y,
-                        score_params=self.score_params,
-                        train=train,
-                        error_score=self.error_score,
-                    )
-                    all_train_scores.append(train_scores)
-
             except Exception as exc:
                 if self.error_score == "raise":
                     raise
-                if first_exception is None:
-                    first_exception = exc
-                failed_splits.append(split_idx)
-                error_val = float(self.error_score) if isinstance(self.error_score, numbers.Number) else np.nan
-                multimetric = isinstance(self.scorers, _MultimetricScorer)
-                # One entry per fold, even when the failure struck after part of the
-                # fold was already recorded: a fold that fit and then failed scoring
-                # would otherwise append a second fit time and a second test score,
-                # skewing every mean computed over them.
-                if len(all_test_scores) <= split_idx:
-                    all_test_scores.append(
-                        dict.fromkeys(self.scorers._scorers, error_val) if multimetric else error_val
-                    )
-                if self.return_train_score and len(all_train_scores) <= split_idx:
-                    all_train_scores.append(
-                        dict.fromkeys(self.scorers._scorers, error_val) if multimetric else error_val
-                    )
-                if len(all_fit_times) <= split_idx:
-                    all_fit_times.append(0.0)
-                if len(all_score_times) <= split_idx:
-                    all_score_times.append(0.0)
+                outcome.train_scores = self._error_scores()
+                outcome.failure = (type(exc).__name__, str(exc))
+        return outcome
 
-        if failed_splits:
-            assert first_exception is not None  # noqa: S101  # set with the first failed split
-            # The same keys the trial-level handler uses, so a consumer reads one
-            # shape whether a failure was absorbed in the fold loop or escaped it.
-            # `failed_splits` is the explicit mark that the trial's score carries
-            # absorbed failures; it is never inferred from the score's value, which
-            # a numeric error_score would make finite.
-            trial.set_user_attr("exception", str(first_exception))
-            trial.set_user_attr("exception_type", type(first_exception).__name__)
-            trial.set_user_attr("failed_splits", failed_splits)
-            logger.warning(
-                "Trial %d: %d of %d fold(s) failed (splits %s), first failure %s: %s",
-                trial.number,
-                len(failed_splits),
-                len(splits),
-                failed_splits,
-                type(first_exception).__name__,
-                first_exception,
-            )
-
-        # Store results as trial user attributes
-        self._store_scores(trial, all_test_scores, all_train_scores)
-        self._store_timing(trial, all_fit_times, all_score_times)
-
-    def _run_shared_round_cross_validation(
+    def _shared_round_outcomes(
         self,
         trial: optuna.trial.Trial,
         params: dict[str, Any],
         splits: list[tuple[np.ndarray, np.ndarray]],
-    ) -> None:
-        """Evaluate the trial with ``validation="cv"`` and store its results on the trial.
+    ) -> list[_FoldOutcome]:
+        """Evaluate the trial with ``validation="cv"``, store its round record, and return its fold outcomes.
 
         yohou's ``_evaluate_candidate_shared_rounds`` fits every fold with its
         test window as the evaluation set, chooses one round per estimator from
         the fold-average stopping curve, and scores every fold cut to that
         round, exactly as ``GridSearchCV(validation="cv")`` evaluates one
-        candidate. Its per-fold results map onto the same user attributes as the
-        default loop, and its round record is stored beside them.
+        candidate.
 
         Parameters
         ----------
         trial : optuna.trial.Trial
-            Optuna trial for storing results.
+            Optuna trial for storing the round record.
         params : dict
             Parameter settings for the forecaster.
         splits : list of tuple of np.ndarray
             ``(train, test)`` row indices for every fold.
+
+        Returns
+        -------
+        list of _FoldOutcome
+            One outcome per fold, in ``splits`` order.
+
+        Raises
+        ------
+        _SharedRoundConfigurationError
+            If yohou refuses the trial's configuration for ``validation="cv"``.
 
         """
         try:
@@ -465,12 +493,39 @@ class _Objective:
             "curve_lengths",
             [None if lengths is None else {str(k): int(v) for k, v in lengths.items()} for lengths in curve_lengths],
         )
+        outcomes = []
+        for result in results:
+            fit_error = result.get("fit_error")
+            outcomes.append(
+                _FoldOutcome(
+                    test_scores=result["test_scores"],
+                    train_scores=result.get("train_scores"),
+                    fit_time=cast("float", result["fit_time"]),
+                    score_time=cast("float", result["score_time"]),
+                    failure=None if fit_error is None else _exception_from_traceback(cast("str", fit_error)),
+                )
+            )
+        return outcomes
 
-        failed_splits = [i for i, result in enumerate(results) if result.get("fit_error") is not None]
+    def _record_folds(self, trial: optuna.trial.Trial, outcomes: list[_FoldOutcome]) -> None:
+        """Store the fold outcomes on the trial: scores, timing, and any failed splits.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            Optuna trial for storing results.
+        outcomes : list of _FoldOutcome
+            One outcome per fold.
+
+        """
+        failed_splits = [i for i, outcome in enumerate(outcomes) if outcome.failure is not None]
         if failed_splits:
-            fit_error = cast("str", results[failed_splits[0]]["fit_error"])
-            exception_type, exception = _exception_from_traceback(fit_error)
-            # The same keys the default loop sets, so a consumer reads one shape.
+            exception_type, exception = cast("tuple[str, str]", outcomes[failed_splits[0]].failure)
+            # The same keys the trial-level handler uses, so a consumer reads one
+            # shape whether a failure was absorbed in a fold or escaped the trial.
+            # `failed_splits` is the explicit mark that the trial's score carries
+            # absorbed failures; it is never inferred from the score's value, which
+            # a numeric error_score would make finite.
             trial.set_user_attr("exception", exception)
             trial.set_user_attr("exception_type", exception_type)
             trial.set_user_attr("failed_splits", failed_splits)
@@ -478,7 +533,7 @@ class _Objective:
                 "Trial %d: %d of %d fold(s) failed (splits %s), first failure %s: %s",
                 trial.number,
                 len(failed_splits),
-                len(splits),
+                len(outcomes),
                 failed_splits,
                 exception_type,
                 exception,
@@ -486,14 +541,27 @@ class _Objective:
 
         self._store_scores(
             trial,
-            [result["test_scores"] for result in results],
-            [result["train_scores"] for result in results] if self.return_train_score else [],
+            [outcome.test_scores for outcome in outcomes],
+            [outcome.train_scores for outcome in outcomes] if self.return_train_score else [],
         )
-        self._store_timing(
-            trial,
-            [cast("float", result["fit_time"]) for result in results],
-            [cast("float", result["score_time"]) for result in results],
-        )
+        self._store_timing(trial, [o.fit_time for o in outcomes], [o.score_time for o in outcomes])
+
+    def _error_scores(self) -> dict[str, float] | float:
+        """The scores a failed fold contributes, shaped like the scorer's output.
+
+        Only called for an absorbed failure, so ``error_score`` is numeric here:
+        ``"raise"`` propagates the failure before this is reached.
+
+        Returns
+        -------
+        dict or float
+            ``error_score`` per scorer for a multi-metric scorer, else ``error_score``.
+
+        """
+        error_value = float(cast("float", self.error_score))
+        if isinstance(self.scorers, _MultimetricScorer):
+            return dict.fromkeys(self.scorers._scorers, error_value)
+        return error_value
 
     def _evaluate_shared_rounds(
         self, params: dict[str, Any], splits: list[tuple[np.ndarray, np.ndarray]]

@@ -2241,6 +2241,29 @@ class TestFoldFailureDiagnostics:
         with pytest.raises(ValueError, match="intentional error in fit"):
             search.fit(y, X_actual=X, forecasting_horizon=3)
 
+    def test_prediction_failure_with_multimetric_scoring(self, y_X_factory, default_sampler, failing_forecaster):
+        """A fold that fit and then failed in predict contributes error_score to every metric."""
+        y, X = y_X_factory(length=100, n_targets=1, n_features=2)
+        search = OptunaSearchCV(
+            forecaster=failing_forecaster,
+            param_distributions={"fail_on": CategoricalDistribution(["predict"])},
+            scoring={"mae": MeanAbsoluteError(), "rmse": RootMeanSquaredError()},
+            sampler=default_sampler,
+            n_trials=1,
+            cv=2,
+            error_score=-1.0,
+            refit=False,
+        )
+        search.fit(y, X_actual=X, forecasting_horizon=3)
+
+        trial = search.trials_[0]
+        assert trial.user_attrs["failed_splits"] == [0, 1]
+        # FailingForecaster has no observe_predict, so the fold's prediction step raises.
+        assert trial.user_attrs["exception_type"] == "AttributeError"
+        for metric in ("mae", "rmse"):
+            for i in range(2):
+                assert search.cv_results_[f"split{i}_test_{metric}"][0] == -1.0
+
     def test_one_timing_entry_per_fold_when_scoring_fails(
         self, y_X_factory, default_sampler, failing_forecaster, monkeypatch
     ):
