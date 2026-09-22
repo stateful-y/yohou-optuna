@@ -3004,7 +3004,7 @@ wheels = [
 
 [[package]]
 name = "yohou"
-version = "0.1.0a11"
+version = "0.1.0a13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "polars" },
@@ -3013,10 +3013,11 @@ dependencies = [
     { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "scipy", version = "1.18.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "sklearn-wrap" },
+    { name = "tzdata" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d1/85/dd5ff69a835b3ac3ee7f632fec75bb9eccea71279d2aa9679f76409c4f79/yohou-0.1.0a11.tar.gz", hash = "sha256:87f47eeb21572e23f5c0c4fd283a2d42ce50ad2235e454bd18e4073bddc7add3", size = 1752466, upload-time = "2026-07-20T07:41:51.719Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/9c/340d4ae6fb62a7ac56598d0b63dc42aeb4a379a00d7d7d53387b6bd31865/yohou-0.1.0a13.tar.gz", hash = "sha256:622333cba411e5351ea30a4d55cb1e5a4b65fc847f025af0d957083fedd2bbeb", size = 2161092, upload-time = "2026-09-22T13:16:12.561Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/45/58/57d0facff260b570070383d37209ec8b4b0595d33e836c1fce3c26498753/yohou-0.1.0a11-py3-none-any.whl", hash = "sha256:2334b9809809a3230750fa488f2cf0e4f4566804b40734379a3b3da50346a68c", size = 623146, upload-time = "2026-07-20T07:41:50.23Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/3d/c7af764673e5ec23e63271babde1a8513f42857a4b047cad4852182b80b9/yohou-0.1.0a13-py3-none-any.whl", hash = "sha256:f2ba95a5e062594d7543df38cd5ede8cbdcadcbc380fd6957207874b69fd6ba1", size = 779657, upload-time = "2026-09-22T13:16:10.906Z" },
 ]
 
 [package.optional-dependencies]
@@ -3106,7 +3107,7 @@ requires-dist = [
     { name = "optuna" },
     { name = "scipy" },
     { name = "sklearn-optuna" },
-    { name = "yohou", specifier = ">=0.1.0a11,<0.2.0" },
+    { name = "yohou", specifier = ">=0.1.0a13,<0.2.0" },
 ]
 
 [package.metadata.requires-dev]
