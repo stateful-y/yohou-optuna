@@ -268,6 +268,10 @@ addopts = [
 ]
 filterwarnings = [
     "error",
+    # dash (via plotly-resampler) registers a pytest plugin whose hookimpl still uses
+    # old-style markers; pytest 9.2 warns about it while loading plugins, before any
+    # test runs, so under "error" the whole session aborts. Not our code to fix.
+    "ignore:The hookimpl pytest_addhooks uses old-style configuration options:pytest.PytestRemovedIn10Warning",
     "ignore::ResourceWarning",
     "ignore:Support for the dataframe interchange protocol:DeprecationWarning",
     "ignore:the default behavior of `how='horizontal'`:DeprecationWarning",
