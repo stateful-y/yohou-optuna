@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.1.0-alpha.13] - 2026-11-03
+
+This **minor release** includes 10 commits.
+
+
+### Features
+- Add fold-level trial pruning and fold evaluation order  ([#202](https://github.com/stateful-y/yohou-optuna/pull/202)) by @gtauzin
+
+### Bug Fixes
+- Bump urllib3 to 2.8.0 to patch security advisories  ([#149](https://github.com/stateful-y/yohou-optuna/pull/149)) by @gtauzin
+- Link the issue chooser to private vulnerability reporting and fix its repo links  ([#170](https://github.com/stateful-y/yohou-optuna/pull/170)) by @gtauzin
+- Never automerge into a branch that requires no checks  ([#181](https://github.com/stateful-y/yohou-optuna/pull/181)) by @gtauzin
+- Enable auto-merge as the App so the automerge queue drains  ([#185](https://github.com/stateful-y/yohou-optuna/pull/185)) by @gtauzin
+- Pin ty and the Python of every nox session  ([#194](https://github.com/stateful-y/yohou-optuna/pull/194)) by @gtauzin
+- Ignore the dash pytest plugin's hookimpl deprecation warning  ([#197](https://github.com/stateful-y/yohou-optuna/pull/197)) by @gtauzin
+
+### Miscellaneous Tasks
+- Pin the Python version installed by the lint and commit-message jobs  ([#169](https://github.com/stateful-y/yohou-optuna/pull/169)) by @gtauzin
+- Build Read the Docs with uv 0.13.1, matching the workflows  ([#171](https://github.com/stateful-y/yohou-optuna/pull/171)) by @gtauzin
+- Update from template v0.45.0  ([#174](https://github.com/stateful-y/yohou-optuna/pull/174)) by @gtauzin
+
+### Contributors
+
+Thanks to all contributors for this release:
+- @gtauzin
+
 ## [0.1.0-alpha.12] - 2026-09-22
 
 This **minor release** includes 1 commit.
