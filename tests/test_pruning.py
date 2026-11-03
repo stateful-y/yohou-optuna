@@ -151,11 +151,12 @@ CHARACTERISATION = {
 }
 
 
+@pytest.mark.parametrize("fold_order", ["recent_first", "chronological", "random"])
 @pytest.mark.parametrize("case", ["single", "multi", "failing"])
-def test_characterisation_unchanged(case, caplog):
-    """The restructured fold loop records what the original loop recorded."""
+def test_characterisation_unchanged(case, fold_order, caplog):
+    """The restructured fold loop records what the original loop recorded, under every fold order."""
     caplog.set_level(logging.ERROR)
-    search = _build(case)
+    search = _build(case, fold_order=fold_order, random_state=0)
     search.fit(_series(), forecasting_horizon=TEST_SIZE)
     got, want = _snapshot(search), CHARACTERISATION[case]
     assert got["params"] == pytest.approx(want["params"])
@@ -177,13 +178,6 @@ def test_pruner_is_the_sklearn_optuna_class():
 
     assert yohou_optuna.Pruner is sklearn_optuna.Pruner
     assert "Pruner" in yohou_optuna.__all__
-
-
-def test_inert_pruner_helper_still_exists_upstream():
-    """The search reuses this private sklearn-optuna helper; a rename upstream fails here first."""
-    from sklearn_optuna.search import _warn_if_pruner_inert
-
-    assert callable(_warn_if_pruner_inert)
 
 
 # ---------------------------------------------------------------------------
@@ -251,11 +245,11 @@ def _threshold(**params):
     return Pruner(pruner=ThresholdPruner, lower=FLOOR, **params)
 
 
-def _fit_collecting(search, y, **fit_params):
+def _fit_collecting(search, y, forecasting_horizon=TEST_SIZE, **fit_params):
     """Fit, and return the messages of the UserWarnings raised (Optuna's experimental notice excluded)."""
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        search.fit(y, forecasting_horizon=TEST_SIZE, **fit_params)
+        search.fit(y, forecasting_horizon=forecasting_horizon, **fit_params)
     return [
         str(w.message)
         for w in caught
@@ -306,7 +300,7 @@ class TestFoldsFixed:
 
     def test_splitter_failure_raises_before_any_trial(self):
         search = _level_search(n_splits=5)
-        with pytest.raises(ValueError, match=r"."):
+        with pytest.raises(ValueError, match="non-overlapping test windows"):
             search.fit(_sine(length=12), forecasting_horizon=TEST_SIZE)
         assert not hasattr(search, "study_")
 
@@ -578,8 +572,13 @@ class TestWarnings:
         search = _level_search(n_trials=1, pruner=Pruner(pruner=MedianPruner), fold_order="chronological")
         assert not [m for m in _fit_collecting(search, _sine()) if ORDER in m]
 
-    def test_wilcoxon_under_any_order_does_not_warn(self):
-        search = _level_search(n_trials=1, pruner=Pruner(), fold_order="random", random_state=0)
+    @pytest.mark.parametrize(
+        ("pruner", "fold_order"),
+        [(Pruner(), "random"), (Pruner(), "recent_first"), (Pruner(pruner=NopPruner), "recent_first")],
+        ids=["wilcoxon-random", "wilcoxon-recent-first", "nop-recent-first"],
+    )
+    def test_order_independent_pruners_do_not_warn(self, pruner, fold_order):
+        search = _level_search(n_trials=1, pruner=pruner, fold_order=fold_order, random_state=0)
         assert not [m for m in _fit_collecting(search, _sine()) if ORDER in m]
 
     def test_pruner_with_shared_round_validation_is_refused(self):
@@ -686,18 +685,11 @@ class TestFoldOrder:
         chronological = _shared_round_search(fold_order="chronological")
         chronological.fit(_trend(), forecasting_horizon=3)
         shuffled = _shared_round_search(fold_order="random", random_state=0)
-        messages = _fit_collecting_shared(shuffled)
+        messages = _fit_collecting(shuffled, _trend(), forecasting_horizon=3)
         assert not [m for m in messages if "fold" in m.lower() and "order" in m.lower()]
         for key in chronological.cv_results_:
             if key.startswith(("split", "mean_test")):
                 assert list(shuffled.cv_results_[key]) == list(chronological.cv_results_[key])
-
-
-def _fit_collecting_shared(search):
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        search.fit(_trend(), forecasting_horizon=3)
-    return [str(w.message) for w in caught if not issubclass(w.category, ExperimentalWarning)]
 
 
 # ---------------------------------------------------------------------------
@@ -717,29 +709,3 @@ def test_lowest_failed_fold_names_the_exception_under_any_order(fold_order, capl
     assert attrs["failed_splits"] == [0, 1]
     assert attrs["exception_type"] == "ValueError"
     assert "length 95" in attrs["exception"]
-
-
-def test_multimetric_fold_without_a_score_dict_writes_nothing(mocker):
-    """A multi-metric fold whose scores are not a dict has no metric names to store under."""
-    from yohou_optuna.objective import _Objective
-
-    trial = mocker.MagicMock()
-    trial.user_attrs = {}
-    trial.set_user_attr = lambda key, value: trial.user_attrs.update({key: value})
-    objective = _Objective(
-        forecaster=PointReductionForecaster(estimator=Ridge()),
-        param_distributions={},
-        y=None,
-        X_actual=None,
-        X_future=None,
-        X_forecast=None,
-        forecasting_horizon=3,
-        splits=[],
-        scorers=MeanAbsoluteError(),
-        fit_params={},
-        predict_func_params={},
-        score_params={},
-        multimetric=True,
-    )
-    objective._store_fold_scores(trial, 0, "test", 0.5)
-    assert trial.user_attrs == {}

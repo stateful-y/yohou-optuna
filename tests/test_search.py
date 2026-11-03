@@ -112,7 +112,7 @@ class TestOptunaSearchCVFit:
         search.fit(y, forecasting_horizon=3)
         assert hasattr(search, "best_params_")
 
-    def test_routed_split_metadata_reaches_every_trial(self, y_X_factory, default_sampler):
+    def test_routed_split_metadata_reaches_the_single_split_call(self, y_X_factory, default_sampler):
         """A requested split key passed to fit arrives on the one split call of the fit."""
         from conftest import MarkerRecordingSplitter
 
@@ -1169,7 +1169,7 @@ class TestObjective:
         assert result == float("-inf")
 
     def test_store_multimetric_scores_non_dict_early_return(self, mocker):
-        """Test that _store_multimetric_scores returns early for non-dict scores."""
+        """Test that _store_mean_multimetric_scores returns early for non-dict scores."""
         from yohou_optuna.objective import _Objective
 
         mock_trial = mocker.MagicMock()
@@ -1195,12 +1195,12 @@ class TestObjective:
             refit=False,
         )
 
-        objective._store_multimetric_scores(mock_trial, [0.5, 0.6], [])
+        objective._store_mean_multimetric_scores(mock_trial, [0.5, 0.6], [])
         mean_test_keys = [k for k in mock_trial.user_attrs if k.startswith("mean_test_")]
         assert len(mean_test_keys) == 0
 
     def test_store_multimetric_scores_empty_list_early_return(self, mocker):
-        """Test that _store_multimetric_scores returns early for empty list."""
+        """Test that _store_mean_multimetric_scores returns early for empty list."""
         from yohou_optuna.objective import _Objective
 
         mock_trial = mocker.MagicMock()
@@ -1226,7 +1226,7 @@ class TestObjective:
             refit=False,
         )
 
-        objective._store_multimetric_scores(mock_trial, [], [])
+        objective._store_mean_multimetric_scores(mock_trial, [], [])
         mean_test_keys = [k for k in mock_trial.user_attrs if k.startswith("mean_test_")]
         assert len(mean_test_keys) == 0
 
@@ -1354,7 +1354,7 @@ class TestBuildCVResults:
         """Test that metric names are inferred even when the first trial has no scores."""
         from yohou_optuna.utils import _build_cv_results
 
-        # Error trial: completed but no mean_test_ attrs (exception before _store_scores)
+        # Error trial: completed but no mean_test_ attrs (exception before _store_mean_scores)
         error_trial = mocker.MagicMock()
         error_trial.state = optuna.trial.TrialState.COMPLETE
         error_trial.user_attrs = {
@@ -2267,14 +2267,14 @@ class TestFoldFailureDiagnostics:
         from yohou_optuna.objective import _Objective
 
         captured = {}
-        original = _Objective._store_timing
+        original = _Objective._store_timing_summary
 
         def spy(self, trial, fit_times, score_times):
             captured["fit_times"] = list(fit_times)
             captured["score_times"] = list(score_times)
             return original(self, trial, fit_times, score_times)
 
-        monkeypatch.setattr(_Objective, "_store_timing", spy)
+        monkeypatch.setattr(_Objective, "_store_timing_summary", spy)
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         search = self._failing_search(failing_forecaster, default_sampler, n_trials=1, fail_on="predict")
@@ -2289,8 +2289,8 @@ class TestFoldFailureDiagnostics:
         from yohou_optuna.objective import _Objective
 
         captured = {}
-        original_scores = _Objective._store_scores
-        original_timing = _Objective._store_timing
+        original_scores = _Objective._store_mean_scores
+        original_timing = _Objective._store_timing_summary
 
         def spy_scores(self, trial, all_test_scores, all_train_scores):
             captured["test"] = list(all_test_scores)
@@ -2302,8 +2302,8 @@ class TestFoldFailureDiagnostics:
             captured["score_times"] = list(score_times)
             return original_timing(self, trial, fit_times, score_times)
 
-        monkeypatch.setattr(_Objective, "_store_scores", spy_scores)
-        monkeypatch.setattr(_Objective, "_store_timing", spy_timing)
+        monkeypatch.setattr(_Objective, "_store_mean_scores", spy_scores)
+        monkeypatch.setattr(_Objective, "_store_timing_summary", spy_timing)
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
         search = OptunaSearchCV(

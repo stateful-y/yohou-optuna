@@ -97,7 +97,7 @@ for trial in pruned:
 
 `trial.intermediate_values` maps fold index to that fold's test score. A pruned trial also keeps `split<i>_test_score`, `split<i>_fit_time`, `split<i>_score_time` and, if a fold failed, `failed_splits` for the folds that ran.
 
-Plot the fold scores of every trial; pruned trials end early:
+Plot the fold scores of every trial. A pruned trial's line covers only the folds it ran; under the default order those are the most recent windows, so it is missing the oldest folds:
 
 ```python
 fig = optuna.visualization.plot_intermediate_values(search.study_)

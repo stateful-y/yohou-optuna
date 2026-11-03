@@ -197,7 +197,7 @@ def _(mo):
         r"""
         ## 4. Plot Fold Scores per Trial
 
-        Each line is one trial across its folds. Pruned trials stop early, at the most recent windows first.
+        Each line is one trial across its folds, numbered oldest first. A pruned trial ran its most recent windows first, so its line covers only the highest fold numbers and is missing the oldest ones.
         """
     )
     return

@@ -328,26 +328,21 @@ class _Objective:
             Parameter settings for the forecaster.
 
         """
-        splits = self.splits
         if self.validation == "cv":
             # yohou evaluates every fold in one call, so there is no point between
-            # folds to prune at; record and report them afterwards, in index order.
-            outcomes = self._shared_round_outcomes(trial, params, splits)
+            # folds to prune at; record them afterwards, in index order.
+            outcomes = self._shared_round_outcomes(trial, params)
             for split_idx, outcome in enumerate(outcomes):
                 self._record_fold(trial, split_idx, outcome)
-                self._report_fold(trial, split_idx, outcome.test_scores)
         else:
-            # Indexed by splitter position whatever the evaluation order, so the
-            # summary reads folds in the same order, and sums them in the same
-            # order, under every fold_order.
-            slots: list[_FoldOutcome | None] = [None] * len(splits)
+            evaluated: dict[int, _FoldOutcome] = {}
             for split_idx in self._get_fold_order(trial):
-                train, test = splits[split_idx]
-                outcome = self._evaluate_fold(params, train, test, split_idx, len(splits))
-                slots[split_idx] = outcome
-                self._record_fold(trial, split_idx, outcome)
-                self._report_fold(trial, split_idx, outcome.test_scores)
-            outcomes = cast("list[_FoldOutcome]", slots)
+                train, test = self.splits[split_idx]
+                evaluated[split_idx] = self._evaluate_fold(params, train, test, split_idx)
+                self._record_fold(trial, split_idx, evaluated[split_idx])
+            # Back in splitter order whatever the evaluation order, so the summary
+            # reads and sums the folds identically under every fold_order.
+            outcomes = [evaluated[split_idx] for split_idx in range(len(self.splits))]
         self._summarize_folds(trial, outcomes)
 
     def _get_fold_order(self, trial: optuna.trial.Trial) -> list[int]:
@@ -373,7 +368,7 @@ class _Objective:
         return list(range(n_splits))
 
     def _evaluate_fold(
-        self, params: dict[str, Any], train: np.ndarray, test: np.ndarray, split_idx: int, n_splits: int
+        self, params: dict[str, Any], train: np.ndarray, test: np.ndarray, split_idx: int
     ) -> _FoldOutcome:
         """Fit and score one fold through yohou's fold evaluation.
 
@@ -390,8 +385,6 @@ class _Objective:
             The fold's training and test row indices.
         split_idx : int
             Zero-based index of the fold.
-        n_splits : int
-            Number of folds, for verbose progress.
 
         Returns
         -------
@@ -419,7 +412,7 @@ class _Objective:
             fit_params=self.fit_params,
             score_params=self.score_params,
             return_train_score=self.return_train_score,
-            split_progress=(split_idx, n_splits),
+            split_progress=(split_idx, len(self.splits)),
             candidate_progress=None,
             error_score=self.error_score,
             coverage_rates=self.coverage_rates,
@@ -500,12 +493,7 @@ class _Objective:
                 outcome.failure = (type(exc).__name__, str(exc))
         return outcome
 
-    def _shared_round_outcomes(
-        self,
-        trial: optuna.trial.Trial,
-        params: dict[str, Any],
-        splits: list[tuple[np.ndarray, np.ndarray]],
-    ) -> list[_FoldOutcome]:
+    def _shared_round_outcomes(self, trial: optuna.trial.Trial, params: dict[str, Any]) -> list[_FoldOutcome]:
         """Evaluate the trial with ``validation="cv"``, store its round record, and return its fold outcomes.
 
         yohou's ``_evaluate_candidate_shared_rounds`` fits every fold with its
@@ -520,8 +508,6 @@ class _Objective:
             Optuna trial for storing the round record.
         params : dict
             Parameter settings for the forecaster.
-        splits : list of tuple of np.ndarray
-            ``(train, test)`` row indices for every fold.
 
         Returns
         -------
@@ -535,7 +521,7 @@ class _Objective:
 
         """
         try:
-            results, record = self._evaluate_shared_rounds(params, splits)
+            results, record = self._evaluate_shared_rounds(params)
         except Exception as exc:
             if self.error_score == "raise":
                 raise
@@ -571,6 +557,27 @@ class _Objective:
         return outcomes
 
     def _record_fold(self, trial: optuna.trial.Trial, split_idx: int, outcome: _FoldOutcome) -> None:
+        """Store one evaluated fold on the trial, then report it and prune when asked to.
+
+        Parameters
+        ----------
+        trial : optuna.trial.Trial
+            Optuna trial for storing results.
+        split_idx : int
+            The fold's index in the splitter's order.
+        outcome : _FoldOutcome
+            The fold's scores, times, and first failure, if any.
+
+        Raises
+        ------
+        optuna.TrialPruned
+            If pruning is enabled and the pruner says to stop.
+
+        """
+        self._store_fold(trial, split_idx, outcome)
+        self._report_fold(trial, split_idx, outcome.test_scores)
+
+    def _store_fold(self, trial: optuna.trial.Trial, split_idx: int, outcome: _FoldOutcome) -> None:
         """Store one fold's scores, timings and failure on the trial, under its splitter index.
 
         Written as soon as the fold is evaluated, so a trial the pruner stops
@@ -617,14 +624,16 @@ class _Objective:
             The fold's index in the splitter's order.
         kind : {"test", "train"}
             Which side of the fold the scores belong to.
-        scores : dict, float or None
-            The fold's scores.
+        scores : dict or float
+            The fold's scores: a dict of metric name to score with multi-metric
+            scoring, else one score.
 
         """
         if self.multimetric:
-            if isinstance(scores, dict):
-                for metric_name, value in scores.items():
-                    trial.set_user_attr(f"split{split_idx}_{kind}_{metric_name}", _as_score(value))
+            # Multi-metric fold scores are always a dict: yohou fills a failed fold
+            # with one error value per scorer, as _error_scores does.
+            for metric_name, value in scores.items():
+                trial.set_user_attr(f"split{split_idx}_{kind}_{metric_name}", _as_score(value))
         else:
             trial.set_user_attr(f"split{split_idx}_{kind}_score", _as_score(scores))
 
@@ -688,12 +697,12 @@ class _Objective:
                 exception,
             )
 
-        self._store_scores(
+        self._store_mean_scores(
             trial,
             [outcome.test_scores for outcome in outcomes],
             [outcome.train_scores for outcome in outcomes] if self.return_train_score else [],
         )
-        self._store_timing(trial, [o.fit_time for o in outcomes], [o.score_time for o in outcomes])
+        self._store_timing_summary(trial, [o.fit_time for o in outcomes], [o.score_time for o in outcomes])
 
     def _error_scores(self) -> dict[str, float] | float:
         """The scores a failed fold contributes, shaped like the scorer's output.
@@ -712,17 +721,13 @@ class _Objective:
             return dict.fromkeys(self.scorers._scorers, error_value)
         return error_value
 
-    def _evaluate_shared_rounds(
-        self, params: dict[str, Any], splits: list[tuple[np.ndarray, np.ndarray]]
-    ) -> tuple[list[dict[str, object]], dict[str, object]]:
+    def _evaluate_shared_rounds(self, params: dict[str, Any]) -> tuple[list[dict[str, object]], dict[str, object]]:
         """Run yohou's shared-round evaluation of one candidate on every split.
 
         Parameters
         ----------
         params : dict
             Parameter settings for the forecaster.
-        splits : list of tuple of np.ndarray
-            ``(train, test)`` row indices for every fold.
 
         Returns
         -------
@@ -740,7 +745,7 @@ class _Objective:
             self.forecasting_horizon,
             X_future=self.X_future,
             X_forecast=self.X_forecast,
-            splits=splits,
+            splits=self.splits,
             parameters=params,
             early_stopping_adapter=None if self.early_stopping_adapter is None else clone(self.early_stopping_adapter),
             scorer=self.scorers,
@@ -754,7 +759,7 @@ class _Objective:
             coverage_rates=self.coverage_rates,
         )
 
-    def _store_scores(
+    def _store_mean_scores(
         self,
         trial: optuna.trial.Trial,
         all_test_scores: list[Any],
@@ -762,7 +767,7 @@ class _Objective:
     ) -> None:
         """Store the trial's mean cross-validation scores as trial user attributes.
 
-        The per-fold ``split<i>_*`` attributes are written by ``_record_fold``
+        The per-fold ``split<i>_*`` attributes are written by ``_store_fold``
         as each fold completes; this stores the means over every fold.
 
         Parameters
@@ -776,11 +781,11 @@ class _Objective:
 
         """
         if self.multimetric:
-            self._store_multimetric_scores(trial, all_test_scores, all_train_scores)
+            self._store_mean_multimetric_scores(trial, all_test_scores, all_train_scores)
         else:
-            self._store_single_metric_scores(trial, all_test_scores, all_train_scores)
+            self._store_mean_single_metric_scores(trial, all_test_scores, all_train_scores)
 
-    def _store_multimetric_scores(
+    def _store_mean_multimetric_scores(
         self,
         trial: optuna.trial.Trial,
         all_test_scores: list[Any],
@@ -824,7 +829,7 @@ class _Objective:
                 mean_train = float(np.mean(train_vals))
                 trial.set_user_attr(f"mean_train_{metric_name}", mean_train)
 
-    def _store_single_metric_scores(
+    def _store_mean_single_metric_scores(
         self,
         trial: optuna.trial.Trial,
         all_test_scores: list[Any],
@@ -844,7 +849,7 @@ class _Objective:
         """
         test_vals = [_as_score(score) for score in all_test_scores]
 
-        # A plain mean, never nanmean: see _store_multimetric_scores.
+        # A plain mean, never nanmean: see _store_mean_multimetric_scores.
         mean_test = float(np.mean(test_vals))
         trial.set_user_attr("mean_test_score", mean_test)
 
@@ -854,7 +859,7 @@ class _Objective:
             mean_train = float(np.mean(train_vals))
             trial.set_user_attr("mean_train_score", mean_train)
 
-    def _store_timing(
+    def _store_timing_summary(
         self,
         trial: optuna.trial.Trial,
         fit_times: list[float],

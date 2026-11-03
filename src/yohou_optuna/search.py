@@ -182,9 +182,10 @@ class OptunaSearchCV(BaseSearchCV):
         storage this counts the whole study, including trials written by
         other processes.
     n_pruned_ : int
-        Number of trials in the study that ended in Optuna's PRUNED state.
-        They are not counted in ``n_completed_`` and have no row in
-        ``cv_results_``.  Always 0 when ``pruner`` is ``None``.
+        Number of trials in the study that ended in Optuna's PRUNED state,
+        counted over the whole study as ``n_completed_`` is, so a continued
+        study includes trials an earlier fit pruned.  They are not counted in
+        ``n_completed_`` and have no row in ``cv_results_``.
     n_scored_ : int
         Number of completed trials whose objective is finite. A completed
         trial whose every fold failed carries a sentinel value, so this is

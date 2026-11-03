@@ -275,4 +275,4 @@ Pass `early_stopping_adapter=` to use a custom `BaseEarlyStoppingAdapter` for an
 - [About OptunaSearchCV](../explanation/concepts.md): understand samplers, temporal CV, and wrapper classes
 - yohou's [early stopping how-to](https://yohou.readthedocs.io/en/latest/pages/how-to/early-stopping/): configuring the estimator, `validation_size`, and `validation="cv"` in yohou's own searches
 - [Multi-Metric Search](multi-metric-search.md): evaluate multiple metrics simultaneously
-- [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`
+- [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`, `Pruner`
