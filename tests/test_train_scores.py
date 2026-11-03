@@ -127,12 +127,11 @@ class TestScoreParams:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=FH,
-            cv=cv,
+            splits=list(cv.split(y)),
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={"row_id": np.arange(len(y))},
-            split_params={},
             return_train_score=True,
             error_score="raise",
         )

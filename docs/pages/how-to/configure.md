@@ -265,6 +265,7 @@ A few things to know about `validation="cv"`:
 - **The scores are optimistic.** The round is chosen on the same rows that produce the trial's score, as if `n_estimators` were searched on the test folds. Prefer `validation_size` when the score itself matters, and use `validation="cv"` to find a round count for the refit.
 - **The ceiling is the cost.** Folds train to `n_estimators` (or `iterations`, or `max_iter`), which is also the largest round the search can choose. A trial whose chosen round sits at the ceiling sets `rounds_at_boundary` and emits a warning: raise the ceiling.
 - **Some configurations are refused, and stop the search.** yohou rejects non-reduction forecasters, a forecaster that sets `validation_size`, `reduction_strategy="dir-rec"`, LightGBM or XGBoost dart boosting, and CatBoost without an explicit `learning_rate`. A forecaster or fit parameter it rejects fails `fit` before any trial runs. A sampled parameter it rejects, such as `reduction_strategy` drawn as `"dir-rec"`, raises and stops the study rather than being recorded as a failed trial, the way the same configuration stops `GridSearchCV`. Keep such values out of `param_distributions`.
+- **Pruning is not available.** Every fold of a trial is evaluated in one call, so there is no point between folds at which a pruner could stop it, and `fit()` raises `ValueError` when `pruner` is also set. Use `validation_size` on the forecaster if you need both early stopping and pruning.
 - **Fold failures still follow `error_score`**, exactly as without `validation="cv"`: a fold whose fit raises contributes `error_score`, is listed in the trial's `failed_splits`, and adds no stopping curve.
 
 Pass `early_stopping_adapter=` to use a custom `BaseEarlyStoppingAdapter` for an estimator yohou has no built-in adapter for. See yohou's [early stopping how-to](https://yohou.readthedocs.io/en/latest/pages/how-to/early-stopping/) for how the estimator is configured and how adapters work.
@@ -274,4 +275,4 @@ Pass `early_stopping_adapter=` to use a custom `BaseEarlyStoppingAdapter` for an
 - [About OptunaSearchCV](../explanation/concepts.md): understand samplers, temporal CV, and wrapper classes
 - yohou's [early stopping how-to](https://yohou.readthedocs.io/en/latest/pages/how-to/early-stopping/): configuring the estimator, `validation_size`, and `validation="cv"` in yohou's own searches
 - [Multi-Metric Search](multi-metric-search.md): evaluate multiple metrics simultaneously
-- [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`
+- [API Reference](../reference/api.md): full parameter documentation for `OptunaSearchCV`, `Sampler`, `Storage`, `Callback`, `Pruner`

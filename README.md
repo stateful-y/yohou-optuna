@@ -25,7 +25,8 @@ It integrates with Optuna's distributions, samplers, and storages, and wraps the
 
 - **Adaptive optimization**: Run Optuna studies over Yohou forecasters with TPE, CMA-ES, and other samplers to find better configurations in fewer trials.
 - **Forecaster-native API**: `OptunaSearchCV` is a forecaster after fitting, so you can call `predict`, `observe`, `observe_predict`, and interval methods.
-- **Clone-safe wrappers**: `Sampler`, `Storage`, and `Callback` wrappers ensure Optuna objects survive sklearn cloning and serialization.
+- **Clone-safe wrappers**: `Sampler`, `Storage`, `Callback`, and `Pruner` wrappers ensure Optuna objects survive sklearn cloning and serialization.
+- **Fold-level pruning**: Pass a `Pruner` to stop a trial after a few backtest windows when it is reliably worse than the best one, with the most recent windows judged first by default.
 - **Time-series CV support**: Works with Yohou splitters for proper temporal validation and scorer integration.
 - **Multi-metric evaluation**: Evaluate multiple scorers and refit on the one that matters most for your use case.
 - **(Experimental) Persistence workflows**: Resume studies with storage-backed optimization and continue tuning over time.

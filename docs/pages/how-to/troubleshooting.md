@@ -13,7 +13,7 @@ Solutions to common problems when using Yohou-Optuna.
 ## Search Issues
 
 **Problem: `AttributeError: 'TPESampler' object has no attribute 'instantiate'`**
-: You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler(sampler=optuna.samplers.TPESampler)`. The same applies to `Storage` and `Callback`. See [Configure OptunaSearchCV](configure.md).
+: You passed a raw Optuna object instead of a wrapper. Replace `sampler=optuna.samplers.TPESampler()` with `sampler=Sampler(sampler=optuna.samplers.TPESampler)`. The same applies to `Storage`, `Callback`, and `Pruner`; a raw pruner raises `TypeError: pruner must be a Pruner instance` at `fit()`. See [Configure OptunaSearchCV](configure.md) and [Prune Unpromising Trials](prune-trials.md).
 
 **Problem: `TypeError: callbacks must be a dict of str to Callback`**
 : You passed `callbacks` as a list instead of a dictionary. This error appears at `fit()` time, not at construction. Replace `callbacks=[Callback(...)]` with `callbacks={"name": Callback(...)}`. The dictionary keys are arbitrary names used for parameter routing.

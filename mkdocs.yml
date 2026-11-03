@@ -256,6 +256,7 @@ nav:
   - How-to Guides:
     - pages/how-to/index.md
     - Configuration: pages/how-to/configure.md
+    - Pruning: pages/how-to/prune-trials.md
     - Multi-Metric Search: pages/how-to/multi-metric-search.md
     - Composed Forecasters: pages/how-to/composed-forecasters.md
     - Panel Data: pages/how-to/panel-data.md
