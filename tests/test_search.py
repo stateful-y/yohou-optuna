@@ -113,7 +113,7 @@ class TestOptunaSearchCVFit:
         assert hasattr(search, "best_params_")
 
     def test_routed_split_metadata_reaches_every_trial(self, y_X_factory, default_sampler):
-        """A requested split key passed to fit arrives on each per-trial split call."""
+        """A requested split key passed to fit arrives on the one split call of the fit."""
         from conftest import MarkerRecordingSplitter
 
         y, X = y_X_factory(length=100, n_targets=1, n_features=2)
@@ -134,7 +134,8 @@ class TestOptunaSearchCVFit:
         search.fit(y, X_actual=X, forecasting_horizon=3, split_marker="routed")
 
         assert search.n_splits_ == 2
-        assert splitter.split_calls_ == ["routed", "routed"]
+        # Split once per fit, not once per trial: every trial is scored on these folds.
+        assert splitter.split_calls_ == ["routed"]
 
     def test_scoring_none_fails_with_the_clear_valueerror(
         self, default_forecaster, default_param_distributions, y_X_factory
@@ -1060,12 +1061,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score=0.0,
             multimetric=False,
@@ -1095,12 +1095,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=False,
@@ -1126,12 +1125,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score="raise",
             multimetric=False,
@@ -1156,12 +1154,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,
@@ -1187,12 +1184,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,
@@ -1219,12 +1215,11 @@ class TestObjective:
             X_future=None,
             X_forecast=None,
             forecasting_horizon=3,
-            cv=2,
+            splits=[],
             scorers=MeanAbsoluteError(),
             fit_params={},
             predict_func_params={},
             score_params={},
-            split_params={},
             return_train_score=False,
             error_score=np.nan,
             multimetric=True,

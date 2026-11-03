@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import math
 import time
+import warnings
 from collections.abc import Callable
 from numbers import Integral, Real
 from typing import Any
@@ -14,12 +15,14 @@ import optuna
 import polars as pl
 from optuna.distributions import BaseDistribution
 from sklearn.base import clone
-from sklearn.utils._param_validation import Interval
+from sklearn.utils import check_random_state
+from sklearn.utils._param_validation import Interval, StrOptions
 from sklearn.utils.metadata_routing import (
     _raise_for_params,
 )
 from sklearn.utils.validation import _check_method_params, indexable
-from sklearn_optuna.optuna import Callback, Sampler, Storage
+from sklearn_optuna.optuna import Callback, Pruner, Sampler, Storage
+from sklearn_optuna.search import _warn_if_pruner_inert
 from yohou.base import BaseForecaster
 from yohou.metrics.base import BaseScorer
 from yohou.model_selection.search import BaseSearchCV
@@ -36,6 +39,8 @@ from .objective import _Objective
 from .utils import _build_cv_results
 
 logger = logging.getLogger(__name__)
+
+_FOLD_ORDERS = ("recent_first", "chronological", "random")
 
 
 # TODO: Check reference and make it mkdocs-compatible
@@ -67,6 +72,17 @@ class OptunaSearchCV(BaseSearchCV):
         A wrapped Optuna storage.  If ``None``, in-memory storage is used.
     callbacks : dict of str to Callback or None, default=None
         Dictionary mapping callback names to Callback instances.
+    pruner : Pruner or None, default=None
+        A wrapped Optuna pruner.  Each fold's finite test score is reported
+        to the trial at the fold's splitter index whether or not a pruner is
+        set.  When one is given, it is consulted after each fold, and a trial
+        it judges reliably worse than the best so far stops before its
+        remaining folds run: it ends in Optuna's PRUNED state, keeps the
+        per-fold scores, timings and failure marks of the folds that ran, and
+        is left out of ``cv_results_``.  When an existing study is passed to
+        ``fit()``, a given pruner replaces that study's pruner, as
+        ``sampler`` does.  Not supported with ``validation="cv"``, which
+        evaluates every fold of a trial in one call.
     n_trials : int, default=10
         Number of trials for hyperparameter search.
     timeout : float or None, default=None
@@ -120,6 +136,19 @@ class OptunaSearchCV(BaseSearchCV):
         Adapter used with ``validation="cv"``, or ``None`` to resolve yohou's
         built-in adapter for the estimator (LightGBM, XGBoost, CatBoost or
         scikit-learn histogram gradient boosting).
+    fold_order : {"recent_first", "chronological", "random"}, default="recent_first"
+        Order in which a trial evaluates its folds, and so which folds a
+        pruner judges first.  ``"recent_first"`` is reverse splitter order,
+        which for yohou's splitters starts with the most recent window;
+        ``"chronological"`` is splitter order; ``"random"`` draws an order per
+        trial.  A fold keeps its splitter index in every ``split<i>``
+        attribute, ``cv_results_`` column and reported step whatever the
+        order, and the order never changes a completed trial's scores.  Has
+        no effect with ``validation="cv"``.
+    random_state : int, RandomState instance or None, default=None
+        Seeds ``fold_order="random"``: with an integer, trial ``k`` gets the
+        same order in every run, whichever thread runs it.  Ignored by the
+        other orders.
 
     Attributes
     ----------
@@ -152,6 +181,10 @@ class OptunaSearchCV(BaseSearchCV):
         Number of trials in state COMPLETE. On a study backed by shared
         storage this counts the whole study, including trials written by
         other processes.
+    n_pruned_ : int
+        Number of trials in the study that ended in Optuna's PRUNED state.
+        They are not counted in ``n_completed_`` and have no row in
+        ``cv_results_``.  Always 0 when ``pruner`` is ``None``.
     n_scored_ : int
         Number of completed trials whose objective is finite. A completed
         trial whose every fold failed carries a sentinel value, so this is
@@ -207,6 +240,9 @@ class OptunaSearchCV(BaseSearchCV):
         "sampler": [Sampler, None],
         "storage": [Storage, None],
         "callbacks": [dict, None],
+        "pruner": [Pruner, None],
+        "fold_order": [StrOptions(set(_FOLD_ORDERS))],
+        "random_state": ["random_state"],
     }
 
     def __init__(
@@ -229,6 +265,9 @@ class OptunaSearchCV(BaseSearchCV):
         return_train_score: bool = False,
         validation: str | None = None,
         early_stopping_adapter: Any = None,
+        pruner: Pruner | None = None,
+        fold_order: str = "recent_first",
+        random_state: int | np.random.RandomState | None = None,
     ) -> None:
         super().__init__(
             forecaster=forecaster,
@@ -249,6 +288,9 @@ class OptunaSearchCV(BaseSearchCV):
         self.storage = storage
         self.timeout = timeout
         self.callbacks = callbacks
+        self.pruner = pruner
+        self.fold_order = fold_order
+        self.random_state = random_state
 
     def _run_search(self, evaluate_candidates: Callable[..., Any]) -> None:
         """Not used. OptunaSearchCV overrides fit() directly.
@@ -312,6 +354,9 @@ class OptunaSearchCV(BaseSearchCV):
 
         """
         _raise_for_params(params, self, "fit")
+        # fit() runs no parameter validation, so these are explicit, like the
+        # callbacks check, and run before any study exists.
+        self._check_pruning_setup()
         if self.validation == "cv":
             # The checks no trial can change: a reduction forecaster, and no
             # caller-supplied evaluation set the folds would overwrite.
@@ -346,9 +391,26 @@ class OptunaSearchCV(BaseSearchCV):
         # Get routed params
         routed_params = self._get_routed_params_for_fit(params)
 
-        # Get CV splitter
+        # Split once per fit: every trial is scored on the same folds, which is what
+        # lets a pruner compare fold i of one trial with fold i of another. A
+        # splitter that cannot split fails here, before any trial runs.
         cv_orig = check_cv(self.cv, forecasting_horizon)
-        self.n_splits_ = cv_orig.get_n_splits(y, X_actual, **routed_params.splitter.split)
+        splits = list(cv_orig.split(y, X_actual, **routed_params.splitter.split))
+        self.n_splits_ = len(splits)
+
+        # Instantiate the pruner first, so Optuna rejects invalid settings before
+        # the checks read them.
+        pruner_instance = None
+        if self.pruner is not None:
+            pruner_instance = self.pruner.instantiate().instance_
+            _warn_if_pruner_inert(self.pruner, self.n_splits_)
+            _warn_if_pruner_order_sensitive(self.pruner, self.fold_order)
+
+        # A per-fit seed, combined with each trial's number, keeps the random fold
+        # order independent of thread scheduling.
+        seed = 0
+        if self.fold_order == "random":
+            seed = int(check_random_state(self.random_state).randint(np.iinfo(np.int32).max))
 
         # Instantiate sampler from wrapper
         sampler_instance = None
@@ -379,11 +441,14 @@ class OptunaSearchCV(BaseSearchCV):
             optuna_study = study
             if sampler_instance is not None:
                 optuna_study.sampler = sampler_instance
+            if pruner_instance is not None:
+                optuna_study.pruner = pruner_instance
         else:
             optuna_study = optuna.create_study(
                 direction="maximize",
                 sampler=sampler_instance,
                 storage=storage_instance,
+                pruner=pruner_instance,
             )
 
         # Route predict_params for the resolved response method
@@ -398,12 +463,11 @@ class OptunaSearchCV(BaseSearchCV):
             X_future=X_future,
             X_forecast=X_forecast,
             forecasting_horizon=forecasting_horizon,
-            cv=cv_orig,
+            splits=splits,
             scorers=scorers,
             fit_params=routed_params.forecaster.fit,
             predict_func_params=predict_func_params,
             score_params=routed_params.scorer.score if self.scoring is not None else {},
-            split_params=routed_params.splitter.split,
             verbose=self.verbose,
             return_train_score=self.return_train_score,
             error_score=self.error_score,
@@ -412,6 +476,9 @@ class OptunaSearchCV(BaseSearchCV):
             coverage_rates=coverage_rates,
             validation=self.validation,
             early_stopping_adapter=self.early_stopping_adapter,
+            fold_order=self.fold_order,
+            seed=seed,
+            prune=pruner_instance is not None,
         )
 
         # Run optimization
@@ -433,6 +500,7 @@ class OptunaSearchCV(BaseSearchCV):
         # usable results right up until a selection turns out to be arbitrary.
         completed_trials = [t for t in self.trials_ if t.state == optuna.trial.TrialState.COMPLETE]
         self.n_completed_ = len(completed_trials)
+        self.n_pruned_ = sum(1 for t in self.trials_ if t.state == optuna.trial.TrialState.PRUNED)
         self.n_scored_ = sum(1 for t in completed_trials if t.value is not None and math.isfinite(t.value))
         n_fold_failed = sum(1 for t in completed_trials if "failed_splits" in t.user_attrs)
         if n_fold_failed:
@@ -496,6 +564,33 @@ class OptunaSearchCV(BaseSearchCV):
 
         return self
 
+    def _check_pruning_setup(self) -> None:
+        """Reject a pruning or fold-order configuration before any study exists.
+
+        Raises
+        ------
+        TypeError
+            If ``pruner`` is neither ``None`` nor a ``Pruner`` wrapper.
+        ValueError
+            If ``fold_order`` is not an accepted value, or if a pruner is
+            combined with ``validation="cv"``.
+
+        """
+        if self.pruner is not None and not isinstance(self.pruner, Pruner):
+            msg = f"pruner must be a Pruner instance or None, got {type(self.pruner)}"
+            raise TypeError(msg)
+        if self.fold_order not in _FOLD_ORDERS:
+            accepted = ", ".join(repr(order) for order in _FOLD_ORDERS)
+            msg = f"fold_order must be one of {accepted}, got {self.fold_order!r}"
+            raise ValueError(msg)
+        if self.pruner is not None and self.validation == "cv":
+            msg = (
+                "pruner cannot be combined with validation='cv': that mode evaluates every "
+                "fold of a trial in one call, so there is no point between folds at which a "
+                "pruner could stop it. Drop the pruner, or use validation=None."
+            )
+            raise ValueError(msg)
+
     def __sklearn_tags__(self) -> Tags:
         """Get tags for this search estimator.
 
@@ -542,3 +637,35 @@ def _shared_round_record(trial: optuna.trial.FrozenTrial, n_splits: int) -> dict
         "boundary_positions": list(attrs.get("boundary_positions", [])),
         "curve_lengths": list(attrs.get("curve_lengths", [None] * n_splits)),
     }
+
+
+def _warn_if_pruner_order_sensitive(pruner: Pruner, fold_order: str) -> None:
+    """Warn when a pruner that reads only the highest step meets a non-chronological fold order.
+
+    Each fold is reported at its splitter index. Optuna's median, percentile and
+    threshold pruners judge a trial on the value at its highest step so far and
+    apply their warm-up to that step number, so with folds run most recent first
+    the first report is already the highest step: every later fold re-judges that
+    score and the warm-up never applies. The Wilcoxon pruner pairs folds by step
+    and works under any order; the no-op pruner never prunes.
+
+    Parameters
+    ----------
+    pruner : Pruner
+        The wrapped pruner.
+    fold_order : str
+        The search's fold order.
+
+    """
+    if fold_order == "chronological":
+        return
+    if issubclass(pruner.estimator_class, optuna.pruners.WilcoxonPruner | optuna.pruners.NopPruner):
+        return
+    warnings.warn(
+        f"{pruner.estimator_class.__name__} judges a trial on the highest-numbered fold reported "
+        f"so far, so with fold_order={fold_order!r} it decides on the first fold run and skips its "
+        f"warm-up. Use fold_order='chronological' with this pruner, or the default WilcoxonPruner, "
+        f"which pairs folds by number in any order.",
+        UserWarning,
+        stacklevel=3,
+    )

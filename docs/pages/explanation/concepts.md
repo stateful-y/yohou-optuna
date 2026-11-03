@@ -20,7 +20,7 @@ Calling `fit(y, X_actual, forecasting_horizon)` triggers the following steps:
 
 1. An Optuna `Study` is created (or loaded from storage if `study_name` and `storage` are provided).
 2. For each of `n_trials` trials, the sampler proposes a parameter combination from `param_distributions`.
-3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The plain mean of the fold scores becomes the trial's objective value; [Fold Failures and Trial Scores](#fold-failures-and-trial-scores) explains what happens when a fold raises. If `X_future` or `X_forecast` are provided, they are forwarded to `fit()` and `predict()` within each fold.
+3. A clone of the base forecaster is created with those parameters and evaluated via cross-validation. The plain mean of the fold scores becomes the trial's objective value; [Fold Failures and Trial Scores](#fold-failures-and-trial-scores) explains what happens when a fold raises. If `X_future` or `X_forecast` are provided, they are forwarded to `fit()` and `predict()` within each fold. When a `pruner` is set, a trial may stop after some of its folds instead; see [Pruning](#pruning).
 4. Optuna records the result and the sampler updates its internal model of the search space.
 5. After all trials, the best parameter combination is used to refit the forecaster on the full training data. The fitted forecaster is stored as `best_forecaster_`.
 
@@ -44,23 +44,42 @@ The reason is comparability. Every trial is evaluated on the same folds, and the
 
 A trial sunk this way still completes, deliberately. Optuna's samplers learn from completed trials and ignore failed ones, so completing at the sentinel keeps the crashing region visible to the sampler, which steers away from it instead of resampling it. This matches Optuna's own guidance for infeasible points.
 
-The failure is recorded rather than discarded. A trial with absorbed fold failures carries three user attributes: `exception` and `exception_type` for the first exception, and `failed_splits` for the indices of the folds that raised. A fold counts as failed when fitting, predicting the test window, or computing its train score raises. A train-score failure keeps the fold's real test score and replaces only its train score. A scorer that raises while scoring predictions that were produced is handled inside Yohou, which substitutes `error_score` with a warning, exactly as in its own searches. `failed_splits` is the reliable mark of a failure: with a numeric `error_score` the trial's aggregate stays finite, so the score's value alone cannot say whether a fold failed. The search warns once per failing trial and summarises once per search, and it exposes `n_completed_` and `n_scored_` so the count of trials that produced a usable score is readable without recomputation. [Handle Fitting Errors](../how-to/configure.md#handle-fitting-errors) covers the operational side.
+The failure is recorded rather than discarded. A trial with absorbed fold failures carries three user attributes: `exception` and `exception_type` for the first exception, and `failed_splits` for the indices of the folds that raised. A fold counts as failed when fitting, predicting the test window, or computing its train score raises. A train-score failure keeps the fold's real test score and replaces only its train score. A scorer that raises while scoring predictions that were produced is handled inside Yohou, which substitutes `error_score` with a warning, exactly as in its own searches. `failed_splits` is the reliable mark of a failure: with a numeric `error_score` the trial's aggregate stays finite, so the score's value alone cannot say whether a fold failed. The search warns once per failing trial and summarises once per search, and it exposes `n_completed_`, `n_scored_` and `n_pruned_` so the count of trials that produced a usable score, and of those a pruner stopped, is readable without recomputation. [Handle Fitting Errors](../how-to/configure.md#handle-fitting-errors) covers the operational side.
+
+## Pruning
+
+Every trial reports each fold's test score to its Optuna study as an intermediate value, at a step equal to the fold's index in the splitter. That record exists with or without a pruner: it is what Optuna's intermediate-value plot draws, and it is what a pruner reads.
+
+A pruner turns that record into a decision. When `pruner` is set, the search asks it after every fold whether the trial should stop, and a trial it stops ends in Optuna's `PRUNED` state. The default `Pruner` wraps Optuna's `WilcoxonPruner`, which runs a paired statistical test between the trial's fold scores and the best trial's scores on the same folds. Pairing fold `i` with fold `i` means something because every trial of a fit is scored on the same folds: the data is split once per `fit()`. The test needs several pairs before it is confident, so at its default threshold it cannot stop a trial before its fourth fold.
+
+### Why Fold Order Matters
+
+Backtest windows are not interchangeable. The most recent windows resemble the conditions the deployed model will face, while the oldest train on the least history. When a pruner decides after a few folds, the folds that ran first are the ones the verdict rests on. `fold_order="recent_first"`, the default, runs the most recent windows first, so an early verdict is based on them. `"chronological"` runs them oldest first. `"random"` draws an order per trial, which removes any systematic direction, and `random_state` makes it reproducible. The order changes which folds a pruned trial ran, never the scores of a trial that ran them all.
+
+The default pruner is what makes this work under any order. Wilcoxon pairs folds by their index, so it does not depend on the order in which they arrive. Optuna's median, percentile and threshold pruners instead judge a trial on the value at its highest step so far and count their warm-up in step numbers. With folds run most recent first, the first fold reported is already the highest step, so those pruners decide on that one fold and skip their warm-up. The search warns when one of them meets an order other than chronological.
+
+### What a Pruned Trial Leaves Behind
+
+A pruned trial keeps its parameters and, for the folds that ran, their scores, timings and failure marks, under the same `split<i>` keys a completed trial uses. It has no mean, because a mean over the folds it happened to run would not compare with the full means of completed trials. For the same reason it has no row in `cv_results_`, so every row there remains a full evaluation, while `trials_`, `study_` and `n_pruned_` keep it visible. A fold whose fit failed under the NaN `error_score` is not reported at all, because it is not a measurement. A numeric `error_score` is reported as the fold's score, so the pruner judges it like a real one.
+
+Pruning works between folds only. With `validation="cv"`, Yohou evaluates every fold of a trial in one call, so there is no point at which a pruner could stop it, and the search refuses that combination. [Prune Unpromising Trials](../how-to/prune-trials.md) covers the procedure.
 
 ## Wrapper Classes and Cloneability
 
-Optuna's sampler, storage, and callback objects are not compatible with Python's `copy.deepcopy()`, which Scikit-Learn's `clone()` uses internally. `BaseSearchCV` calls `clone()` to create fresh copies of the forecaster for each trial. Passing an `optuna.samplers.TPESampler` directly would fail at the first cloning step.
+Optuna's sampler, storage, pruner, and callback objects are not compatible with Python's `copy.deepcopy()`, which Scikit-Learn's `clone()` uses internally. `BaseSearchCV` calls `clone()` to create fresh copies of the forecaster for each trial. Passing an `optuna.samplers.TPESampler` directly would fail at the first cloning step.
 
-The `Sampler`, `Storage`, and `Callback` wrappers (re-exported from [Sklearn-Optuna](https://github.com/stateful-y/sklearn-optuna)) solve this by storing the class reference and constructor arguments rather than the live Optuna object. When the study needs to be created, the wrapper instantiates the underlying Optuna object on demand. Since a wrapper holds only serializable Python values, `clone()` can copy it safely.
+The `Sampler`, `Storage`, `Callback`, and `Pruner` wrappers (re-exported from [Sklearn-Optuna](https://github.com/stateful-y/sklearn-optuna)) solve this by storing the class reference and constructor arguments rather than the live Optuna object. When the study needs to be created, the wrapper instantiates the underlying Optuna object on demand. Since a wrapper holds only serializable Python values, `clone()` can copy it safely.
 
 ```python
 import optuna
-from yohou_optuna import Sampler, Storage, Callback
+from yohou_optuna import Callback, Pruner, Sampler, Storage
 from optuna.study import MaxTrialsCallback
 
 # Wrappers hold arguments, not live Optuna objects
 sampler = Sampler(sampler=optuna.samplers.TPESampler, seed=42)
 storage = Storage(storage=optuna.storages.RDBStorage, url="sqlite:///study.db")
 callback = Callback(callback=MaxTrialsCallback, n_trials=100)
+pruner = Pruner(pruner=optuna.pruners.MedianPruner, n_warmup_steps=2)
 ```
 
 The lazy instantiation also means the Optuna backend (database connections, sampler state) is only initialized when the study is actually created, not when you construct `OptunaSearchCV`.
@@ -93,7 +112,7 @@ Because Optuna studies can be shared through a database backend, you can distrib
 
 ## Limitations
 
-- **No pruning**: Optuna's pruning API (early stopping of unpromising trials) is not wired into `OptunaSearchCV`. All trials run full cross-validation.
+- **Pruning between folds only**: a pruner can stop a trial after a fold, not part-way through a fit, and not with `validation="cv"`, which evaluates every fold of a trial in one call.
 - **Single-objective only**: Each trial produces one objective value (the mean CV score from the `scoring` metric). When `scoring` is a dict for multi-metric tracking, the `refit` key selects which metric drives the optimization. Optuna's multi-objective Pareto optimization is not supported.
 - **Threading-based parallelism**: Parallel trials on a single machine use threading, not multiprocessing. For multi-process or multi-node parallelism, use a shared database storage so each process runs its own `OptunaSearchCV.fit()` against the same study.
 

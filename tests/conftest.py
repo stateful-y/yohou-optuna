@@ -450,8 +450,8 @@ class MarkerRecordingSplitter(ExpandingWindowSplitter):
     requestable through sklearn's signature scraping, so after
     ``set_split_request(split_marker=True)`` a search routes it via the
     splitter bucket. Every ``split`` call records the received marker in
-    ``split_calls_``, which lets a test assert the routed value reached each
-    per-trial split. ``get_n_splits`` accepts the key as well because the
+    ``split_calls_``, which lets a test assert the routed value reached the
+    search's split and how many times it split. ``get_n_splits`` accepts the key as well because the
     search forwards the same bucket there.
 
     Parameters

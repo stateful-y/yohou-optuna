@@ -6,6 +6,7 @@ completed the [Getting Started](../tutorials/getting-started.md) tutorial.
 ## Optimization
 
 - [Configure OptunaSearchCV](configure.md): choose samplers, add callbacks, persist studies, and customize cross-validation
+- [Prune Unpromising Trials](prune-trials.md): stop a trial after a few backtest folds when it is reliably worse than the best one, and choose which folds run first
 - [Score Multiple Metrics](multi-metric-search.md): evaluate configurations against multiple scoring metrics simultaneously
 - [Visualize Search Results](visualize-study.md): plot optimization history and parameter importance with Optuna and yohou diagnostics
 

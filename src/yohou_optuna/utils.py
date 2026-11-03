@@ -146,7 +146,9 @@ def _initialize_result_arrays(
     split_keys: set[str] = set()
     for trial in completed_trials:
         for key in trial.user_attrs:
-            if key.startswith("split"):
+            # Per-fold timings are trial attributes for diagnostics (a pruned trial's
+            # partial record), not cv_results_ columns, as in scikit-learn.
+            if key.startswith("split") and ("_test_" in key or "_train_" in key):
                 split_keys.add(key)
 
     for key in split_keys:
