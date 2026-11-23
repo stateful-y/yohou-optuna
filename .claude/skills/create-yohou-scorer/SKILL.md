@@ -130,7 +130,7 @@ tags = {
 - **Search sign convention**: `GridSearchCV`/`RandomizedSearchCV` **negate** scores for `lower_is_better=True` scorers (sklearn convention). Scores in `cv_results_` and `best_score_` will be negative for error metrics. To recover the raw value: `raw_mae = -best_score_`. If your scorer has `lower_is_better=False` (e.g. `EmpiricalCoverage`), override `__sklearn_tags__` to set `scorer_tags.lower_is_better = False`.
 - **Time weights not supported**: Don't override `_aggregate_scores()` unless necessary
 - **Panel data not handled**: Base class handles panel groups automatically
-- **Never use Sphinx cross-links**: We use mkdocs, not Sphinx. Never use `:class:`, `:func:`, `:meth:`, `:mod:`, `:obj:`, `:ref:`, `:attr:`, or `:term:` directives in docstrings. Use backtick references instead (e.g., `` `ClassName` `` not `:class:\`ClassName\``). Also never use mkdocs cross-references like `[ClassName][]` in docstrings — those only render in `.md` files, not in Python help or IDEs. For hyperlinks in docstrings, always use Markdown syntax `[text](url)`, never RST syntax ``text <url>`_`
+- **Never use Sphinx cross-links**: We use mkdocs, not Sphinx. Never use `:class:`, `:func:`, `:meth:`, `:mod:`, `:obj:`, `:ref:`, `:attr:`, or `:term:` directives in docstrings. Use backtick references instead (e.g., `` `ClassName` `` not `` :class:`ClassName` ``). Also never use mkdocs cross-references like `[ClassName][]` in docstrings — those only render in `.md` files, not in Python help or IDEs. For hyperlinks in docstrings, always use Markdown syntax `[text](url)`, never RST syntax ``text <url>`_`
 - **Never use inline comment separators**: Do not use `# --------`, `# ========`, section name headers, or any decorative comment dividers in code
 
 ---
